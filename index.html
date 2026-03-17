@@ -64,7 +64,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:700;line-height:1.25;margin-bottom:22px}
 .welcome-greeting span{color:#f5c27a}
 .home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.home-stat[onclick]:hover{border-color:var(--amber);box-shadow:var(--shadow-lg)}
 .home-stat-val{font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px}
 .home-stat-lbl{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 
@@ -237,13 +238,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="home-stat-val" id="stat-next-trip">Apr 3</div>
       <div class="home-stat-lbl">Next Trip</div>
     </div>
-    <div class="home-stat">
+    <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
       <div class="home-stat-val" id="stat-todos">—</div>
-      <div class="home-stat-lbl">Open To-Dos</div>
+      <div class="home-stat-lbl">Open To-Dos ↗</div>
     </div>
-    <div class="home-stat">
+    <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
       <div class="home-stat-val" id="stat-last-entry">—</div>
-      <div class="home-stat-lbl">Last Review</div>
+      <div class="home-stat-lbl">Last Review ↗</div>
     </div>
   </div>
 
