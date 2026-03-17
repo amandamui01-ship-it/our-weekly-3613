@@ -913,11 +913,6 @@ function renderDates() {
       <button class="trip-del" onclick="deleteTrip('${t.id}')">×</button>
       <div class="trip-dates">${escHtml(t.dates)}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
-      <div class="trip-days">${
-        t.aidanDays > 0 || t.amandaDays > 0
-          ? `Aidan: <span>${t.aidanDays}d</span> · Amanda: <span>${t.amandaDays}d</span> PTO`
-          : `<span style="color:var(--sage)">No PTO needed ✓</span>`
-      }</div>
     </div>
   `).join('') + `
     <div class="add-trip-form">
