@@ -467,7 +467,20 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <div class="toast" id="toast"></div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
+// ─── FIREBASE ────────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyD3iFECQA4IJbqFljJl9zbXLGMRB8FL7OQ",
+  authDomain: "our-weekly.firebaseapp.com",
+  projectId: "our-weekly",
+  storageBucket: "our-weekly.firebasestorage.app",
+  messagingSenderId: "33271634302",
+  appId: "1:33271634302:web:22a68f678056b06aaf7b2f"
+});
+const db = firebase.firestore();
+
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
 const COFFEE_SHOPS = [
@@ -671,23 +684,53 @@ let todos = [];
 let newEntries = [];
 let trips = [], logisticsList = [], bucketList = [];
 
-function loadState() {
-  const t = localStorage.getItem('wr_todos');
-  todos = t ? JSON.parse(t) : DEFAULT_TODOS.map(x => ({...x}));
-  const e = localStorage.getItem('wr_entries');
-  newEntries = e ? JSON.parse(e) : [];
-  const tr = localStorage.getItem('wr_trips');
-  trips = tr ? JSON.parse(tr) : TRIPS_2026.map((x,i) => ({...x, id:'trip-'+i}));
-  const lo = localStorage.getItem('wr_logistics');
-  logisticsList = lo ? JSON.parse(lo) : LOGISTICS_LIST.map((text,i) => ({id:'log-'+i, text}));
-  const bu = localStorage.getItem('wr_bucket');
-  bucketList = bu ? JSON.parse(bu) : BUCKET_LIST.map((text,i) => ({id:'bkt-'+i, text}));
+function isActive(name) {
+  return document.getElementById('page-' + name)?.classList.contains('active');
 }
-function saveTodos()     { localStorage.setItem('wr_todos',     JSON.stringify(todos));        }
-function saveEntries()   { localStorage.setItem('wr_entries',   JSON.stringify(newEntries));   }
-function saveTrips()     { localStorage.setItem('wr_trips',     JSON.stringify(trips));        }
-function saveLogistics() { localStorage.setItem('wr_logistics', JSON.stringify(logisticsList));}
-function saveBucket()    { localStorage.setItem('wr_bucket',    JSON.stringify(bucketList));   }
+
+function initFirestore() {
+  const ref = key => db.collection('state').doc(key);
+
+  ref('todos').onSnapshot(snap => {
+    if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
+    todos = snap.data().items || [];
+    if (isActive('todos')) renderTodos();
+    if (isActive('home'))  renderHome();
+    const el = document.getElementById('stat-todos');
+    if (el) el.textContent = todos.filter(t=>!t.done).length;
+  });
+
+  ref('entries').onSnapshot(snap => {
+    if (!snap.exists) { ref('entries').set({items:[]}); return; }
+    newEntries = snap.data().items || [];
+    if (isActive('history')) renderHistory();
+    if (isActive('home'))    renderHome();
+  });
+
+  ref('trips').onSnapshot(snap => {
+    if (!snap.exists) { ref('trips').set({items: TRIPS_2026.map((x,i)=>({...x,id:'trip-'+i}))}); return; }
+    trips = snap.data().items || [];
+    if (isActive('dates')) renderDates();
+  });
+
+  ref('logistics').onSnapshot(snap => {
+    if (!snap.exists) { ref('logistics').set({items: LOGISTICS_LIST.map((text,i)=>({id:'log-'+i,text}))}); return; }
+    logisticsList = snap.data().items || [];
+    if (isActive('dates')) renderDates();
+  });
+
+  ref('bucket').onSnapshot(snap => {
+    if (!snap.exists) { ref('bucket').set({items: BUCKET_LIST.map((text,i)=>({id:'bkt-'+i,text}))}); return; }
+    bucketList = snap.data().items || [];
+    if (isActive('dates')) renderDates();
+  });
+}
+
+function saveTodos()     { db.collection('state').doc('todos').set({items: todos});            }
+function saveEntries()   { db.collection('state').doc('entries').set({items: newEntries});     }
+function saveTrips()     { db.collection('state').doc('trips').set({items: trips});            }
+function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList});}
+function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList});      }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(name) {
@@ -1101,7 +1144,7 @@ tickJapan();
 setInterval(tickJapan, 1000);
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
-loadState();
+initFirestore();
 renderHome();
 renderDates();
 
