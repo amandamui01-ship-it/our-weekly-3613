@@ -230,34 +230,66 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-meal-input:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 
 /* ── Budget ── */
-.budget-add-form{display:flex;flex-direction:column;gap:10px}
-.budget-form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.budget-form-row select,.budget-form-row input[type=text],.budget-form-row input[type=number],.budget-form-row input[type=date]{flex:1;min-width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none}
-.budget-form-row select:focus,.budget-form-row input:focus{border-color:var(--amber)}
-.budget-shared-toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);white-space:nowrap;cursor:pointer;flex-shrink:0}
-.budget-shared-toggle input{accent-color:var(--amber);width:15px;height:15px}
-.budget-tx-list{display:flex;flex-direction:column;gap:1px}
-.budget-tx{display:grid;grid-template-columns:70px 80px 1fr auto auto auto;gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border-light);font-size:13px}
+.budget-period-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.budget-period-row select{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
+.budget-period-row select:focus{border-color:var(--amber)}
+.budget-month-pills{display:flex;gap:6px;flex-wrap:wrap}
+.bmonth-pill{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--text-2);transition:all .15s;background:var(--surface)}
+.bmonth-pill:hover{border-color:var(--amber);color:var(--amber)}
+.bmonth-pill.active{background:var(--amber);color:white;border-color:var(--amber)}
+
+.budget-quickadd-card{background:var(--amber-bg)!important;border-color:#f0d9b8!important}
+.budget-quickadd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bq-sel,.bq-input{padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none}
+.bq-sel:focus,.bq-input:focus{border-color:var(--amber)}
+.bq-person{width:110px;flex-shrink:0}
+.bq-cat{width:140px;flex-shrink:0}
+.bq-desc{flex:1;min-width:120px}
+.bq-amt{width:100px;flex-shrink:0}
+.bq-date{width:140px;flex-shrink:0}
+.bq-split{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--amber-dark);white-space:nowrap;cursor:pointer;flex-shrink:0}
+.bq-split input{accent-color:var(--amber);width:14px;height:14px}
+.bq-btn{flex-shrink:0}
+
+.budget-top-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}
+.budget-summary-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bsum-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.bsum-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:6px}
+.bsum-value{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700}
+.budget-owes-card{min-width:180px;text-align:center}
+
+.budget-cat-row{display:grid;grid-template-columns:110px 1fr 80px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light)}
+.budget-cat-row:last-child{border-bottom:none}
+.budget-cat-name{font-size:12px;font-weight:600;color:var(--text-2)}
+.budget-cat-bars{display:flex;flex-direction:column;gap:3px}
+.budget-cat-bar-wrap{background:var(--border-light);border-radius:99px;height:6px;overflow:hidden}
+.budget-cat-bar{height:100%;border-radius:99px;transition:width .4s}
+.budget-cat-amt{font-size:12px;font-weight:700;text-align:right;color:var(--text)}
+.budget-cat-sub{font-size:10px;color:var(--text-3);text-align:right}
+
+.budget-tx-list{display:flex;flex-direction:column}
+.budget-tx-group{margin-bottom:8px}
+.budget-tx-date-hdr{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px;border-bottom:1px solid var(--border-light);margin-bottom:2px}
+.budget-tx{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--border-light);font-size:13px}
 .budget-tx:last-child{border-bottom:none}
-.budget-tx-date{color:var(--text-3);font-size:12px}
-.budget-tx-person{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-align:center}
+.budget-tx-person{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
 .budget-tx-person.Amanda{background:#fceae5;color:var(--coral)}
 .budget-tx-person.Aidan{background:var(--blue-bg);color:var(--blue)}
+.budget-tx-info{display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.budget-tx-desc{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .budget-tx-cat{font-size:11px;color:var(--text-3)}
-.budget-tx-amt{font-weight:600;text-align:right;white-space:nowrap}
+.budget-tx-amt{font-weight:700;text-align:right;white-space:nowrap}
 .budget-tx-amt.income{color:var(--sage)}
 .budget-tx-shared{font-size:10px;color:var(--amber);font-weight:700;white-space:nowrap}
-.budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1}
+.budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
 .budget-tx-del:hover{color:var(--coral)}
-.budget-cat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px}
-.budget-cat-row:last-child{border-bottom:none}
-.budget-cat-bar-wrap{width:100%;background:var(--border);border-radius:99px;height:5px;margin-top:4px;overflow:hidden}
-.budget-cat-bar{height:100%;border-radius:99px;background:var(--amber)}
 
 /* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
   .trip-grid,.home-stats{grid-template-columns:1fr}
+  .budget-top-row{grid-template-columns:1fr}
+  .budget-summary-cards{grid-template-columns:1fr 1fr}
   .welcome-banner{padding:24px 22px}
   .welcome-greeting{font-size:24px}
 }
@@ -546,76 +578,61 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- ── BUDGET ── -->
 <div class="page" id="page-budget">
   <div class="page-title">Budget</div>
-  <div class="page-sub" id="budget-month-label"></div>
 
-  <!-- Summary cards -->
-  <div class="home-stats" style="margin-bottom:16px" id="budget-summary"></div>
-
-  <!-- Who owes whom -->
-  <div class="card" style="margin-bottom:16px" id="budget-owes-card">
-    <div class="card-title">Who Owes Whom</div>
-    <div id="budget-owes"></div>
+  <!-- Period picker -->
+  <div class="budget-period-row">
+    <select id="b-filter-year" onchange="renderBudget()">
+      <option value="2026">2026</option>
+      <option value="2025">2025</option>
+    </select>
+    <div class="budget-month-pills" id="budget-month-pills"></div>
   </div>
 
-  <!-- Add expense -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Add Expense</div>
-    <div class="budget-add-form">
-      <div class="budget-form-row">
-        <select id="b-person">
-          <option value="Amanda">Amanda</option>
-          <option value="Aidan">Aidan</option>
-        </select>
-        <input type="date" id="b-date">
-        <select id="b-category">
-          <option value="">Category...</option>
-          <option>Dining</option><option>Entertainment</option><option>Groceries</option>
-          <option>Housing</option><option>Income</option><option>Insurance</option>
-          <option>Investments</option><option>Misc</option><option>Pet</option>
-          <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
-          <option>Transportation</option><option>Travel</option><option>Utilities</option>
-        </select>
-      </div>
-      <div class="budget-form-row">
-        <input type="text" id="b-desc" placeholder="Description">
-        <input type="number" id="b-amount" placeholder="Amount" min="0" step="0.01">
-        <label class="budget-shared-toggle">
-          <input type="checkbox" id="b-shared"> Split 50/50
-        </label>
-        <button class="btn btn-primary" onclick="addExpense()">+ Add</button>
-      </div>
+  <!-- Quick-add form -->
+  <div class="card budget-quickadd-card" style="margin-bottom:16px">
+    <div class="budget-quickadd">
+      <select id="b-person" class="bq-sel bq-person">
+        <option value="Amanda">Amanda</option>
+        <option value="Aidan">Aidan</option>
+      </select>
+      <select id="b-category" class="bq-sel bq-cat">
+        <option value="">Category</option>
+        <option>Dining</option><option>Entertainment</option><option>Groceries</option>
+        <option>Housing</option><option>Income</option><option>Insurance</option>
+        <option>Investments</option><option>Misc</option><option>Pet</option>
+        <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
+        <option>Transportation</option><option>Travel</option><option>Utilities</option>
+      </select>
+      <input class="bq-input bq-desc" id="b-desc" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
+      <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00" min="0" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
+      <input type="date" class="bq-input bq-date" id="b-date">
+      <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50</label>
+      <button class="btn btn-primary bq-btn" onclick="addExpense()">+ Add</button>
     </div>
   </div>
 
-  <!-- Month filter + transaction list -->
+  <!-- Summary + owes -->
+  <div class="budget-top-row" style="margin-bottom:16px">
+    <div id="budget-summary" class="budget-summary-cards"></div>
+    <div class="card budget-owes-card" id="budget-owes-wrap">
+      <div class="card-title">Settlement</div>
+      <div id="budget-owes"></div>
+    </div>
+  </div>
+
+  <!-- Spending by category -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Spending by Category</div>
+    <div id="budget-cats"></div>
+  </div>
+
+  <!-- Transaction list -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div class="card-title" style="margin-bottom:0">Transactions</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="b-filter-year" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
-          <option value="2026">2026</option>
-          <option value="2025">2025</option>
-        </select>
-        <select id="b-filter-month" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
-          <option value="">All Months</option>
-          <option>January</option><option>February</option><option>March</option>
-          <option>April</option><option>May</option><option>June</option>
-          <option>July</option><option>August</option><option>September</option>
-          <option>October</option><option>November</option><option>December</option>
-        </select>
-        <select id="b-filter-person" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
-          <option value="">Both</option>
-          <option>Amanda</option><option>Aidan</option>
-        </select>
-        <select id="b-filter-cat" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
-          <option value="">All Categories</option>
-          <option>Dining</option><option>Entertainment</option><option>Groceries</option>
-          <option>Housing</option><option>Income</option><option>Insurance</option>
-          <option>Investments</option><option>Misc</option><option>Pet</option>
-          <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
-          <option>Transportation</option><option>Travel</option><option>Utilities</option>
-        </select>
-      </div>
+      <select id="b-filter-person" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+        <option value="">Both</option><option>Amanda</option><option>Aidan</option>
+      </select>
     </div>
     <div id="budget-transactions"></div>
   </div>
@@ -1481,76 +1498,111 @@ function calcOwes(txList) {
   return net;
 }
 
+const MONTHS_LIST = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CAT_COLORS = {Dining:'#d96a52',Groceries:'#5c7a62',Shopping:'#bf7c36',Entertainment:'#4472a8',Transportation:'#9b6fa8',Housing:'#6b5c47',Travel:'#3a9ea5',Utilities:'#e0a030',Pet:'#e07a5f',Subscriptions:'#81b29a',Insurance:'#b5838d',Savings:'#4a7c59',Investments:'#2d6a4f',Income:'#52b788',Misc:'#aaa'};
+
+let _budgetMonth = new Date().toLocaleString('en-US',{month:'long'});
+
 function renderBudget() {
-  const curMonth = new Date().toLocaleString('en-US', {month:'long'});
-  document.getElementById('budget-month-label').textContent = curMonth + ' — track every dollar.';
-
-  const yearSel = document.getElementById('b-filter-year');
-  const mSel    = document.getElementById('b-filter-month');
-  if (!mSel.value) mSel.value = curMonth;
-
-  const filterYear   = yearSel ? yearSel.value : '2026';
-  const filterMonth  = mSel.value;
-  const filterPerson = document.getElementById('b-filter-person').value;
-  const filterCat    = document.getElementById('b-filter-cat').value;
-
-  const monthTx = expenses.filter(e =>
-    e.date.startsWith(filterYear) && (!filterMonth || e.month === filterMonth)
-  );
-  const filtered = monthTx.filter(e =>
-    (!filterPerson || e.person === filterPerson) &&
-    (!filterCat    || e.category === filterCat)
-  );
-
-  // Summary cards (always current-month scope, no person/cat filter)
-  const income   = monthTx.filter(e=>e.person==='Amanda'||e.person==='Aidan').reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
-  const expenses_ = monthTx.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
-  const savings  = monthTx.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
-  const net_     = income - expenses_ - savings;
   const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const yearSel = document.getElementById('b-filter-year');
+  const filterYear = yearSel ? yearSel.value : '2026';
+  const curYear = new Date().getFullYear().toString();
+  const filterMonth = _budgetMonth;
+  const filterPerson = document.getElementById('b-filter-person')?.value || '';
+
+  // Month pills
+  const pillContainer = document.getElementById('budget-month-pills');
+  if (pillContainer) {
+    const available = [...new Set(expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month))];
+    pillContainer.innerHTML = MONTHS_LIST.filter(m => available.includes(m)).map(m =>
+      `<div class="bmonth-pill${m===filterMonth?' active':''}" onclick="setBudgetMonth('${m}')">${m.slice(0,3)}</div>`
+    ).join('');
+  }
+
+  const monthTx = expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
+  const filtered = filterPerson ? monthTx.filter(e => e.person === filterPerson) : monthTx;
+
+  // Summary
+  const income    = monthTx.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
+  const spending  = monthTx.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
+  const saved     = monthTx.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
+  const net_      = income - spending - saved;
   document.getElementById('budget-summary').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value" style="color:var(--sage)">${fmt(income)}</div></div>
-    <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" style="color:var(--coral)">${fmt(expenses_)}</div></div>
-    <div class="stat-card"><div class="stat-label">Saved</div><div class="stat-value" style="color:var(--blue)">${fmt(savings)}</div></div>
-    <div class="stat-card"><div class="stat-label">Net Cash Flow</div><div class="stat-value" style="color:${net_>=0?'var(--sage)':'var(--coral)'}">${net_<0?'-':''}${fmt(net_)}</div></div>`;
+    <div class="bsum-card"><div class="bsum-label">Income</div><div class="bsum-value" style="color:var(--sage)">${fmt(income)}</div></div>
+    <div class="bsum-card"><div class="bsum-label">Spending</div><div class="bsum-value" style="color:var(--coral)">${fmt(spending)}</div></div>
+    <div class="bsum-card"><div class="bsum-label">Saved</div><div class="bsum-value" style="color:var(--blue)">${fmt(saved)}</div></div>
+    <div class="bsum-card"><div class="bsum-label">Net</div><div class="bsum-value" style="color:${net_>=0?'var(--sage)':'var(--coral)'}">${net_<0?'−':''}${fmt(net_)}</div></div>`;
 
   // Who owes whom
   const owes = calcOwes(monthTx);
-  const diff = owes.Aidan - owes.Amanda; // positive = Amanda owes Aidan
+  const diff = owes.Aidan - owes.Amanda;
   const oweEl = document.getElementById('budget-owes');
   if (Math.abs(diff) < 0.01) {
-    oweEl.innerHTML = `<div style="text-align:center;color:var(--sage);font-weight:600;padding:8px">All square! ✅</div>`;
+    oweEl.innerHTML = `<div style="color:var(--sage);font-weight:700;padding:12px 0;font-size:14px">All square ✅</div>`;
   } else {
     const who = diff > 0 ? 'Amanda' : 'Aidan';
     const whom = diff > 0 ? 'Aidan' : 'Amanda';
-    oweEl.innerHTML = `<div style="text-align:center;padding:8px;font-size:15px">
-      <span style="font-weight:700;color:var(--coral)">${who}</span>
-      <span style="color:var(--text-2)"> owes </span>
-      <span style="font-weight:700;color:var(--sage)">${whom}</span>
-      <span style="font-weight:700;font-size:18px;color:var(--amber)"> ${fmt(Math.abs(diff))}</span>
+    oweEl.innerHTML = `<div style="padding:8px 0">
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">${who} owes ${whom}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--amber)">${fmt(Math.abs(diff))}</div>
     </div>`;
   }
 
-  // Transaction list
+  // Category breakdown (spending only, no Income/Savings/Investments)
+  const catTotals = {};
+  for (const e of monthTx) {
+    if (EXPENSE_CATS_EXCL.has(e.category)) continue;
+    catTotals[e.category] = (catTotals[e.category]||0) + e.amount;
+  }
+  const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const maxCat = catSorted[0]?.[1] || 1;
+  document.getElementById('budget-cats').innerHTML = catSorted.length ? catSorted.map(([cat, total]) => {
+    const aidanAmt  = monthTx.filter(e=>e.person==='Aidan'&&e.category===cat).reduce((s,e)=>s+e.amount,0);
+    const amandaAmt = monthTx.filter(e=>e.person==='Amanda'&&e.category===cat).reduce((s,e)=>s+e.amount,0);
+    const color = CAT_COLORS[cat] || 'var(--amber)';
+    return `<div class="budget-cat-row">
+      <div class="budget-cat-name">${cat}</div>
+      <div class="budget-cat-bars">
+        <div class="budget-cat-bar-wrap"><div class="budget-cat-bar" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
+        <div style="display:flex;gap:8px;margin-top:2px">
+          <span style="font-size:10px;color:var(--blue)">A: ${fmt(aidanAmt)}</span>
+          <span style="font-size:10px;color:var(--coral)">A: ${fmt(amandaAmt)}</span>
+        </div>
+      </div>
+      <div class="budget-cat-amt">${fmt(total)}</div>
+    </div>`;
+  }).join('') : '<div style="color:var(--text-3);font-size:13px;padding:8px 0">No spending data.</div>';
+
+  // Transactions grouped by date
   const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
   if (!sorted.length) {
-    document.getElementById('budget-transactions').innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No transactions found.</div>';
-    return;
+    document.getElementById('budget-transactions').innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No transactions.</div>';
+  } else {
+    const byDate = {};
+    for (const e of sorted) { (byDate[e.date] = byDate[e.date]||[]).push(e); }
+    document.getElementById('budget-transactions').innerHTML = `<div class="budget-tx-list">` +
+      Object.entries(byDate).map(([date, txs]) => `
+        <div class="budget-tx-group">
+          <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
+          ${txs.map(e=>`<div class="budget-tx">
+            <span class="budget-tx-person ${e.person}">${e.person[0]}</span>
+            <div class="budget-tx-info"><span class="budget-tx-desc">${escHtml(e.description)||'—'}</span><span class="budget-tx-cat">${e.category}</span></div>
+            <span class="budget-tx-shared">${e.shared?'50/50':''}</span>
+            <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
+            <button class="budget-tx-del" onclick="deleteExpense('${e.id}')">×</button>
+          </div>`).join('')}
+        </div>`).join('') + `</div>`;
   }
-  document.getElementById('budget-transactions').innerHTML = `<div class="budget-tx-list">` +
-    sorted.map(e => `
-      <div class="budget-tx">
-        <span class="budget-tx-date">${e.date.slice(5)}</span>
-        <span class="budget-tx-person ${e.person}">${e.person}</span>
-        <span><span class="budget-tx-cat">${e.category} · </span>${escHtml(e.description)}</span>
-        <span class="budget-tx-shared">${e.shared ? '50/50' : ''}</span>
-        <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
-        <button class="budget-tx-del" onclick="deleteExpense('${e.id}')">×</button>
-      </div>`).join('') + `</div>`;
 
-  // Set default date
+  // Default date input
   const dateEl = document.getElementById('b-date');
-  if (!dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+}
+
+function setBudgetMonth(m) {
+  _budgetMonth = m;
+  renderBudget();
 }
 
 function addExpense() {
