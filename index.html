@@ -60,7 +60,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .field textarea:focus,.field input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
 
 /* ── HOME ── */
-.welcome-banner{background:linear-gradient(135deg,#2d2417 0%,#5c3c1e 100%);border-radius:18px;padding:36px 40px;color:white;margin-bottom:20px;position:relative;overflow:hidden}
+.welcome-banner{background:linear-gradient(135deg,#2d2417 0%,#5c3c1e 100%);border-radius:18px;padding:36px 40px;color:white;margin-bottom:20px;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center}
 .welcome-banner::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(191,124,54,.3) 0%,transparent 70%);pointer-events:none}
 .welcome-date{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.55;margin-bottom:8px}
 .welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:700;line-height:1.25;margin-bottom:22px}
@@ -434,10 +434,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="trip-grid" id="trip-grid"></div>
   </div>
 
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Vacation Time Tracker</div>
-    <div id="vaca-tracker"></div>
-  </div>
 
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">Logistics to Figure Out 📋</div>
@@ -935,26 +931,6 @@ function renderDates() {
       <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
     </div>`;
 
-  const aidanUsed = trips.reduce((s,t) => s+(t.aidanDays||0), 0);
-  const amandaUsed = trips.reduce((s,t) => s+(t.amandaDays||0), 0);
-  const aidanTotal = 26, amandaTotal = 16;
-  const amandaOver = amandaUsed > amandaTotal;
-
-  document.getElementById('vaca-tracker').innerHTML = `
-    <div class="vaca-person">
-      <div class="vaca-name">Aidan &nbsp;<span style="font-weight:400;color:var(--text-3);font-size:12px">${aidanUsed} of ${aidanTotal} days planned</span></div>
-      <div class="vaca-bar-track"><div class="vaca-bar-fill" style="width:${Math.min(aidanUsed/aidanTotal*100,100)}%"></div></div>
-      <div class="vaca-stats"><strong>${aidanTotal - aidanUsed} days remaining</strong> · ${aidanTotal} allotted · 7 half-days available</div>
-    </div>
-    <div class="vaca-person">
-      <div class="vaca-name">Amanda &nbsp;<span style="font-weight:400;color:var(--text-3);font-size:12px">${amandaUsed} of ${amandaTotal} days planned</span>
-        ${amandaOver ? `<span class="tag tag-coral">Over by ${amandaUsed - amandaTotal}d</span>` : ''}
-      </div>
-      <div class="vaca-bar-track"><div class="vaca-bar-fill${amandaOver?' over':''}" style="width:${Math.min(amandaUsed/amandaTotal*100,100)}%"></div></div>
-      <div class="vaca-stats">${amandaOver
-        ? `<strong>${amandaUsed - amandaTotal} days over allotment</strong> · Personal days may cover overflow`
-        : `<strong>${amandaTotal - amandaUsed} days remaining</strong>`} · ${amandaTotal} allotted · 7 half-days available</div>
-    </div>`;
 
   document.getElementById('logistics-list').innerHTML =
     logisticsList.map(l => `
