@@ -490,7 +490,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- ── NEXT WEEK PLAN ── -->
 <div class="page" id="page-plan">
   <div class="page-title">Next Week</div>
-  <div class="page-sub">Plan ahead so the week actually happens. 🗓️</div>
+  <div class="page-sub" id="plan-week-label">Plan ahead so the week actually happens. 🗓️</div>
+  <div style="text-align:center;margin-bottom:24px">
+    <button class="btn btn-secondary" onclick="clearPlan()">🗑️ Clear & Start Fresh</button>
+  </div>
 
   <!-- Week Schedule -->
   <div class="card" style="margin-bottom:16px">
@@ -1056,8 +1059,39 @@ const PLAN_DAYS = [
 ];
 const MEAL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
+function getPlanWeekStart() {
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun, 6=Sat
+  // On Sat (6) or Sun (0), plan for next week; otherwise plan for current week
+  const daysUntilNextMon = dow === 0 ? 1 : dow === 6 ? 2 : (8 - dow) % 7 || 7;
+  const offset = (dow === 6 || dow === 0) ? daysUntilNextMon : (1 - dow + 7) % 7;
+  const mon = new Date(today);
+  mon.setDate(today.getDate() + (dow === 6 || dow === 0 ? daysUntilNextMon : -(dow === 0 ? 6 : dow - 1)));
+  return mon;
+}
+
+function formatPlanLabel() {
+  const today = new Date();
+  const dow = today.getDay();
+  const isSatOrSun = dow === 0 || dow === 6;
+  const mon = new Date(today);
+  if (isSatOrSun) {
+    const toMon = dow === 0 ? 1 : 2;
+    mon.setDate(today.getDate() + toMon);
+  } else {
+    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  }
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  const prefix = isSatOrSun ? 'Planning for next week: ' : 'Week of ';
+  return prefix + fmt(mon) + ' – ' + fmt(sun);
+}
+
 function renderPlan() {
   const p = weekPlan;
+
+  document.getElementById('plan-week-label').textContent = formatPlanLabel();
 
   // Schedule
   document.getElementById('plan-week').innerHTML = PLAN_DAYS.map(({key, label}) => {
@@ -1095,6 +1129,13 @@ function renderPlan() {
   // Notes
   const notesEl = document.getElementById('plan-notes');
   if (notesEl && notesEl !== document.activeElement) notesEl.value = p._notes || '';
+}
+
+function clearPlan() {
+  if (!confirm('Clear the whole plan and start fresh?')) return;
+  weekPlan = {};
+  savePlan();
+  renderPlan();
 }
 
 function toggleChip(dayKey, type) {
