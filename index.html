@@ -229,6 +229,31 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-meal-input::placeholder{color:var(--text-3)}
 .plan-meal-input:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 
+/* ── Budget ── */
+.budget-add-form{display:flex;flex-direction:column;gap:10px}
+.budget-form-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.budget-form-row select,.budget-form-row input[type=text],.budget-form-row input[type=number],.budget-form-row input[type=date]{flex:1;min-width:100px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none}
+.budget-form-row select:focus,.budget-form-row input:focus{border-color:var(--amber)}
+.budget-shared-toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);white-space:nowrap;cursor:pointer;flex-shrink:0}
+.budget-shared-toggle input{accent-color:var(--amber);width:15px;height:15px}
+.budget-tx-list{display:flex;flex-direction:column;gap:1px}
+.budget-tx{display:grid;grid-template-columns:70px 80px 1fr auto auto auto;gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border-light);font-size:13px}
+.budget-tx:last-child{border-bottom:none}
+.budget-tx-date{color:var(--text-3);font-size:12px}
+.budget-tx-person{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-align:center}
+.budget-tx-person.Amanda{background:#fceae5;color:var(--coral)}
+.budget-tx-person.Aidan{background:var(--blue-bg);color:var(--blue)}
+.budget-tx-cat{font-size:11px;color:var(--text-3)}
+.budget-tx-amt{font-weight:600;text-align:right;white-space:nowrap}
+.budget-tx-amt.income{color:var(--sage)}
+.budget-tx-shared{font-size:10px;color:var(--amber);font-weight:700;white-space:nowrap}
+.budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1}
+.budget-tx-del:hover{color:var(--coral)}
+.budget-cat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px}
+.budget-cat-row:last-child{border-bottom:none}
+.budget-cat-bar-wrap{width:100%;background:var(--border);border-radius:99px;height:5px;margin-top:4px;overflow:hidden}
+.budget-cat-bar{height:100%;border-radius:99px;background:var(--amber)}
+
 /* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
@@ -249,6 +274,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('todos')">✅ To-Dos</div>
   <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
   <div class="nav-tab" onclick="showPage('history')">📖 History</div>
+  <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
 </nav>
 
 <!-- ── HOME ── -->
@@ -517,6 +543,80 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 </div>
 
+<!-- ── BUDGET ── -->
+<div class="page" id="page-budget">
+  <div class="page-title">Budget</div>
+  <div class="page-sub" id="budget-month-label"></div>
+
+  <!-- Summary cards -->
+  <div class="home-stats" style="margin-bottom:16px" id="budget-summary"></div>
+
+  <!-- Who owes whom -->
+  <div class="card" style="margin-bottom:16px" id="budget-owes-card">
+    <div class="card-title">Who Owes Whom</div>
+    <div id="budget-owes"></div>
+  </div>
+
+  <!-- Add expense -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Add Expense</div>
+    <div class="budget-add-form">
+      <div class="budget-form-row">
+        <select id="b-person">
+          <option value="Amanda">Amanda</option>
+          <option value="Aidan">Aidan</option>
+        </select>
+        <input type="date" id="b-date">
+        <select id="b-category">
+          <option value="">Category...</option>
+          <option>Dining</option><option>Entertainment</option><option>Groceries</option>
+          <option>Housing</option><option>Income</option><option>Insurance</option>
+          <option>Investments</option><option>Misc</option><option>Pet</option>
+          <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
+          <option>Transportation</option><option>Travel</option><option>Utilities</option>
+        </select>
+      </div>
+      <div class="budget-form-row">
+        <input type="text" id="b-desc" placeholder="Description">
+        <input type="number" id="b-amount" placeholder="Amount" min="0" step="0.01">
+        <label class="budget-shared-toggle">
+          <input type="checkbox" id="b-shared"> Split 50/50
+        </label>
+        <button class="btn btn-primary" onclick="addExpense()">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Month filter + transaction list -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div class="card-title" style="margin-bottom:0">Transactions</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="b-filter-month" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+          <option value="">All Months</option>
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+        <select id="b-filter-person" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+          <option value="">Both</option>
+          <option>Amanda</option><option>Aidan</option>
+        </select>
+        <select id="b-filter-cat" onchange="renderBudget()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+          <option value="">All Categories</option>
+          <option>Dining</option><option>Entertainment</option><option>Groceries</option>
+          <option>Housing</option><option>Income</option><option>Insurance</option>
+          <option>Investments</option><option>Misc</option><option>Pet</option>
+          <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
+          <option>Transportation</option><option>Travel</option><option>Utilities</option>
+        </select>
+      </div>
+    </div>
+    <div id="budget-transactions"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
 
@@ -737,6 +837,7 @@ let todos = [];
 let newEntries = [];
 let trips = [], logisticsList = [], bucketList = [];
 let weekPlan = {}; // { mon: { gym:false, date:false, notes:'' }, ... }
+let expenses = [];
 
 function isActive(name) {
   return document.getElementById('page-' + name)?.classList.contains('active');
@@ -795,6 +896,16 @@ function initFirestore() {
     weekPlan = snap.exists ? (snap.data().plan || {}) : {};
     if (isActive('plan')) renderPlan();
   });
+
+  ref('expenses').onSnapshot(snap => {
+    if (!snap.exists) {
+      expenses = BUDGET_SEED.map(e => ({...e}));
+      ref('expenses').set({items: expenses});
+    } else {
+      expenses = snap.data().items || [];
+    }
+    if (isActive('budget')) renderBudget();
+  });
 }
 
 function saveTodos()     { db.collection('state').doc('todos').set({items: todos});            }
@@ -803,13 +914,14 @@ function saveTrips()     { db.collection('state').doc('trips').set({items: trips
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList});}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList});      }
 function savePlan()      { db.collection('state').doc('weekplan').set({plan: weekPlan});       }
+function saveExpenses()  { db.collection('state').doc('expenses').set({items: expenses});      }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const map = {home:0, review:1, plan:2, todos:3, dates:4, history:5};
+  const map = {home:0, review:1, plan:2, todos:3, dates:4, history:5, budget:6};
   document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'todos')   renderTodos();
@@ -817,6 +929,7 @@ function showPage(name) {
   if (name === 'home')    renderHome();
   if (name === 'dates')   renderDates();
   if (name === 'plan')    renderPlan();
+  if (name === 'budget')  renderBudget();
 }
 
 // ─── HOME ────────────────────────────────────────────────────────────────────
@@ -1338,6 +1451,117 @@ function tickJapan() {
 }
 tickJapan();
 setInterval(tickJapan, 1000);
+
+// ─── BUDGET ──────────────────────────────────────────────────────────────────
+const BUDGET_SEED = [{"id":"A-0","date":"2026-01-01","month":"January","person":"Aidan","category":"Dining","description":"","amount":10.32,"shared":false},{"id":"A-1","date":"2026-01-01","month":"January","person":"Aidan","category":"Income","description":"Tip: set Shared = Y to split the amount 50/50.","amount":8076.42,"shared":false},{"id":"A-2","date":"2026-01-01","month":"January","person":"Aidan","category":"Insurance","description":"Dental Insurance","amount":23.65,"shared":false},{"id":"A-3","date":"2026-01-01","month":"January","person":"Aidan","category":"Insurance","description":"Group Term Life","amount":13.2,"shared":false},{"id":"A-4","date":"2026-01-01","month":"January","person":"Aidan","category":"Insurance","description":"LTD","amount":5.0,"shared":false},{"id":"A-5","date":"2026-01-01","month":"January","person":"Aidan","category":"Insurance","description":"STD","amount":21.81,"shared":false},{"id":"A-6","date":"2026-01-01","month":"January","person":"Aidan","category":"Savings","description":"401k","amount":1125.0,"shared":false},{"id":"A-7","date":"2026-01-01","month":"January","person":"Aidan","category":"Investments","description":"Stock Payment","amount":481.59,"shared":false},{"id":"A-8","date":"2026-01-01","month":"January","person":"Aidan","category":"Savings","description":"Roth","amount":250.0,"shared":false},{"id":"A-9","date":"2026-01-01","month":"January","person":"Aidan","category":"Dining","description":"Epic Food","amount":99.25,"shared":false},{"id":"A-10","date":"2026-01-01","month":"January","person":"Aidan","category":"Dining","description":"Culvers","amount":18.01,"shared":false},{"id":"Am-0","date":"2026-01-01","month":"January","person":"Amanda","category":"Income","description":"Mercari (2nd)","amount":21.0,"shared":false},{"id":"Am-1","date":"2026-01-01","month":"January","person":"Amanda","category":"Shopping","description":"Floral Frames","amount":15.0,"shared":true},{"id":"Am-2","date":"2026-01-01","month":"January","person":"Amanda","category":"Income","description":"Income Mercari (13th)","amount":100.0,"shared":false},{"id":"Am-3","date":"2026-01-01","month":"January","person":"Amanda","category":"Shopping","description":"Target","amount":30.0,"shared":false},{"id":"Am-4","date":"2026-01-01","month":"January","person":"Amanda","category":"Income","description":"Income Mercari (6th)","amount":89.0,"shared":false},{"id":"Am-5","date":"2026-01-01","month":"January","person":"Amanda","category":"Entertainment","description":"Vball","amount":186.0,"shared":false},{"id":"Am-6","date":"2026-01-01","month":"January","person":"Amanda","category":"Shopping","description":"Logan Gift","amount":40.0,"shared":true},{"id":"A-11","date":"2026-01-02","month":"January","person":"Aidan","category":"Dining","description":"Cafe Domestique","amount":12.9,"shared":false},{"id":"A-12","date":"2026-01-02","month":"January","person":"Aidan","category":"Shopping","description":"Goodwill","amount":6.32,"shared":false},{"id":"A-13","date":"2026-01-02","month":"January","person":"Aidan","category":"Entertainment","description":"Buying A Knight's Tale","amount":7.37,"shared":false},{"id":"Am-7","date":"2026-01-02","month":"January","person":"Amanda","category":"Travel","description":"Japan Flights","amount":1146.0,"shared":false},{"id":"A-14","date":"2026-01-03","month":"January","person":"Aidan","category":"Shopping","description":"TrioRamen","amount":57.81,"shared":false},{"id":"A-15","date":"2026-01-03","month":"January","person":"Aidan","category":"Housing","description":"Post office radon test","amount":7.8,"shared":true},{"id":"A-16","date":"2026-01-03","month":"January","person":"Aidan","category":"Utilities","description":"Internet","amount":40.0,"shared":true},{"id":"A-17","date":"2026-01-03","month":"January","person":"Aidan","category":"Subscriptions","description":"Spotify","amount":12.65,"shared":false},{"id":"Am-8","date":"2026-01-03","month":"January","person":"Amanda","category":"Shopping","description":"Goodwill","amount":3.5,"shared":false},{"id":"A-18","date":"2026-01-04","month":"January","person":"Aidan","category":"Travel","description":"Japan Flights","amount":1146.43,"shared":false},{"id":"A-19","date":"2026-01-04","month":"January","person":"Aidan","category":"Entertainment","description":"Ten Pin","amount":40.98,"shared":false},{"id":"A-20","date":"2026-01-04","month":"January","person":"Aidan","category":"Utilities","description":"Madison Utilities","amount":74.72,"shared":true},{"id":"Am-9","date":"2026-01-04","month":"January","person":"Amanda","category":"Shopping","description":"Walmart (Aidan white elephant)","amount":1.0,"shared":false},{"id":"A-21","date":"2026-01-05","month":"January","person":"Aidan","category":"Shopping","description":"Boomerangs","amount":8.85,"shared":false},{"id":"Am-10","date":"2026-01-05","month":"January","person":"Amanda","category":"Shopping","description":"Underwear - Amazon","amount":9.5,"shared":false},{"id":"A-22","date":"2026-01-06","month":"January","person":"Aidan","category":"Groceries","description":"Hyvee","amount":23.51,"shared":true},{"id":"Am-11","date":"2026-01-06","month":"January","person":"Amanda","category":"Dining","description":"Paul's","amount":10.0,"shared":false},{"id":"A-23","date":"2026-01-07","month":"January","person":"Aidan","category":"Groceries","description":"Costco","amount":63.41,"shared":true},{"id":"A-24","date":"2026-01-07","month":"January","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":16.12,"shared":true},{"id":"A-25","date":"2026-01-07","month":"January","person":"Aidan","category":"Groceries","description":"Costco","amount":175.0,"shared":true},{"id":"A-26","date":"2026-01-07","month":"January","person":"Aidan","category":"Dining","description":"Costco Meal","amount":5.25,"shared":false},{"id":"Am-12","date":"2026-01-07","month":"January","person":"Amanda","category":"Groceries","description":"Trader Joes","amount":73.0,"shared":true},{"id":"Am-13","date":"2026-01-07","month":"January","person":"Amanda","category":"Pet","description":"New cat toy (returned old one)","amount":2.0,"shared":true},{"id":"A-27","date":"2026-01-08","month":"January","person":"Aidan","category":"Groceries","description":"Costco - doordash cards","amount":89.98,"shared":true},{"id":"Am-14","date":"2026-01-09","month":"January","person":"Amanda","category":"Income","description":"Mercari (16th)","amount":19.0,"shared":false},{"id":"A-28","date":"2026-01-10","month":"January","person":"Aidan","category":"Groceries","description":"Walmart","amount":11.75,"shared":true},{"id":"A-29","date":"2026-01-10","month":"January","person":"Aidan","category":"Groceries","description":"Hyvee","amount":2.69,"shared":true},{"id":"Am-15","date":"2026-01-10","month":"January","person":"Amanda","category":"Housing","description":"Mortgage","amount":1833.0,"shared":false},{"id":"A-30","date":"2026-01-11","month":"January","person":"Aidan","category":"Shopping","description":"Nintendo game","amount":6.64,"shared":false},{"id":"A-31","date":"2026-01-11","month":"January","person":"Aidan","category":"Housing","description":"Radon Test","amount":20.02,"shared":true},{"id":"A-32","date":"2026-01-11","month":"January","person":"Aidan","category":"Groceries","description":"Hyvee","amount":17.42,"shared":true},{"id":"A-33","date":"2026-01-11","month":"January","person":"Aidan","category":"Housing","description":"Mortgage","amount":1833.0,"shared":false},{"id":"A-34","date":"2026-01-11","month":"January","person":"Aidan","category":"Travel","description":"Japan housing - Hiroshima","amount":175.88,"shared":true},{"id":"A-35","date":"2026-01-11","month":"January","person":"Aidan","category":"Travel","description":"Japan housing - Kanazawa","amount":56.46,"shared":true},{"id":"Am-16","date":"2026-01-12","month":"January","person":"Amanda","category":"Shopping","description":"Weed","amount":60.0,"shared":true},{"id":"Am-17","date":"2026-01-12","month":"January","person":"Amanda","category":"Income","description":"Mercari (21 +23)","amount":73.0,"shared":false},{"id":"Am-18","date":"2026-01-13","month":"January","person":"Amanda","category":"Dining","description":"Orchard w/Erica","amount":34.0,"shared":false},{"id":"Am-19","date":"2026-01-16","month":"January","person":"Amanda","category":"Entertainment","description":"Karaoke","amount":6.0,"shared":false},{"id":"A-36","date":"2026-01-17","month":"January","person":"Aidan","category":"Travel","description":"Japan housing - Hakone","amount":941.63,"shared":true},{"id":"A-37","date":"2026-01-17","month":"January","person":"Aidan","category":"Subscriptions","description":"Peacock","amount":3.15,"shared":false},{"id":"A-38","date":"2026-01-17","month":"January","person":"Aidan","category":"Groceries","description":"Costco","amount":77.31,"shared":true},{"id":"A-39","date":"2026-01-17","month":"January","person":"Aidan","category":"Groceries","description":"Costco","amount":130.23,"shared":true},{"id":"Am-20","date":"2026-01-17","month":"January","person":"Amanda","category":"Pet","description":"Suni Teeth Gel","amount":65.0,"shared":true},{"id":"Am-21","date":"2026-01-17","month":"January","person":"Amanda","category":"Entertainment","description":"Maddie's Show","amount":19.0,"shared":false},{"id":"A-40","date":"2026-01-18","month":"January","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":15.41,"shared":true},{"id":"Am-22","date":"2026-01-18","month":"January","person":"Amanda","category":"Entertainment","description":"Galentine's","amount":28.0,"shared":false},{"id":"A-41","date":"2026-01-22","month":"January","person":"Aidan","category":"Shopping","description":"Goodwill","amount":15.0,"shared":false},{"id":"A-42","date":"2026-01-22","month":"January","person":"Aidan","category":"Subscriptions","description":"Oura","amount":5.99,"shared":false},{"id":"A-43","date":"2026-01-22","month":"January","person":"Aidan","category":"Subscriptions","description":"Apple storage","amount":2.99,"shared":false},{"id":"A-44","date":"2026-01-22","month":"January","person":"Aidan","category":"Utilities","description":"MGE","amount":286.9,"shared":true},{"id":"Am-23","date":"2026-01-22","month":"January","person":"Amanda","category":"Income","description":"Mercari 27th","amount":55.0,"shared":false},{"id":"Am-24","date":"2026-01-22","month":"January","person":"Amanda","category":"Income","description":"Facebook Marketplace","amount":172.5,"shared":false},{"id":"A-45","date":"2026-01-23","month":"January","person":"Aidan","category":"Insurance","description":"Car Insurance","amount":84.36,"shared":false},{"id":"Am-25","date":"2026-01-23","month":"January","person":"Amanda","category":"Pet","description":"Cat Toy","amount":4.0,"shared":true},{"id":"Am-26","date":"2026-01-23","month":"January","person":"Amanda","category":"Shopping","description":"Haircut","amount":108.0,"shared":false},{"id":"Am-27","date":"2026-01-23","month":"January","person":"Amanda","category":"Shopping","description":"Camera from Mercari","amount":55.0,"shared":false},{"id":"A-46","date":"2026-01-25","month":"January","person":"Aidan","category":"Income","description":"FB marketplace (stools/footstool)","amount":172.5,"shared":false},{"id":"A-47","date":"2026-01-25","month":"January","person":"Aidan","category":"Dining","description":"CafeHollander with cousins","amount":60.07,"shared":false},{"id":"A-48","date":"2026-01-26","month":"January","person":"Aidan","category":"Dining","description":"LaBrioche with Cousins","amount":67.25,"shared":false},{"id":"Am-28","date":"2026-01-26","month":"January","person":"Amanda","category":"Income","description":"Paycheck","amount":7004.2,"shared":false},{"id":"Am-29","date":"2026-01-27","month":"January","person":"Amanda","category":"Insurance","description":"Group Term Life","amount":10.8,"shared":false},{"id":"Am-30","date":"2026-01-27","month":"January","person":"Amanda","category":"Insurance","description":"LTD","amount":5.0,"shared":false},{"id":"Am-31","date":"2026-01-28","month":"January","person":"Amanda","category":"Savings","description":"401k","amount":1437.5,"shared":false},{"id":"A-49","date":"2026-01-29","month":"January","person":"Aidan","category":"Travel","description":"Japan Housing - Onomichi","amount":89.66,"shared":true},{"id":"A-50","date":"2026-01-29","month":"January","person":"Aidan","category":"Travel","description":"Japan Housing - Kyoto","amount":274.0,"shared":true},{"id":"Am-32","date":"2026-01-29","month":"January","person":"Amanda","category":"Investments","description":"Stock payment","amount":537.71,"shared":false},{"id":"Am-33","date":"2026-01-29","month":"January","person":"Amanda","category":"Dining","description":"Epic Food","amount":107.0,"shared":false},{"id":"A-51","date":"2026-01-31","month":"January","person":"Aidan","category":"Shopping","description":"PBS Donation","amount":20.0,"shared":true},{"id":"A-52","date":"2026-02-01","month":"February","person":"Aidan","category":"Utilities","description":"Internet","amount":40.0,"shared":true},{"id":"A-53","date":"2026-02-01","month":"February","person":"Aidan","category":"Utilities","description":"Taxes","amount":63.1,"shared":false},{"id":"A-54","date":"2026-02-01","month":"February","person":"Aidan","category":"Subscriptions","description":"Spotify","amount":12.65,"shared":false},{"id":"A-55","date":"2026-02-01","month":"February","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":22.08,"shared":true},{"id":"Am-34","date":"2026-02-01","month":"February","person":"Amanda","category":"Travel","description":"Flights for Ben + Phelps Wedding","amount":125.0,"shared":false},{"id":"A-56","date":"2026-02-03","month":"February","person":"Aidan","category":"Groceries","description":"Costco","amount":84.15,"shared":true},{"id":"A-57","date":"2026-02-03","month":"February","person":"Aidan","category":"Shopping","description":"Goodwill","amount":66.39,"shared":true},{"id":"A-58","date":"2026-02-03","month":"February","person":"Aidan","category":"Utilities","description":"City Utility","amount":74.57,"shared":true},{"id":"A-59","date":"2026-02-05","month":"February","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":16.37,"shared":true},{"id":"A-60","date":"2026-02-05","month":"February","person":"Aidan","category":"Groceries","description":"Costco","amount":137.52,"shared":true},{"id":"Am-35","date":"2026-02-05","month":"February","person":"Amanda","category":"Income","description":"Ebay profit (watch)","amount":76.0,"shared":false},{"id":"Am-37","date":"2026-02-05","month":"February","person":"Amanda","category":"Shopping","description":"Abercrombie Jacket + Bra + TTS (Aidan gift)","amount":42.0,"shared":false},{"id":"A-61","date":"2026-02-07","month":"February","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":14.14,"shared":true},{"id":"A-62","date":"2026-02-07","month":"February","person":"Aidan","category":"Groceries","description":"Costco","amount":7.0,"shared":true},{"id":"A-63","date":"2026-02-07","month":"February","person":"Aidan","category":"Travel","description":"United Flight","amount":124.53,"shared":false},{"id":"A-64","date":"2026-02-07","month":"February","person":"Aidan","category":"Travel","description":"United Flight","amount":11.2,"shared":false},{"id":"A-65","date":"2026-02-07","month":"February","person":"Aidan","category":"Groceries","description":"Hy-Vee","amount":36.74,"shared":true},{"id":"Am-41","date":"2026-02-07","month":"February","person":"Amanda","category":"Income","description":"Lia paid for airpods","amount":50.0,"shared":false},{"id":"A-66","date":"2026-02-08","month":"February","person":"Aidan","category":"Shopping","description":"Amazon Gift","amount":10.55,"shared":false},{"id":"Am-36","date":"2026-02-08","month":"February","person":"Amanda","category":"Groceries","description":"Trader Joes","amount":15.5,"shared":true},{"id":"A-67","date":"2026-02-09","month":"February","person":"Aidan","category":"Shopping","description":"Amazon Gift","amount":37.97,"shared":false},{"id":"Am-38","date":"2026-02-09","month":"February","person":"Amanda","category":"Utilities","description":"Taxes","amount":63.0,"shared":false},{"id":"Am-39","date":"2026-02-09","month":"February","person":"Amanda","category":"Dining","description":"Doordash - Culver's","amount":10.0,"shared":true},{"id":"Am-42","date":"2026-02-09","month":"February","person":"Amanda","category":"Income","description":"Tax deal","amount":25.0,"shared":false},{"id":"Am-43","date":"2026-02-09","month":"February","person":"Amanda","category":"Income","description":"State Refund","amount":1150.0,"shared":false},{"id":"Am-40","date":"2026-02-10","month":"February","person":"Amanda","category":"Income","description":"Mercari","amount":66.0,"shared":false},{"id":"A-68","date":"2026-02-12","month":"February","person":"Aidan","category":"Groceries","description":"Trader Joe's","amount":26.39,"shared":true},{"id":"A-69","date":"2026-02-12","month":"February","person":"Aidan","category":"Entertainment","description":"Soccer fee","amount":133.43,"shared":false},{"id":"A-70","date":"2026-02-12","month":"February","person":"Aidan","category":"Income","description":"Tax Return","amount":2077.0,"shared":false},{"id":"Am-44","date":"2026-02-12","month":"February","person":"Amanda","category":"Pet","description":"Suni Vet","amount":144.0,"shared":true},{"id":"Am-47","date":"2026-02-12","month":"February","person":"Amanda","category":"Shopping","description":"Uber gift card","amount":12.0,"shared":true},{"id":"Am-46","date":"2026-02-13","month":"February","person":"Amanda","category":"Travel","description":"NY Flight","amount":11.0,"shared":false},{"id":"A-71","date":"2026-02-14","month":"February","person":"Aidan","category":"Subscriptions","description":"Peacock","amount":3.15,"shared":false},{"id":"Am-45","date":"2026-02-14","month":"February","person":"Amanda","category":"Shopping","description":"Doordash Gift Card","amount":43.0,"shared":true},{"id":"Am-48","date":"2026-02-14","month":"February","person":"Amanda","category":"Shopping","description":"Goodwill","amount":16.0,"shared":false},{"id":"A-72","date":"2026-02-15","month":"February","person":"Aidan","category":"Dining","description":"Taco Bell","amount":19.91,"shared":false},{"id":"A-73","date":"2026-02-15","month":"February","person":"Aidan","category":"Dining","description":"Canteen","amount":25.1,"shared":false},{"id":"A-74","date":"2026-02-15","month":"February","person":"Aidan","category":"Dining","description":"High Noon Saloon","amount":26.92,"shared":false},{"id":"A-75","date":"2026-02-16","month":"February","person":"Aidan","category":"Dining","description":"Taco Bell","amount":11.56,"shared":false},{"id":"A-76","date":"2026-02-17","month":"February","person":"Aidan","category":"Groceries","description":"Trader Joe's","amount":50.58,"shared":true},{"id":"A-77","date":"2026-02-18","month":"February","person":"Aidan","category":"Entertainment","description":"Soccer Men's 11s","amount":95.65,"shared":false},{"id":"A-78","date":"2026-02-18","month":"February","person":"Aidan","category":"Entertainment","description":"Soccer Summer Session","amount":85.0,"shared":false},{"id":"A-79","date":"2026-02-19","month":"February","person":"Aidan","category":"Income","description":"Apple suit","amount":40.1,"shared":false},{"id":"A-80","date":"2026-02-19","month":"February","person":"Aidan","category":"Savings","description":"Roth IRA Fill","amount":4000.0,"shared":false},{"id":"A-81","date":"2026-02-19","month":"February","person":"Aidan","category":"Entertainment","description":"Anna's Concert","amount":28.12,"shared":false},{"id":"Am-49","date":"2026-02-20","month":"February","person":"Amanda","category":"Dining","description":"Uber eats","amount":20.0,"shared":true},{"id":"A-83","date":"2026-02-21","month":"February","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":14.27,"shared":true},{"id":"A-84","date":"2026-02-21","month":"February","person":"Aidan","category":"Groceries","description":"Costco","amount":134.0,"shared":true},{"id":"A-87","date":"2026-02-21","month":"February","person":"Aidan","category":"Dining","description":"Forage Kitchen","amount":6.77,"shared":false},{"id":"Am-50","date":"2026-02-21","month":"February","person":"Amanda","category":"Income","description":"Mercari","amount":20.0,"shared":false},{"id":"A-85","date":"2026-02-22","month":"February","person":"Aidan","category":"Shopping","description":"Strictly Discs","amount":5.26,"shared":false},{"id":"A-88","date":"2026-02-22","month":"February","person":"Aidan","category":"Subscriptions","description":"Oura","amount":5.99,"shared":false},{"id":"A-89","date":"2026-02-22","month":"February","person":"Aidan","category":"Dining","description":"Bloom Bake Shop","amount":8.75,"shared":false},{"id":"A-90","date":"2026-02-22","month":"February","person":"Aidan","category":"Travel","description":"Uber Gift Card","amount":12.0,"shared":true},{"id":"A-91","date":"2026-02-22","month":"February","person":"Aidan","category":"Groceries","description":"Trader Joes","amount":39.15,"shared":true},{"id":"Am-51","date":"2026-02-23","month":"February","person":"Amanda","category":"Shopping","description":"Target - plant","amount":3.0,"shared":false},{"id":"A-86","date":"2026-02-24","month":"February","person":"Aidan","category":"Insurance","description":"Car insurance","amount":82.56,"shared":false},{"id":"Am-52","date":"2026-02-25","month":"February","person":"Amanda","category":"Shopping","description":"Mercari - Jeans","amount":22.0,"shared":false},{"id":"Am-53","date":"2026-02-25","month":"February","person":"Amanda","category":"Shopping","description":"Mercari - Feliway","amount":18.0,"shared":true},{"id":"Am-54","date":"2026-02-26","month":"February","person":"Amanda","category":"Travel","description":"NY Hotel","amount":425.0,"shared":true},{"id":"A-82","date":"2026-02-27","month":"February","person":"Aidan","category":"Utilities","description":"MG&E","amount":291.56,"shared":true},{"id":"Am-55","date":"2026-02-27","month":"February","person":"Amanda","category":"Pet","description":"Suni oral surgery","amount":710.0,"shared":true},{"id":"A-92","date":"2026-02-28","month":"February","person":"Aidan","category":"Income","description":"Paycheck","amount":8076.42,"shared":false},{"id":"A-93","date":"2026-02-28","month":"February","person":"Aidan","category":"Insurance","description":"Dental Insurance","amount":23.65,"shared":false},{"id":"A-94","date":"2026-02-28","month":"February","person":"Aidan","category":"Insurance","description":"Group Term Life","amount":13.2,"shared":false},{"id":"A-95","date":"2026-02-28","month":"February","person":"Aidan","category":"Insurance","description":"LTD","amount":5.0,"shared":false},{"id":"A-96","date":"2026-02-28","month":"February","person":"Aidan","category":"Insurance","description":"STD","amount":21.81,"shared":false},{"id":"A-97","date":"2026-02-28","month":"February","person":"Aidan","category":"Savings","description":"401k","amount":1125.0,"shared":false},{"id":"A-98","date":"2026-02-28","month":"February","person":"Aidan","category":"Investments","description":"Stock Payment","amount":481.59,"shared":false},{"id":"A-99","date":"2026-02-28","month":"February","person":"Aidan","category":"Savings","description":"Roth","amount":250.0,"shared":false},{"id":"A-100","date":"2026-02-28","month":"February","person":"Aidan","category":"Dining","description":"Epic Food","amount":110.0,"shared":false},{"id":"A-101","date":"2026-02-28","month":"February","person":"Aidan","category":"Housing","description":"Mortgage","amount":1833.0,"shared":false},{"id":"A-107","date":"2026-02-28","month":"February","person":"Aidan","category":"Shopping","description":"Goodwill","amount":31.61,"shared":true},{"id":"A-119","date":"2026-02-28","month":"February","person":"Aidan","category":"Dining","description":"Chic-Fil-A","amount":5.22,"shared":false},{"id":"Am-56","date":"2026-02-28","month":"February","person":"Amanda","category":"Income","description":"Paycheck","amount":7004.2,"shared":false},{"id":"Am-57","date":"2026-02-28","month":"February","person":"Amanda","category":"Insurance","description":"Group Term Life","amount":10.8,"shared":false},{"id":"Am-58","date":"2026-02-28","month":"February","person":"Amanda","category":"Insurance","description":"LTD","amount":5.0,"shared":false},{"id":"Am-59","date":"2026-02-28","month":"February","person":"Amanda","category":"Savings","description":"401k","amount":1437.5,"shared":false},{"id":"Am-60","date":"2026-02-28","month":"February","person":"Amanda","category":"Investments","description":"Stock payment","amount":537.71,"shared":false},{"id":"Am-61","date":"2026-02-28","month":"February","person":"Amanda","category":"Dining","description":"Epic Food","amount":107.0,"shared":false},{"id":"Am-62","date":"2026-02-28","month":"February","person":"Amanda","category":"Housing","description":"Mortgage","amount":1833.0,"shared":false},{"id":"A-120","date":"2026-03-02","month":"March","person":"Aidan","category":"Dining","description":"Cafe Hollander","amount":53.35,"shared":false},{"id":"A-108","date":"2026-03-03","month":"March","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":19.28,"shared":true},{"id":"A-109","date":"2026-03-03","month":"March","person":"Aidan","category":"Groceries","description":"Costco","amount":149.94,"shared":true},{"id":"A-110","date":"2026-03-03","month":"March","person":"Aidan","category":"Dining","description":"Costco Food","amount":4.2,"shared":false},{"id":"Am-73","date":"2026-03-03","month":"March","person":"Amanda","category":"Shopping","description":"Miniso","amount":5.0,"shared":false},{"id":"Am-74","date":"2026-03-03","month":"March","person":"Amanda","category":"Shopping","description":"Kohl's brush","amount":3.0,"shared":false},{"id":"A-111","date":"2026-03-04","month":"March","person":"Aidan","category":"Utilities","description":"Madison City Utilities","amount":76.59,"shared":true},{"id":"Am-72","date":"2026-03-04","month":"March","person":"Amanda","category":"Shopping","description":"Madewell ring","amount":14.0,"shared":false},{"id":"Am-70","date":"2026-03-05","month":"March","person":"Amanda","category":"Shopping","description":"PINK","amount":5.0,"shared":false},{"id":"Am-71","date":"2026-03-05","month":"March","person":"Amanda","category":"Shopping","description":"TTS (Blissy)","amount":55.0,"shared":true},{"id":"A-102","date":"2026-03-07","month":"March","person":"Aidan","category":"Utilities","description":"Internet","amount":40.0,"shared":true},{"id":"A-103","date":"2026-03-07","month":"March","person":"Aidan","category":"Subscriptions","description":"Spotify","amount":13.7,"shared":false},{"id":"A-112","date":"2026-03-07","month":"March","person":"Aidan","category":"Transportation","description":"Electric Charging","amount":14.38,"shared":true},{"id":"A-121","date":"2026-03-07","month":"March","person":"Aidan","category":"Dining","description":"La Brioche","amount":53.57,"shared":false},{"id":"Am-69","date":"2026-03-07","month":"March","person":"Amanda","category":"Shopping","description":"Goodwill","amount":7.0,"shared":false},{"id":"A-104","date":"2026-03-08","month":"March","person":"Aidan","category":"Entertainment","description":"Bee movie","amount":4.21,"shared":true},{"id":"A-113","date":"2026-03-08","month":"March","person":"Aidan","category":"Groceries","description":"Costco","amount":23.47,"shared":true},{"id":"A-114","date":"2026-03-09","month":"March","person":"Aidan","category":"Transportation","description":"Costco Gas","amount":20.64,"shared":true},{"id":"A-115","date":"2026-03-09","month":"March","person":"Aidan","category":"Groceries","description":"Costco","amount":34.78,"shared":true},{"id":"A-116","date":"2026-03-09","month":"March","person":"Aidan","category":"Dining","description":"Costco food","amount":2.1,"shared":false},{"id":"A-125","date":"2026-03-10","month":"March","person":"Aidan","category":"Dining","description":"Mirch Masala","amount":30.0,"shared":false},{"id":"A-126","date":"2026-03-10","month":"March","person":"Aidan","category":"Entertainment","description":"Pickleball","amount":14.77,"shared":false},{"id":"A-127","date":"2026-03-10","month":"March","person":"Aidan","category":"Dining","description":"Uber eats","amount":30.0,"shared":false},{"id":"A-105","date":"2026-03-11","month":"March","person":"Aidan","category":"Dining","description":"Colectivo","amount":7.17,"shared":false},{"id":"A-117","date":"2026-03-12","month":"March","person":"Aidan","category":"Groceries","description":"Costco","amount":97.3,"shared":true},{"id":"A-118","date":"2026-03-12","month":"March","person":"Aidan","category":"Dining","description":"Costco Food","amount":4.21,"shared":false},{"id":"A-122","date":"2026-03-12","month":"March","person":"Aidan","category":"Groceries","description":"Trader Joes","amount":11.96,"shared":true},{"id":"Am-65","date":"2026-03-12","month":"March","person":"Amanda","category":"Entertainment","description":"Pickle","amount":15.0,"shared":false},{"id":"Am-68","date":"2026-03-12","month":"March","person":"Amanda","category":"Entertainment","description":"Cirque du Soleil show","amount":157.0,"shared":false},{"id":"A-123","date":"2026-03-13","month":"March","person":"Aidan","category":"Transportation","description":"Uber Gift Card","amount":12.0,"shared":true},{"id":"A-124","date":"2026-03-13","month":"March","person":"Aidan","category":"Transportation","description":"Spark Plugs","amount":49.05,"shared":true},{"id":"Am-63","date":"2026-03-13","month":"March","person":"Amanda","category":"Income","description":"Mercari","amount":55.0,"shared":false},{"id":"A-106","date":"2026-03-14","month":"March","person":"Aidan","category":"Groceries","description":"Dairy Queen","amount":23.2,"shared":false},{"id":"Am-67","date":"2026-03-14","month":"March","person":"Amanda","category":"Shopping","description":"TTS (Blissy)","amount":27.0,"shared":true},{"id":"Am-66","date":"2026-03-15","month":"March","person":"Amanda","category":"Shopping","description":"Goodwill","amount":77.0,"shared":true},{"id":"Am-64","date":"2026-03-16","month":"March","person":"Amanda","category":"Entertainment","description":"March Madness","amount":20.0,"shared":true}];
+
+const EXPENSE_CATS_EXCL = new Set(['Income','Savings','Investments']);
+
+function calcOwes(txList) {
+  // For each shared expense: payer is owed half by the other person
+  // net[person] = positive means they are owed money, negative means they owe
+  let net = {Aidan: 0, Amanda: 0};
+  for (const tx of txList) {
+    if (!tx.shared) continue;
+    const half = tx.amount / 2;
+    net[tx.person] += half;        // payer gets credited half back
+    const other = tx.person === 'Aidan' ? 'Amanda' : 'Aidan';
+    net[other] -= half;            // other person owes half
+  }
+  return net;
+}
+
+function renderBudget() {
+  const curMonth = new Date().toLocaleString('en-US', {month:'long'});
+  document.getElementById('budget-month-label').textContent = curMonth + ' — track every dollar.';
+
+  // Default month filter to current month
+  const mSel = document.getElementById('b-filter-month');
+  if (!mSel.value) mSel.value = curMonth;
+
+  const filterMonth  = mSel.value;
+  const filterPerson = document.getElementById('b-filter-person').value;
+  const filterCat    = document.getElementById('b-filter-cat').value;
+
+  const monthTx = expenses.filter(e => !filterMonth  || e.month === filterMonth);
+  const filtered = monthTx.filter(e =>
+    (!filterPerson || e.person === filterPerson) &&
+    (!filterCat    || e.category === filterCat)
+  );
+
+  // Summary cards (always current-month scope, no person/cat filter)
+  const income   = monthTx.filter(e=>e.person==='Amanda'||e.person==='Aidan').reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
+  const expenses_ = monthTx.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
+  const savings  = monthTx.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
+  const net_     = income - expenses_ - savings;
+  const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('budget-summary').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Income</div><div class="stat-value" style="color:var(--sage)">${fmt(income)}</div></div>
+    <div class="stat-card"><div class="stat-label">Expenses</div><div class="stat-value" style="color:var(--coral)">${fmt(expenses_)}</div></div>
+    <div class="stat-card"><div class="stat-label">Saved</div><div class="stat-value" style="color:var(--blue)">${fmt(savings)}</div></div>
+    <div class="stat-card"><div class="stat-label">Net Cash Flow</div><div class="stat-value" style="color:${net_>=0?'var(--sage)':'var(--coral)'}">${net_<0?'-':''}${fmt(net_)}</div></div>`;
+
+  // Who owes whom
+  const owes = calcOwes(monthTx);
+  const diff = owes.Aidan - owes.Amanda; // positive = Amanda owes Aidan
+  const oweEl = document.getElementById('budget-owes');
+  if (Math.abs(diff) < 0.01) {
+    oweEl.innerHTML = `<div style="text-align:center;color:var(--sage);font-weight:600;padding:8px">All square! ✅</div>`;
+  } else {
+    const who = diff > 0 ? 'Amanda' : 'Aidan';
+    const whom = diff > 0 ? 'Aidan' : 'Amanda';
+    oweEl.innerHTML = `<div style="text-align:center;padding:8px;font-size:15px">
+      <span style="font-weight:700;color:var(--coral)">${who}</span>
+      <span style="color:var(--text-2)"> owes </span>
+      <span style="font-weight:700;color:var(--sage)">${whom}</span>
+      <span style="font-weight:700;font-size:18px;color:var(--amber)"> ${fmt(Math.abs(diff))}</span>
+    </div>`;
+  }
+
+  // Transaction list
+  const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+  if (!sorted.length) {
+    document.getElementById('budget-transactions').innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No transactions found.</div>';
+    return;
+  }
+  document.getElementById('budget-transactions').innerHTML = `<div class="budget-tx-list">` +
+    sorted.map(e => `
+      <div class="budget-tx">
+        <span class="budget-tx-date">${e.date.slice(5)}</span>
+        <span class="budget-tx-person ${e.person}">${e.person}</span>
+        <span><span class="budget-tx-cat">${e.category} · </span>${escHtml(e.description)}</span>
+        <span class="budget-tx-shared">${e.shared ? '50/50' : ''}</span>
+        <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
+        <button class="budget-tx-del" onclick="deleteExpense('${e.id}')">×</button>
+      </div>`).join('') + `</div>`;
+
+  // Set default date
+  const dateEl = document.getElementById('b-date');
+  if (!dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+}
+
+function addExpense() {
+  const person   = document.getElementById('b-person').value;
+  const date     = document.getElementById('b-date').value;
+  const category = document.getElementById('b-category').value;
+  const desc     = document.getElementById('b-desc').value.trim();
+  const amount   = parseFloat(document.getElementById('b-amount').value);
+  const shared   = document.getElementById('b-shared').checked;
+  if (!date || !category || !desc || isNaN(amount)) return;
+  const month = new Date(date + 'T12:00:00').toLocaleString('en-US',{month:'long'});
+  expenses.push({id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared});
+  saveExpenses();
+  document.getElementById('b-desc').value = '';
+  document.getElementById('b-amount').value = '';
+  document.getElementById('b-shared').checked = false;
+  renderBudget();
+}
+
+function deleteExpense(id) {
+  expenses = expenses.filter(e => e.id !== id);
+  saveExpenses();
+  renderBudget();
+}
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initFirestore();
