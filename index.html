@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>our weekly ♥</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-55 -50 210 210'><path fill='black' d='M50 85 C20 68 10 55 10 38 C10 24 21 14 35 14 C42 14 48 18 50 22 C52 18 58 14 65 14 C79 14 90 24 90 38 C90 55 80 68 50 85Z'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='black' d='M20,35 A15,15,0,0,0,50,35 A15,15,0,0,0,80,35 Q80,57,50,80 Q20,57,20,35 Z'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -434,6 +434,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="trip-grid" id="trip-grid"></div>
   </div>
 
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Vacation Time Tracker</div>
+    <div id="vaca-tracker"></div>
+  </div>
 
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">Logistics to Figure Out 📋</div>
@@ -936,6 +940,30 @@ function renderDates() {
       <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
     </div>`;
 
+
+  const aidanUsed   = trips.reduce((s,t) => s+(t.aidanDays||0), 0);
+  const amandaUsed  = trips.reduce((s,t) => s+(t.amandaDays||0), 0);
+  const aidanTotal  = 26, amandaTotal = 16;
+  const aidanPct    = Math.min(100, Math.round(aidanUsed/aidanTotal*100));
+  const amandaPct   = Math.min(100, Math.round(amandaUsed/amandaTotal*100));
+  const amandaOver  = amandaUsed > amandaTotal;
+  document.getElementById('vaca-tracker').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Aidan — ${aidanUsed} / ${aidanTotal} days used</div>
+        <div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden">
+          <div style="width:${aidanPct}%;height:100%;background:var(--amber);border-radius:99px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">${aidanTotal - aidanUsed} days remaining</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px">Amanda — ${amandaUsed} / ${amandaTotal} days used${amandaOver ? ' ⚠️' : ''}</div>
+        <div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden">
+          <div style="width:${amandaPct}%;height:100%;background:${amandaOver ? 'var(--coral)' : 'var(--sage)'};border-radius:99px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">${amandaOver ? (amandaUsed - amandaTotal)+' days over' : (amandaTotal - amandaUsed)+' days remaining'}</div>
+      </div>
+    </div>`;
 
   document.getElementById('logistics-list').innerHTML =
     logisticsList.map(l => `
