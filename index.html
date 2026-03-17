@@ -284,12 +284,25 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
 .budget-tx-del:hover{color:var(--coral)}
 
+.recurring-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border-light);font-size:12px}
+.recurring-item:last-child{border-bottom:none}
+.rec-person-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;flex-shrink:0}
+.rec-person-badge.Amanda{background:#fceae5;color:var(--coral)}
+.rec-person-badge.Aidan{background:var(--blue-bg);color:var(--blue)}
+.rec-info{flex:1;overflow:hidden}
+.rec-desc{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-meta{color:var(--text-3);font-size:11px}
+.rec-amt{font-weight:700;white-space:nowrap}
+.rec-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:14px;padding:0 2px}
+.rec-del:hover{color:var(--coral)}
+
 /* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
   .trip-grid,.home-stats{grid-template-columns:1fr}
   .budget-top-row{grid-template-columns:1fr}
   .budget-summary-cards{grid-template-columns:1fr 1fr}
+  .budget-tools-row{grid-template-columns:1fr!important}
   .welcome-banner{padding:24px 22px}
   .welcome-greeting{font-size:24px}
 }
@@ -305,8 +318,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('plan')">🗓️ Next Week</div>
   <div class="nav-tab" onclick="showPage('todos')">✅ To-Dos</div>
   <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
-  <div class="nav-tab" onclick="showPage('history')">📖 History</div>
   <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
+  <div class="nav-tab" onclick="showPage('history')">📖 History</div>
 </nav>
 
 <!-- ── HOME ── -->
@@ -626,6 +639,45 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div id="budget-cats"></div>
   </div>
 
+  <!-- Recurring + Bulk paste -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="budget-tools-row">
+
+    <!-- Recurring -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0">🔁 Recurring</div>
+        <button class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurring()">Load This Month</button>
+      </div>
+      <div id="recurring-list" style="max-height:260px;overflow-y:auto"></div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        <input id="rec-person-sel" style="width:90px" class="bq-sel bq-input" placeholder="Person">
+        <input id="rec-cat-sel" style="flex:1;min-width:80px" class="bq-input" placeholder="Category">
+        <input id="rec-desc" class="bq-input" style="flex:2;min-width:100px" placeholder="Description">
+        <input id="rec-amt" type="number" class="bq-input" style="width:80px" placeholder="$" min="0" step="0.01">
+        <label class="bq-split"><input type="checkbox" id="rec-shared"> 50/50</label>
+        <button class="btn btn-primary" style="font-size:12px;padding:6px 10px" onclick="addRecurring()">+ Save</button>
+      </div>
+    </div>
+
+    <!-- Bulk paste -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">📋 Bulk Paste</div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">One expense per line:<br><code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Description, amount, category, shared(y/n)</code><br>e.g. <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Costco, 84.15, Groceries, y</code></div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <select id="bulk-person" class="bq-sel" style="width:110px">
+          <option value="Amanda">Amanda</option>
+          <option value="Aidan">Aidan</option>
+        </select>
+        <input type="date" id="bulk-date" class="bq-input" style="flex:1">
+      </div>
+      <textarea id="bulk-text" placeholder="Costco, 84.15, Groceries, y&#10;Spotify, 13.70, Subscriptions, n&#10;Mirch Masala, 30.00, Dining, n"
+        style="width:100%;height:100px;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--surface);color:var(--text)"
+        onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      <button class="btn btn-primary" style="margin-top:8px;width:100%;justify-content:center" onclick="bulkAddExpenses()">Import Lines</button>
+      <div id="bulk-result" style="font-size:12px;color:var(--sage);margin-top:6px;min-height:16px"></div>
+    </div>
+  </div>
+
   <!-- Transaction list -->
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -859,6 +911,7 @@ let newEntries = [];
 let trips = [], logisticsList = [], bucketList = [];
 let weekPlan = {}; // { mon: { gym:false, date:false, notes:'' }, ... }
 let expenses = [];
+let recurringItems = [];
 
 function isActive(name) {
   return document.getElementById('page-' + name)?.classList.contains('active');
@@ -918,6 +971,16 @@ function initFirestore() {
     if (isActive('plan')) renderPlan();
   });
 
+  ref('recurring').onSnapshot(snap => {
+    if (!snap.exists) {
+      recurringItems = DEFAULT_RECURRING.map(r=>({...r}));
+      ref('recurring').set({items: recurringItems});
+    } else {
+      recurringItems = snap.data().items || [];
+    }
+    if (isActive('budget')) renderRecurring();
+  });
+
   ref('expenses').onSnapshot(snap => {
     if (!snap.exists) {
       expenses = [...BUDGET_SEED_2025, ...BUDGET_SEED].map(e => ({...e}));
@@ -939,14 +1002,15 @@ function saveTrips()     { db.collection('state').doc('trips').set({items: trips
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList});}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList});      }
 function savePlan()      { db.collection('state').doc('weekplan').set({plan: weekPlan});       }
-function saveExpenses()  { db.collection('state').doc('expenses').set({items: expenses});      }
+function saveExpenses()   { db.collection('state').doc('expenses').set({items: expenses});       }
+function saveRecurring()  { db.collection('state').doc('recurring').set({items: recurringItems}); }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const map = {home:0, review:1, plan:2, todos:3, dates:4, history:5, budget:6};
+  const map = {home:0, review:1, plan:2, todos:3, dates:4, budget:5, history:6};
   document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'todos')   renderTodos();
@@ -954,7 +1018,7 @@ function showPage(name) {
   if (name === 'home')    renderHome();
   if (name === 'dates')   renderDates();
   if (name === 'plan')    renderPlan();
-  if (name === 'budget')  renderBudget();
+  if (name === 'budget')  { renderBudget(); renderRecurring(); }
 }
 
 // ─── HOME ────────────────────────────────────────────────────────────────────
@@ -1626,6 +1690,134 @@ function deleteExpense(id) {
   expenses = expenses.filter(e => e.id !== id);
   saveExpenses();
   renderBudget();
+}
+
+// ─── RECURRING & BULK ────────────────────────────────────────────────────────
+const DEFAULT_RECURRING = [
+  {id:'rec-0', person:'Aidan',  category:'Housing',       description:'Mortgage',         amount:1833.00, shared:false},
+  {id:'rec-1', person:'Amanda', category:'Housing',       description:'Mortgage',         amount:1833.00, shared:false},
+  {id:'rec-2', person:'Aidan',  category:'Savings',       description:'401k',             amount:1125.00, shared:false},
+  {id:'rec-3', person:'Amanda', category:'Savings',       description:'401k',             amount:1437.50, shared:false},
+  {id:'rec-4', person:'Aidan',  category:'Investments',   description:'Stock Payment',    amount:481.59,  shared:false},
+  {id:'rec-5', person:'Amanda', category:'Investments',   description:'Stock Payment',    amount:537.71,  shared:false},
+  {id:'rec-6', person:'Aidan',  category:'Savings',       description:'Roth',             amount:250.00,  shared:false},
+  {id:'rec-7', person:'Aidan',  category:'Subscriptions', description:'Spotify',          amount:13.70,   shared:false},
+  {id:'rec-8', person:'Aidan',  category:'Subscriptions', description:'Peacock',          amount:3.15,    shared:false},
+  {id:'rec-9', person:'Aidan',  category:'Subscriptions', description:'Oura',             amount:5.99,    shared:false},
+  {id:'rec-10',person:'Aidan',  category:'Subscriptions', description:'Apple Storage',    amount:2.99,    shared:false},
+  {id:'rec-11',person:'Aidan',  category:'Utilities',     description:'Internet',         amount:40.00,   shared:true},
+  {id:'rec-12',person:'Aidan',  category:'Insurance',     description:'Dental Insurance', amount:23.65,   shared:false},
+  {id:'rec-13',person:'Aidan',  category:'Insurance',     description:'Group Term Life',  amount:13.20,   shared:false},
+  {id:'rec-14',person:'Aidan',  category:'Insurance',     description:'LTD',              amount:5.00,    shared:false},
+  {id:'rec-15',person:'Aidan',  category:'Insurance',     description:'STD',              amount:21.81,   shared:false},
+  {id:'rec-16',person:'Amanda', category:'Insurance',     description:'Group Term Life',  amount:10.80,   shared:false},
+  {id:'rec-17',person:'Amanda', category:'Insurance',     description:'LTD',              amount:5.00,    shared:false},
+  {id:'rec-18',person:'Aidan',  category:'Dining',        description:'Epic Food',        amount:110.00,  shared:false},
+  {id:'rec-19',person:'Amanda', category:'Dining',        description:'Epic Food',        amount:107.00,  shared:false},
+];
+
+function renderRecurring() {
+  const fmt = n => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const el = document.getElementById('recurring-list');
+  if (!el) return;
+  if (!recurringItems.length) {
+    el.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 0">No recurring expenses saved yet.</div>';
+    return;
+  }
+  el.innerHTML = recurringItems.map(r => `
+    <div class="recurring-item">
+      <span class="rec-person-badge ${r.person}">${r.person[0]}</span>
+      <div class="rec-info">
+        <div class="rec-desc">${escHtml(r.description)}</div>
+        <div class="rec-meta">${r.category}${r.shared?' · 50/50':''}</div>
+      </div>
+      <span class="rec-amt">${fmt(r.amount)}</span>
+      <button class="rec-del" onclick="deleteRecurring('${r.id}')">×</button>
+    </div>`).join('');
+}
+
+function addRecurring() {
+  const person   = document.getElementById('rec-person-sel').value.trim();
+  const cat      = document.getElementById('rec-cat-sel').value.trim();
+  const desc     = document.getElementById('rec-desc').value.trim();
+  const amount   = parseFloat(document.getElementById('rec-amt').value);
+  const shared   = document.getElementById('rec-shared').checked;
+  if (!person || !cat || !desc || isNaN(amount)) return;
+  recurringItems.push({id:'rec-'+Date.now(), person, category:cat, description:desc, amount, shared});
+  saveRecurring();
+  document.getElementById('rec-person-sel').value = '';
+  document.getElementById('rec-cat-sel').value    = '';
+  document.getElementById('rec-desc').value       = '';
+  document.getElementById('rec-amt').value        = '';
+  document.getElementById('rec-shared').checked  = false;
+  renderRecurring();
+}
+
+function deleteRecurring(id) {
+  recurringItems = recurringItems.filter(r => r.id !== id);
+  saveRecurring();
+  renderRecurring();
+}
+
+function loadRecurring() {
+  const today = new Date().toISOString().slice(0,10);
+  const month = new Date().toLocaleString('en-US',{month:'long'});
+  const year  = new Date().getFullYear().toString();
+  let added = 0;
+  for (const r of recurringItems) {
+    // Skip if already loaded this month (same description + person + month)
+    const already = expenses.some(e =>
+      e.person === r.person &&
+      e.description === r.description &&
+      e.month === month &&
+      e.date.startsWith(year)
+    );
+    if (already) continue;
+    expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
+      date:today, month, person:r.person, category:r.category,
+      description:r.description, amount:r.amount, shared:r.shared});
+    added++;
+  }
+  if (added) {
+    saveExpenses();
+    renderBudget();
+    showToast(`✅ Loaded ${added} recurring expense${added>1?'s':''}`);
+  } else {
+    showToast('Already loaded this month!');
+  }
+}
+
+function bulkAddExpenses() {
+  const person = document.getElementById('bulk-person').value;
+  const date   = document.getElementById('bulk-date').value || new Date().toISOString().slice(0,10);
+  const month  = new Date(date+'T12:00:00').toLocaleString('en-US',{month:'long'});
+  const lines  = document.getElementById('bulk-text').value.trim().split('\n').filter(l=>l.trim());
+  const CATS   = new Set(['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities']);
+  let added = 0, errors = 0;
+  for (const line of lines) {
+    const parts = line.split(',').map(p=>p.trim());
+    if (parts.length < 2) { errors++; continue; }
+    const desc   = parts[0];
+    const amount = parseFloat(parts[1]);
+    if (!desc || isNaN(amount)) { errors++; continue; }
+    // fuzzy match category
+    const catRaw = parts[2] || '';
+    const cat    = [...CATS].find(c => c.toLowerCase().startsWith(catRaw.toLowerCase().slice(0,3))) || 'Misc';
+    const shared = (parts[3]||'').toLowerCase().trim() === 'y';
+    expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
+      date, month, person, category:cat, description:desc, amount, shared});
+    added++;
+  }
+  if (added) {
+    saveExpenses();
+    renderBudget();
+    document.getElementById('bulk-text').value = '';
+  }
+  const resultEl = document.getElementById('bulk-result');
+  resultEl.style.color = errors ? 'var(--coral)' : 'var(--sage)';
+  resultEl.textContent = added
+    ? `✓ Added ${added} expense${added>1?'s':''}${errors?' ('+errors+' skipped)':''}`
+    : `Could not parse any lines${errors?' ('+errors+' errors)':''}`;
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
