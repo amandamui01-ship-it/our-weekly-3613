@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>our weekly ♥</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf7f2;--surface:#ffffff;--surface-warm:#fffdf8;
+  --border:#ede4d8;--border-light:#f4ede3;
+  --text:#2d2417;--text-2:#6b5c47;--text-3:#9b8878;
+  --amber:#bf7c36;--amber-bg:#fef3e4;--amber-dark:#92590f;
+  --sage:#5c7a62;--sage-bg:#eaf2eb;
+  --coral:#d96a52;--coral-bg:#fceae5;
+  --blue:#4472a8;--blue-bg:#e8f0f8;
+  --radius:14px;
+  --shadow:0 2px 12px rgba(45,36,23,.08);
+  --shadow-lg:0 8px 32px rgba(45,36,23,.12);
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── Nav ── */
+#nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(45,36,23,.06);overflow-x:auto}
+#logo{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:700;color:var(--amber);padding:14px 20px 14px 0;border-right:1px solid var(--border);margin-right:8px;white-space:nowrap;letter-spacing:-.3px;flex-shrink:0}
+.nav-tab{padding:14px 16px;font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:600}
+
+/* ── Pages ── */
+.page{display:none;padding:32px 40px 60px;max-width:920px;margin:0 auto}
+.page.active{display:block}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow)}
+.card+.card{margin-top:16px}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px}
+
+/* ── Typography ── */
+.page-title{font-family:'Playfair Display',Georgia,serif;font-size:28px;font-weight:700;color:var(--text);margin-bottom:6px}
+.page-sub{font-size:13px;color:var(--text-3);margin-bottom:28px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--amber);color:white}
+.btn-primary:hover{background:var(--amber-dark)}
+.btn-secondary{background:var(--border);color:var(--text-2)}
+.btn-secondary:hover{background:#dfd4c4;color:var(--text)}
+.btn-lg{padding:14px 32px;font-size:15px;border-radius:12px;width:100%;justify-content:center}
+
+/* ── Inputs ── */
+.field{margin-bottom:18px}
+.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-bottom:6px}
+.field textarea,.field input[type=text],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
+.field textarea{min-height:90px}
+.field textarea:focus,.field input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
+
+/* ── HOME ── */
+.welcome-banner{background:linear-gradient(135deg,#2d2417 0%,#5c3c1e 100%);border-radius:18px;padding:36px 40px;color:white;margin-bottom:20px;position:relative;overflow:hidden}
+.welcome-banner::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(191,124,54,.3) 0%,transparent 70%);pointer-events:none}
+.welcome-date{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.55;margin-bottom:8px}
+.welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:700;line-height:1.25;margin-bottom:22px}
+.welcome-greeting span{color:#f5c27a}
+.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+.home-stat-val{font-size:26px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px}
+.home-stat-lbl{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+
+/* ── Coffee Roulette ── */
+.coffee-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;margin-bottom:20px;text-align:center;box-shadow:var(--shadow)}
+.coffee-icon{font-size:38px;margin-bottom:8px;display:block}
+.coffee-title-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px}
+.coffee-name{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;color:var(--amber-dark);min-height:36px;transition:opacity .08s;margin-bottom:5px}
+.coffee-area{font-size:13px;color:var(--text-3);min-height:20px;margin-bottom:20px}
+.coffee-name.spinning{opacity:.35}
+.spin-btn{background:var(--amber);color:white;border:none;border-radius:10px;padding:11px 32px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.spin-btn:hover{background:var(--amber-dark);transform:scale(1.03)}
+.spin-btn:active{transform:scale(.97)}
+.spin-btn:disabled{opacity:.7;cursor:not-allowed;transform:none}
+
+/* ── REVIEW ── */
+.step-progress{display:flex;gap:8px;align-items:center;margin-bottom:28px}
+.step-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:all .2s;flex-shrink:0}
+.step-dot.done{background:var(--sage)}
+.step-dot.active{background:var(--amber);width:28px;border-radius:5px}
+.step-label{font-size:12px;color:var(--text-3);margin-left:auto}
+.step-page{display:none}
+.step-page.active{display:block}
+.step-title{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.step-sub{font-size:13px;color:var(--text-3);margin-bottom:24px;line-height:1.65}
+.step-nav{display:flex;gap:10px;margin-top:24px}
+
+/* ── Heart rating ── */
+.heart-rating{display:flex;gap:8px;margin:10px 0 20px}
+.heart{font-size:30px;cursor:pointer;transition:transform .15s;filter:grayscale(1) opacity(.25);user-select:none}
+.heart.on{filter:none}
+.heart:hover{transform:scale(1.2)}
+
+/* ── Theme chips ── */
+.theme-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.theme-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;transition:all .15s;background:var(--surface)}
+.theme-chip:hover{border-color:var(--amber);color:var(--amber-dark)}
+.theme-chip.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber-dark)}
+
+/* ── To-Dos ── */
+.todo-category{margin-bottom:16px}
+.todo-cat-title{font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.todo-items{display:flex;flex-direction:column;gap:6px}
+.todo-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:9px;transition:all .15s}
+.todo-item:hover{border-color:var(--border)}
+.todo-item.done{opacity:.5}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--text-3)}
+.todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;background:white;font-size:11px;font-weight:700;color:white}
+.todo-item.done .todo-cb{background:var(--sage);border-color:var(--sage)}
+.todo-text{font-size:13px;color:var(--text);flex:1}
+.todo-del{font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;padding:0 2px;line-height:1}
+.todo-item:hover .todo-del{opacity:.4}
+.todo-del:hover{opacity:1!important;color:var(--coral)}
+.add-todo{display:flex;gap:8px;margin-top:10px}
+.add-todo input{flex:1;padding:9px 13px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
+.add-todo input:focus{border-color:var(--amber);border-style:solid}
+.add-todo button{padding:9px 16px;background:var(--amber-bg);color:var(--amber-dark);border:1px solid #f0d4a8;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.add-todo button:hover{background:var(--amber);color:white;border-color:var(--amber)}
+
+/* ── Dates ── */
+.trip-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
+.trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.trip-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--amber)}
+.trip-dates{font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.trip-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3}
+.trip-days{font-size:11px;color:var(--text-3)}
+.trip-days span{font-weight:600;color:var(--text-2)}
+.vaca-person{margin-bottom:20px}
+.vaca-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.vaca-bar-track{background:var(--border);border-radius:6px;height:10px;overflow:hidden;margin-bottom:5px}
+.vaca-bar-fill{height:10px;border-radius:6px;background:var(--sage);transition:width .6s ease}
+.vaca-bar-fill.over{background:var(--coral)}
+.vaca-stats{font-size:12px;color:var(--text-3)}
+.vaca-stats strong{color:var(--text)}
+.list-items{display:flex;flex-direction:column;gap:6px}
+.list-item{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);padding:8px 12px;border-radius:8px;background:var(--surface-warm);border:1px solid var(--border-light)}
+.list-item::before{content:'→';font-weight:700;color:var(--text-3);flex-shrink:0}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;vertical-align:middle;margin-left:6px}
+.tag-coral{background:var(--coral-bg);color:var(--coral)}
+.tag-sage{background:var(--sage-bg);color:var(--sage)}
+.trip-card .trip-del{position:absolute;top:8px;right:10px;font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;line-height:1;padding:2px 4px}
+.trip-card:hover .trip-del{opacity:.45}
+.trip-del:hover{opacity:1!important;color:var(--coral)}
+.add-trip-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border);grid-column:1/-1}
+.add-trip-form input{padding:9px 12px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
+.add-trip-form input:focus{border-color:var(--amber);border-style:solid}
+.list-item .list-del{margin-left:auto;font-size:17px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;padding:0 2px;line-height:1;flex-shrink:0}
+.list-item:hover .list-del{opacity:.4}
+.list-del:hover{opacity:1!important;color:var(--coral)}
+.add-list-row{display:flex;gap:8px;margin-top:10px}
+.add-list-row input{flex:1;padding:9px 13px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
+.add-list-row input:focus{border-color:var(--amber);border-style:solid}
+.add-list-row button{padding:9px 16px;background:var(--amber-bg);color:var(--amber-dark);border:1px solid #f0d4a8;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.add-list-row button:hover{background:var(--amber);color:white;border-color:var(--amber)}
+
+/* ── History ── */
+.history-entry{margin-bottom:12px}
+.history-header{display:flex;align-items:center;gap:12px;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s}
+.history-header:hover{border-color:var(--amber);background:var(--amber-bg)}
+.history-header.open{border-radius:var(--radius) var(--radius) 0 0;border-bottom-color:transparent}
+.history-date-badge{background:var(--amber-bg);color:var(--amber-dark);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.history-preview{flex:1;font-size:13px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.history-theme{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--sage-bg);color:var(--sage);white-space:nowrap;flex-shrink:0}
+.history-chevron{color:var(--text-3);font-size:11px;transition:transform .2s;flex-shrink:0}
+.history-header.open .history-chevron{transform:rotate(180deg)}
+.history-hearts{display:flex;gap:3px;flex-shrink:0}
+.history-heart{font-size:14px;filter:grayscale(1) opacity(.2)}
+.history-heart.on{filter:none}
+.history-body{display:none;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:20px 22px}
+.history-body.open{display:block}
+.history-section{margin-bottom:14px}
+.history-section:last-child{margin-bottom:0}
+.history-section-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:5px}
+.history-section-text{font-size:13px;color:var(--text-2);line-height:1.75;white-space:pre-wrap}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28px;right:28px;background:#2d2417;color:white;padding:13px 22px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Confetti ── */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden}
+.confetti-dot{position:absolute;width:9px;height:9px;border-radius:50%;opacity:0}
+@keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
+
+/* ── Misc ── */
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-3);font-size:14px}
+.divider{height:1px;background:var(--border-light);margin:24px 0}
+
+/* ── Responsive ── */
+@media(max-width:680px){
+  .page{padding:20px 16px 40px}
+  .trip-grid,.home-stats{grid-template-columns:1fr}
+  .welcome-banner{padding:24px 22px}
+  .welcome-greeting{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav id="nav">
+  <div id="logo">our weekly ♥</div>
+  <div class="nav-tab active" onclick="showPage('home')">🏠 Home</div>
+  <div class="nav-tab" onclick="showPage('review')">✏️ This Week</div>
+  <div class="nav-tab" onclick="showPage('todos')">✅ To-Dos</div>
+  <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
+  <div class="nav-tab" onclick="showPage('history')">📖 History</div>
+</nav>
+
+<!-- ── HOME ── -->
+<div class="page active" id="page-home">
+  <div class="welcome-banner">
+    <div class="welcome-date" id="home-date-label"></div>
+    <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
+    <button class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="showPage('review')">
+      ✏️ Start This Week's Review →
+    </button>
+  </div>
+
+  <div class="coffee-card">
+    <span class="coffee-icon">☕</span>
+    <div class="coffee-title-label">this week's coffee shop pick</div>
+    <div class="coffee-name" id="coffee-name">—</div>
+    <div class="coffee-area" id="coffee-area">tap spin to discover</div>
+    <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
+  </div>
+
+  <div class="home-stats">
+    <div class="home-stat">
+      <div class="home-stat-val" id="stat-next-trip">Apr 3</div>
+      <div class="home-stat-lbl">Next Trip</div>
+    </div>
+    <div class="home-stat">
+      <div class="home-stat-val" id="stat-todos">—</div>
+      <div class="home-stat-lbl">Open To-Dos</div>
+    </div>
+    <div class="home-stat">
+      <div class="home-stat-val" id="stat-last-entry">—</div>
+      <div class="home-stat-lbl">Last Review</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Coming Up ✈️</div>
+    <div id="home-trips"></div>
+  </div>
+</div>
+
+<!-- ── THIS WEEK'S REVIEW ── -->
+<div class="page" id="page-review">
+  <div class="page-title">This Week's Review</div>
+  <div class="page-sub" id="review-date-sub"></div>
+
+  <div class="step-progress">
+    <div class="step-dot active" id="dot-0"></div>
+    <div class="step-dot" id="dot-1"></div>
+    <div class="step-dot" id="dot-2"></div>
+    <div class="step-dot" id="dot-3"></div>
+    <div class="step-dot" id="dot-4"></div>
+    <span class="step-label" id="step-label-text">Step 1 of 5</span>
+  </div>
+
+  <div class="card">
+
+    <!-- Step 1: Overview -->
+    <div class="step-page active" id="step-0">
+      <div class="step-title">🌅 Weekly Overview</div>
+      <div class="step-sub">Take 10–15 minutes to reflect on how the week went as a team.</div>
+      <div class="field">
+        <label>What went well this week?</label>
+        <textarea id="r-well" placeholder="Wins, good moments, things to celebrate..."></textarea>
+      </div>
+      <div class="field">
+        <label>What was stressful or hard?</label>
+        <textarea id="r-stress" placeholder="Challenges, friction, things to let go..."></textarea>
+      </div>
+      <div class="field">
+        <label>Any adjustments for next week?</label>
+        <textarea id="r-adjust" placeholder="What would you do differently?"></textarea>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-primary" onclick="nextStep(1)">Next → Budget 💰</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Budget -->
+    <div class="step-page" id="step-1">
+      <div class="step-title">💰 Budget & Finances</div>
+      <div class="step-sub">Quick money check-in — no spreadsheets required.</div>
+      <div class="field">
+        <label>Any big purchases or financial moves this week?</label>
+        <textarea id="r-budget" placeholder="Spendy moments, unexpected costs, good deals..."></textarea>
+      </div>
+      <div class="field">
+        <label>Savings & goals progress</label>
+        <textarea id="r-savings" placeholder="Japan fund? Car situation? Any wins?"></textarea>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(2)">Next → Logistics 🏠</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Logistics -->
+    <div class="step-page" id="step-2">
+      <div class="step-title">🏠 Logistics & Household</div>
+      <div class="step-sub">Keep the house (and life) running smoothly.</div>
+      <div class="field">
+        <label>Household notes — groceries, cleaning, errands</label>
+        <textarea id="r-logistics" placeholder="What needs to happen around the house?"></textarea>
+      </div>
+      <div class="field">
+        <label>Appointments to schedule</label>
+        <textarea id="r-appts" placeholder="Haircuts, vet, car stuff, doctor..."></textarea>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(3)">Next → Calendar 📅</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Calendar -->
+    <div class="step-page" id="step-3">
+      <div class="step-title">📅 Upcoming Week</div>
+      <div class="step-sub">What's on deck? Scan the calendar and set a vibe.</div>
+      <div class="field">
+        <label>What's on the calendar this week?</label>
+        <textarea id="r-upcoming" placeholder="Events, appointments, commitments..."></textarea>
+      </div>
+      <div class="field">
+        <label>This week's theme or focus</label>
+        <div class="theme-chips">
+          <div class="theme-chip" onclick="pickTheme(this)">🔋 Recharging</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💸 Financial Reset</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🏠 House Reset</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎉 Holiday Cheer</div>
+          <div class="theme-chip" onclick="pickTheme(this)">❤️ Reconnection</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌿 Slow Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">✈️ Adventure</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌱 Fresh Start</div>
+        </div>
+        <input type="text" id="r-theme" placeholder="Or type your own theme...">
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(4)">Next → Us ❤️</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Us -->
+    <div class="step-page" id="step-4">
+      <div class="step-title">❤️ Us Check-in</div>
+      <div class="step-sub">The most important part. How are we doing?</div>
+      <div class="field">
+        <label>How would you rate this week? (1–5 ❤️)</label>
+        <div class="heart-rating">
+          <span class="heart" onclick="setHeart(1)">❤️</span>
+          <span class="heart" onclick="setHeart(2)">❤️</span>
+          <span class="heart" onclick="setHeart(3)">❤️</span>
+          <span class="heart" onclick="setHeart(4)">❤️</span>
+          <span class="heart" onclick="setHeart(5)">❤️</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Amanda → one thing you loved about Aidan this week</label>
+        <input type="text" id="r-amanda" placeholder="💛">
+      </div>
+      <div class="field">
+        <label>Aidan → one thing you loved about Amanda this week</label>
+        <input type="text" id="r-aidan" placeholder="💛">
+      </div>
+      <div class="field">
+        <label>Anything else to remember?</label>
+        <textarea id="r-misc" placeholder="Wild cards, funny moments, things to look back on..."></textarea>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-secondary" onclick="nextStep(3)">← Back</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── TO-DOS ── -->
+<div class="page" id="page-todos">
+  <div class="page-title">To-Dos & Goals</div>
+  <div class="page-sub">Keep the house (and life) running smoothly.</div>
+  <div id="todos-container"></div>
+</div>
+
+<!-- ── 2026 DATES ── -->
+<div class="page" id="page-dates">
+  <div class="page-title">2026 Dates</div>
+  <div class="page-sub">All the good stuff to look forward to this year. 🎉</div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Trips & Events ✈️</div>
+    <div class="trip-grid" id="trip-grid"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Vacation Time Tracker</div>
+    <div id="vaca-tracker"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Logistics to Figure Out 📋</div>
+    <div class="list-items" id="logistics-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Bucket List & Ideas 🌟</div>
+    <div class="list-items" id="bucket-list"></div>
+  </div>
+</div>
+
+<!-- ── HISTORY ── -->
+<div class="page" id="page-history">
+  <div class="page-title">Our Story</div>
+  <div class="page-sub">Every week, written down. ✨</div>
+  <div id="history-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const COFFEE_SHOPS = [
+  { name: "Leopold's", area: "Central / Regent Street Area" },
+  { name: "Cafe Domestique", area: "East Madison / Willy Street" },
+  { name: "Wonderstate Coffee", area: "Downtown Madison / Capitol Square" },
+  { name: "New Here Coffee", area: "Downtown / UW Campus Area" },
+  { name: "Ledger Coffee Roasters", area: "East Madison / Garver Feed Mill" },
+  { name: "Forward Craft & Coffee", area: "East Madison / Atwood Neighborhood" },
+  { name: "Bradbury's Coffee", area: "Downtown Madison / Near Capitol" },
+  { name: "Mercies Coffee", area: "East Madison" },
+  { name: "Johnson Public House", area: "East Madison / Tenney-Lapham" },
+  { name: "Grace Coffee Co.", area: "South Madison" },
+  { name: "Ellipse Coffee & Crepes", area: "Downtown / State Street" },
+  { name: "Fair Trade Coffee House", area: "Downtown / State Street" },
+  { name: "Cafe Hollander", area: "Hilldale / West Madison" },
+  { name: "Barriques", area: "Multiple Locations" },
+  { name: "Crema Cafe", area: "East Madison / Monona Dr Area" },
+  { name: "Indie Coffee", area: "Central Madison / Regent Street Area" },
+  { name: "Moka", area: "Central Madison / University Ave" },
+  { name: "Colectivo Coffee", area: "On the Square / Downtown" },
+  { name: "Cargo Coffee", area: "South Madison / E. Washington Corridor" },
+  { name: "Stone Creek Coffee", area: "West Madison / Mineral Point Area" },
+];
+
+const SEED_ENTRIES = [
+  {
+    id:"seed-1", date:"2025-11-09",
+    well:"Six Flags (fright fest) was fun! Perri's birthday and House on the Rock.",
+    stress:"Amanda's dad in the hospital. No full weekend reset. Stressful week at work for Amanda (SD 5 meeting, catching up from the weekend before). Big conversations about the future and marriage — Aidan's weird and has level 1 commitment issues but knows he LOVES Amanda more than the entire WORLD. House on the Rock went a little long.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Tuesday - Amanda has vball. Thrifting at some point (find Thanksgiving gifts). Weekend - nothing much yet (parents going to Devil's lake).",
+    theme:"Recharging (this week) / Financial Reset (this meeting)", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-2", date:"2025-11-15",
+    well:"Got through a tough week at work. Focused on recharging (YAY). House is way cleaner with DYSON. Suni's shirt makes him very cuddly. We navigated complex conversations well (mostly related to marriage). We've been working out more!",
+    stress:"", adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday - Wicked, Tuesday - Amanda Volleyball, Wednesday - DATE NIGHT 9pm (Lucille), Friday - Friendsgiving, Sunday - Karen Visiting for day. Future holiday drinks 12/18 @ Lucille.",
+    theme:"House Reset", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-3", date:"2025-11-22",
+    well:"We got through a busy week! DOOT NOOT at Lucille's. Friendsgiving. Binging Stranger Things. Recovered well from a fight in the second half of the week.",
+    stress:"Had a fight earlier in the week.", adjust:"Find cat coverage. Go to shoe store.", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Parents and Karen coming on Sunday. Tuesday - Volleyball. Wednesday - Go to Chippewa Falls and spend two nights.",
+    theme:"Holiday Cheer (and decoration)", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-4", date:"2025-11-30",
+    well:"Thanksgiving food slapped + seeing the fam. We planned well for having people over (Friday hang + meeting Martin). Able to leave work early multiple times! Prepped the house for decorations + been cleaning as we go. Been having bitchin sex.",
+    stress:"Black Friday shopping didn't go well, but it was an experience. Caught 7 mice - OMG.", adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Tuesday - Vball. Saturday - Friendsgiving (thinking of not going). Saturday or Sunday - lunch with family.",
+    theme:"Holiday Cheer", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-5", date:"2025-12-06",
+    well:"BONUSES!!!!!!!!! Got through a hard week in our sicky states. Family dinner at Merch. We decorated.",
+    stress:"", adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Tuesday - Vball, Friday - Christmas Carol/dinner at Bar Corallini, Sat Morning go to Dells, spend the night and come back Sunday.",
+    theme:"", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-6", date:"2025-12-14",
+    well:"All of our events were good! We hosted (we liked it). Cleaned out some things in the basement. Nice that we were on the same page about coming home early.",
+    stress:"Amanda's parents were stressing Aidan out. Had a tough conversation before people came over on Tuesday. We gotta stop doing that.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Tuesday - dinner potentially, Vball at 9. Thursday - holiday drinks at Lucille's (gift cards). Saturday in Chicago.",
+    theme:"Holiday Cheer", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-7", date:"2025-12-21",
+    well:"Lucille's was great and we got dinner with Chris, Nathaniel, and Erica. We are ready for the holidays. Got great massages at King Spa.",
+    stress:"Amanda's family is a bit stressful sometimes.", adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday - Soccer, Wednesday - WFH/half day, Thursday - CHRISTMAS",
+    theme:"Holiday Cheer", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-8", date:"2025-12-27",
+    well:"Presents were AWESOME. We are doing a good job relaxing. Christmas at Amanda's house was good and we sang Christmas carols. Amanda is being an animal with Japan planning.",
+    stress:"Aidan was sick most of the week. Aidan's fam missed him.", adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday - Soccer, Wednesday - New Years Eve Party, Thursday - Off",
+    theme:"Recharging", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-9", date:"2026-01-03",
+    well:"We did a lot of social things / hosted this week! Collin came and spent the night. Movie night with Erica on Sunday. New Years Eve party was fun and Lia and Marty came! AIDAN WON FANTASY FOOTBALL. KYLE PITTS FOR THE WIN. We're talking about buying the RAV4 from Amanda's fam.",
+    stress:"The NYE party was slightly overwhelming.", adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday - Soccer, Tuesday - Vball",
+    theme:"Recharge and New Years Reset!!!!", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-10", date:"2026-01-17",
+    well:"Aidan crushed his Judy meeting! Hosted white elephant — people loved our decorations. Good conversation around sex the other day. Rearranged Japan trip + mostly booked. Wonderful!",
+    stress:"A little sicky. Work was a little stressful with all the exec meetings. Hosting was a little stressful because Aidan was gone for a bit.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday Soccer, Tuesday Vball (8p), weekend with the cousins.",
+    theme:"Financial Reset", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-11", date:"2026-01-25",
+    well:"Chill beginning of the week. Cousins came on Friday — played games and had a tea ceremony. Got double brunch (Cafe Hollander and La Brioche) and did karaoke! The weekend went really well. Everyone loves our space and we hosted well as a team.",
+    stress:"Amanda had to see Maddie's play on Thursday (Aidan watched Tick Tick Boom hehehe).",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday soccer (7pm), no vball, leave on Friday for Florida.",
+    theme:"Recharging", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-12", date:"2026-01-31",
+    well:"Ran some errands. Got Amanda's haircut.",
+    stress:"Busy and stressful week at work (attorney was escalated). The FL trip got canceled. Big boo. It's been fucking cold.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Amanda in FL till Wed night. Aidan has soccer Monday. Saturday with my family (celebrate mom's birthday).",
+    theme:"Time Apart!", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-13", date:"2026-02-14",
+    well:"HAPPY VALENTINES DAY! We went to L'etoile with Aidan's parents gift card and it was delicious. Did a D&D campaign for Cary's birthday.",
+    stress:"We've been a little sicky. Amanda was sad about her raise. Work has been stressful for Aidan.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday - Soccer, Tuesday - Volleyball, Sunday - Pottery",
+    theme:"Recovery", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-14", date:"2026-02-21",
+    well:"Went to Anna's concert. Played a legendary game of Mario Party with Ben and Erica. Aidan did well at the Vistage meeting. Amanda got out of a tour.",
+    stress:"Oof. A tough week at work which caused a tough week at home. Aidan worked a lot from home after work. Bad sports week for both.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Monday - soccer, Tuesday - Volleyball, Weekend? Maybe go to Amanda's fam to cross country ski.",
+    theme:"Relationship Reconnection", amanda:"", aidan:"", misc:"", hearts:0
+  },
+  {
+    id:"seed-15", date:"2026-03-16",
+    well:"Amanda got back from Vegas (SURVIVED). AMANDA'S BIRTHDAYYYYY!!! We redesigned the bedroom and got a Dairy Queen ice cream cake and Uncrustables.",
+    stress:"Aidan took a sick day and watched all of Solo Leveling.",
+    adjust:"", budget:"", savings:"", logistics:"", appts:"",
+    upcoming:"Wednesday - Dave and Busters, Weekend - go get lost and found from Dilldinkers and thrifting with Peyton, go to the mall.",
+    theme:"", amanda:"", aidan:"", misc:"", hearts:0
+  },
+];
+
+const TRIPS_2026 = [
+  { dates:"Apr 3–6",       label:"Erica & Kevin Engagement Party 💍", aidanDays:1,   amandaDays:1   },
+  { dates:"Apr 9–12",      label:"Ben's Bachelor Party 🍺",           aidanDays:1,   amandaDays:0   },
+  { dates:"Jun 5–7",       label:"Kohler-Andre State Park 🏕️",        aidanDays:0,   amandaDays:0   },
+  { dates:"Jun 20",        label:"Ben's Wedding 🎊",                   aidanDays:1.5, amandaDays:1.5 },
+  { dates:"Jun 27",        label:"Ed Sheeran in Chicago 🎶",           aidanDays:0,   amandaDays:0   },
+  { dates:"Aug 21–23",     label:"Peninsula State Park Camping 🌲",    aidanDays:0.5, amandaDays:0.5 },
+  { dates:"Oct 24 – Nov 8",label:"JAPAN 🗾✨",                         aidanDays:5,   amandaDays:15  },
+  { dates:"Late Dec",      label:"Christmas in Missoula 🎄",           aidanDays:3,   amandaDays:3   },
+];
+
+const LOGISTICS_LIST = [
+  "Sell Ed Sheeran tickets (by June)",
+  "Flights for Missoula (~$330 on American?)",
+  "Figure out the car situation with Amanda's dad",
+  "Japan spending plan",
+  "Cancel United Quest card (renews in August)",
+];
+
+const BUCKET_LIST = [
+  "Geocaching adventure",
+  "Weekend cabin trip",
+  "Spa day",
+  "Day trips (La Crosse, etc.)",
+  "Ski trip? SLC?",
+  "Summer Chicago trip again",
+  "Lift tickets — Marquette Mountain Resort",
+  "Meal prep routine",
+  "Morning walk ritual",
+  "Exercise planning routine",
+];
+
+const DEFAULT_TODOS = [
+  { id:"t1",  text:"Finish organizing basement",                     cat:"todo",      done:false },
+  { id:"t2",  text:"Fix bathtub faucet",                             cat:"todo",      done:false },
+  { id:"t3",  text:"Put up the curtains god damnit",                 cat:"todo",      done:false },
+  { id:"t4",  text:"Cancel United Quest card (renews in August)",    cat:"todo",      done:false },
+  { id:"t5",  text:"Figure out the car situation with Amanda's dad", cat:"todo",      done:false },
+  { id:"t6",  text:"Save money for Japan",                           cat:"todo",      done:false },
+  { id:"t7",  text:"Asbestos inspection",                            cat:"projects",  done:false },
+  { id:"t8",  text:"Call electrical company",                        cat:"projects",  done:false },
+  { id:"t9",  text:"Radon test",                                     cat:"projects",  done:false },
+  { id:"t10", text:"Table for behind the couch downstairs",          cat:"needs",     done:false },
+  { id:"t11", text:"Plant stands",                                   cat:"needs",     done:false },
+  { id:"t12", text:"Japan spending plan",                            cat:"priorities",done:false },
+  { id:"t13", text:"Clean up office",                                cat:"priorities",done:false },
+];
+
+const TODO_CATEGORIES = [
+  { id:"todo",       label:"📋 Active To-Dos"      },
+  { id:"projects",   label:"🔨 Household Projects"  },
+  { id:"needs",      label:"🛋️ Household Needs"    },
+  { id:"priorities", label:"💫 Priorities"          },
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentStep = 0;
+let heartVal = 0;
+let todos = [];
+let newEntries = [];
+let trips = [], logisticsList = [], bucketList = [];
+
+function loadState() {
+  const t = localStorage.getItem('wr_todos');
+  todos = t ? JSON.parse(t) : DEFAULT_TODOS.map(x => ({...x}));
+  const e = localStorage.getItem('wr_entries');
+  newEntries = e ? JSON.parse(e) : [];
+  const tr = localStorage.getItem('wr_trips');
+  trips = tr ? JSON.parse(tr) : TRIPS_2026.map((x,i) => ({...x, id:'trip-'+i}));
+  const lo = localStorage.getItem('wr_logistics');
+  logisticsList = lo ? JSON.parse(lo) : LOGISTICS_LIST.map((text,i) => ({id:'log-'+i, text}));
+  const bu = localStorage.getItem('wr_bucket');
+  bucketList = bu ? JSON.parse(bu) : BUCKET_LIST.map((text,i) => ({id:'bkt-'+i, text}));
+}
+function saveTodos()     { localStorage.setItem('wr_todos',     JSON.stringify(todos));        }
+function saveEntries()   { localStorage.setItem('wr_entries',   JSON.stringify(newEntries));   }
+function saveTrips()     { localStorage.setItem('wr_trips',     JSON.stringify(trips));        }
+function saveLogistics() { localStorage.setItem('wr_logistics', JSON.stringify(logisticsList));}
+function saveBucket()    { localStorage.setItem('wr_bucket',    JSON.stringify(bucketList));   }
+
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const map = {home:0, review:1, todos:2, dates:3, history:4};
+  document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'todos')   renderTodos();
+  if (name === 'history') renderHistory();
+  if (name === 'home')    renderHome();
+}
+
+// ─── HOME ────────────────────────────────────────────────────────────────────
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_GREETINGS = [
+  '🌸 Happy Sunday,', '☀️ Hello Monday,', '✨ Happy Tuesday,',
+  '🌿 Midweek Wednesday,', '💫 Almost Friday,', '🎉 Happy Friday,', '🛋️ Cozy Saturday,'
+];
+
+function renderHome() {
+  const now = new Date();
+  document.getElementById('home-date-label').textContent =
+    `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  document.getElementById('welcome-greeting').innerHTML =
+    `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda & Aidan!</span>`;
+
+  document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
+
+  const all = getAllEntries();
+  if (all.length > 0) {
+    const d = new Date(all[0].date + 'T12:00:00');
+    document.getElementById('stat-last-entry').textContent = `${MONTHS_S[d.getMonth()]} ${d.getDate()}`;
+  } else {
+    document.getElementById('stat-last-entry').textContent = '—';
+  }
+
+  document.getElementById('home-trips').innerHTML = TRIPS_2026.map(t => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f4ede3">
+      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:100px;flex-shrink:0">${t.dates}</div>
+      <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
+      ${t.aidanDays > 0 || t.amandaDays > 0
+        ? `<div style="font-size:11px;color:var(--text-3);flex-shrink:0">${t.aidanDays}d / ${t.amandaDays}d PTO</div>`
+        : `<div style="font-size:11px;color:var(--sage);flex-shrink:0">No PTO</div>`}
+    </div>
+  `).join('');
+}
+
+// ─── COFFEE ROULETTE ─────────────────────────────────────────────────────────
+let spinning = false;
+
+function spinCoffee() {
+  if (spinning) return;
+  spinning = true;
+  const btn = document.getElementById('spin-btn');
+  btn.textContent = '✨ Spinning...';
+  btn.disabled = true;
+  const nameEl = document.getElementById('coffee-name');
+  const areaEl = document.getElementById('coffee-area');
+  nameEl.classList.add('spinning');
+  let ticks = 0;
+  const interval = setInterval(() => {
+    const s = COFFEE_SHOPS[Math.floor(Math.random() * COFFEE_SHOPS.length)];
+    nameEl.textContent = s.name;
+    areaEl.textContent = s.area;
+    ticks++;
+    if (ticks >= 20) {
+      clearInterval(interval);
+      const final = COFFEE_SHOPS[Math.floor(Math.random() * COFFEE_SHOPS.length)];
+      nameEl.textContent = final.name;
+      areaEl.textContent = '📍 ' + final.area;
+      nameEl.classList.remove('spinning');
+      spinning = false;
+      btn.textContent = '☕ Spin Again!';
+      btn.disabled = false;
+      burst();
+    }
+  }, 75);
+}
+
+// ─── REVIEW FLOW ─────────────────────────────────────────────────────────────
+function nextStep(n) {
+  document.getElementById('step-' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step-' + n).classList.add('active');
+  for (let i = 0; i < 5; i++) {
+    const dot = document.getElementById('dot-' + i);
+    dot.classList.remove('active','done');
+    if (i < n)  dot.classList.add('done');
+    if (i === n) dot.classList.add('active');
+  }
+  document.getElementById('step-label-text').textContent = `Step ${n+1} of 5`;
+  window.scrollTo(0, 0);
+}
+
+function pickTheme(el) {
+  document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('r-theme').value = el.textContent;
+}
+
+function setHeart(n) {
+  heartVal = n;
+  document.querySelectorAll('.heart').forEach((h,i) => h.classList.toggle('on', i < n));
+}
+
+function saveEntry() {
+  const get = id => document.getElementById(id).value.trim();
+  const entry = {
+    id: 'e-' + Date.now(),
+    date: new Date().toISOString().slice(0, 10),
+    well:     get('r-well'),
+    stress:   get('r-stress'),
+    adjust:   get('r-adjust'),
+    budget:   get('r-budget'),
+    savings:  get('r-savings'),
+    logistics:get('r-logistics'),
+    appts:    get('r-appts'),
+    upcoming: get('r-upcoming'),
+    theme:    get('r-theme'),
+    amanda:   get('r-amanda'),
+    aidan:    get('r-aidan'),
+    misc:     get('r-misc'),
+    hearts:   heartVal,
+  };
+  newEntries.unshift(entry);
+  saveEntries();
+  ['r-well','r-stress','r-adjust','r-budget','r-savings','r-logistics','r-appts','r-upcoming','r-theme','r-amanda','r-aidan','r-misc']
+    .forEach(id => document.getElementById(id).value = '');
+  setHeart(0);
+  document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
+  nextStep(0);
+  showToast('Entry saved! Love you both 🎉');
+  burst();
+}
+
+// ─── TO-DOS ──────────────────────────────────────────────────────────────────
+function renderTodos() {
+  document.getElementById('todos-container').innerHTML = TODO_CATEGORIES.map(cat => {
+    const items = todos.filter(t => t.cat === cat.id);
+    return `
+      <div class="card todo-category">
+        <div class="todo-cat-title">${cat.label}</div>
+        <div class="todo-items">${items.map(renderTodoItem).join('')}</div>
+        <div class="add-todo">
+          <input type="text" placeholder="Add item..." id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')">
+          <button onclick="addTodo('${cat.id}')">+ Add</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTodoItem(t) {
+  return `
+    <div class="todo-item${t.done?' done':''}" id="todo-${t.id}">
+      <div class="todo-cb" onclick="toggleTodo('${t.id}')">${t.done ? '✓' : ''}</div>
+      <span class="todo-text">${escHtml(t.text)}</span>
+      <span class="todo-del" onclick="deleteTodo('${t.id}')">×</span>
+    </div>`;
+}
+
+function toggleTodo(id) {
+  const t = todos.find(x => x.id === id);
+  if (t) { t.done = !t.done; saveTodos(); renderTodos(); }
+}
+
+function deleteTodo(id) {
+  todos = todos.filter(x => x.id !== id);
+  saveTodos(); renderTodos();
+}
+
+function addTodo(cat) {
+  const input = document.getElementById('add-' + cat);
+  const text = input.value.trim();
+  if (!text) return;
+  todos.push({ id:'td-'+Date.now(), text, cat, done:false });
+  saveTodos(); renderTodos();
+}
+
+// ─── DATES ───────────────────────────────────────────────────────────────────
+function renderDates() {
+  document.getElementById('trip-grid').innerHTML = trips.map(t => `
+    <div class="trip-card">
+      <button class="trip-del" onclick="deleteTrip('${t.id}')">×</button>
+      <div class="trip-dates">${escHtml(t.dates)}</div>
+      <div class="trip-name">${escHtml(t.label)}</div>
+      <div class="trip-days">${
+        t.aidanDays > 0 || t.amandaDays > 0
+          ? `Aidan: <span>${t.aidanDays}d</span> · Amanda: <span>${t.amandaDays}d</span> PTO`
+          : `<span style="color:var(--sage)">No PTO needed ✓</span>`
+      }</div>
+    </div>
+  `).join('') + `
+    <div class="add-trip-form">
+      <input type="text" id="new-trip-dates"  placeholder="Dates (e.g. Jun 5–7)">
+      <input type="text" id="new-trip-name"   placeholder="Trip or event name">
+      <input type="number" id="new-trip-aidan"  placeholder="Aidan PTO days" min="0" step="0.5">
+      <input type="number" id="new-trip-amanda" placeholder="Amanda PTO days" min="0" step="0.5">
+      <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
+    </div>`;
+
+  const aidanUsed = trips.reduce((s,t) => s+(t.aidanDays||0), 0);
+  const amandaUsed = trips.reduce((s,t) => s+(t.amandaDays||0), 0);
+  const aidanTotal = 26, amandaTotal = 16;
+  const amandaOver = amandaUsed > amandaTotal;
+
+  document.getElementById('vaca-tracker').innerHTML = `
+    <div class="vaca-person">
+      <div class="vaca-name">Aidan &nbsp;<span style="font-weight:400;color:var(--text-3);font-size:12px">${aidanUsed} of ${aidanTotal} days planned</span></div>
+      <div class="vaca-bar-track"><div class="vaca-bar-fill" style="width:${Math.min(aidanUsed/aidanTotal*100,100)}%"></div></div>
+      <div class="vaca-stats"><strong>${aidanTotal - aidanUsed} days remaining</strong> · ${aidanTotal} allotted · 7 half-days available</div>
+    </div>
+    <div class="vaca-person">
+      <div class="vaca-name">Amanda &nbsp;<span style="font-weight:400;color:var(--text-3);font-size:12px">${amandaUsed} of ${amandaTotal} days planned</span>
+        ${amandaOver ? `<span class="tag tag-coral">Over by ${amandaUsed - amandaTotal}d</span>` : ''}
+      </div>
+      <div class="vaca-bar-track"><div class="vaca-bar-fill${amandaOver?' over':''}" style="width:${Math.min(amandaUsed/amandaTotal*100,100)}%"></div></div>
+      <div class="vaca-stats">${amandaOver
+        ? `<strong>${amandaUsed - amandaTotal} days over allotment</strong> · Personal days may cover overflow`
+        : `<strong>${amandaTotal - amandaUsed} days remaining</strong>`} · ${amandaTotal} allotted · 7 half-days available</div>
+    </div>`;
+
+  document.getElementById('logistics-list').innerHTML =
+    logisticsList.map(l => `
+      <div class="list-item">${escHtml(l.text)}
+        <button class="list-del" onclick="deleteListItem('logistics','${l.id}')">×</button>
+      </div>`).join('') + `
+    <div class="add-list-row">
+      <input type="text" id="new-logistics" placeholder="Add item..." onkeydown="if(event.key==='Enter')addListItem('logistics')">
+      <button onclick="addListItem('logistics')">+ Add</button>
+    </div>`;
+
+  document.getElementById('bucket-list').innerHTML =
+    bucketList.map(b => `
+      <div class="list-item">${escHtml(b.text)}
+        <button class="list-del" onclick="deleteListItem('bucket','${b.id}')">×</button>
+      </div>`).join('') + `
+    <div class="add-list-row">
+      <input type="text" id="new-bucket" placeholder="Add idea..." onkeydown="if(event.key==='Enter')addListItem('bucket')">
+      <button onclick="addListItem('bucket')">+ Add</button>
+    </div>`;
+}
+
+function addTrip() {
+  const dates  = document.getElementById('new-trip-dates').value.trim();
+  const label  = document.getElementById('new-trip-name').value.trim();
+  if (!label) return;
+  const aidanDays  = parseFloat(document.getElementById('new-trip-aidan').value)  || 0;
+  const amandaDays = parseFloat(document.getElementById('new-trip-amanda').value) || 0;
+  trips.push({ id:'trip-'+Date.now(), dates, label, aidanDays, amandaDays });
+  saveTrips();
+  renderDates();
+}
+
+function deleteTrip(id) {
+  trips = trips.filter(t => t.id !== id);
+  saveTrips();
+  renderDates();
+}
+
+function addListItem(type) {
+  const input = document.getElementById('new-' + type);
+  const text = input.value.trim();
+  if (!text) return;
+  if (type === 'logistics') {
+    logisticsList.push({ id:'log-'+Date.now(), text });
+    saveLogistics();
+  } else {
+    bucketList.push({ id:'bkt-'+Date.now(), text });
+    saveBucket();
+  }
+  renderDates();
+}
+
+function deleteListItem(type, id) {
+  if (type === 'logistics') {
+    logisticsList = logisticsList.filter(x => x.id !== id);
+    saveLogistics();
+  } else {
+    bucketList = bucketList.filter(x => x.id !== id);
+    saveBucket();
+  }
+  renderDates();
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
+function getAllEntries() {
+  return [...newEntries, ...SEED_ENTRIES].sort((a,b) => b.date.localeCompare(a.date));
+}
+
+function renderHistory() {
+  const entries = getAllEntries();
+  document.getElementById('history-list').innerHTML = entries.map(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    const dateLabel = `${MONTHS_S[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+    const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
+    const heartsHtml = e.hearts > 0
+      ? Array.from({length:5}, (_,i) => `<span class="history-heart${i < e.hearts?' on':''}">❤️</span>`).join('') : '';
+    const sections = [
+      e.well     && {lbl:'What went well',    val:e.well},
+      e.stress   && {lbl:'What was stressful',val:e.stress},
+      e.adjust   && {lbl:'Adjustments',       val:e.adjust},
+      e.budget   && {lbl:'Budget',            val:e.budget},
+      e.savings  && {lbl:'Savings',           val:e.savings},
+      e.logistics && {lbl:'Logistics',        val:e.logistics},
+      e.appts    && {lbl:'Appointments',      val:e.appts},
+      e.upcoming && {lbl:'Upcoming week',     val:e.upcoming},
+      e.theme    && {lbl:'Theme',             val:e.theme},
+      e.amanda   && {lbl:'Amanda ♥ Aidan',   val:e.amanda},
+      e.aidan    && {lbl:'Aidan ♥ Amanda',   val:e.aidan},
+      e.misc     && {lbl:'Notes',             val:e.misc},
+    ].filter(Boolean);
+
+    return `
+      <div class="history-entry">
+        <div class="history-header" id="hh-${e.id}" onclick="toggleHistory('${e.id}')">
+          <div class="history-date-badge">${dateLabel}</div>
+          <div class="history-preview">${escHtml(preview) || '—'}</div>
+          ${e.theme ? `<div class="history-theme">${escHtml(e.theme.replace(/^[\p{Emoji}\s]+/u,'').split('(')[0].trim())}</div>` : ''}
+          ${heartsHtml ? `<div class="history-hearts">${heartsHtml}</div>` : ''}
+          <div class="history-chevron">▼</div>
+        </div>
+        <div class="history-body" id="hb-${e.id}">
+          ${sections.map(s => `
+            <div class="history-section">
+              <div class="history-section-lbl">${s.lbl}</div>
+              <div class="history-section-text">${escHtml(s.val)}</div>
+            </div>`).join('')}
+          ${!sections.length ? '<div style="color:var(--text-3);font-size:13px">No notes for this entry.</div>' : ''}
+        </div>
+      </div>`;
+  }).join('') || '<div class="empty-state">No entries yet. Start your first weekly review! ✨</div>';
+}
+
+function toggleHistory(id) {
+  document.getElementById('hh-' + id).classList.toggle('open');
+  document.getElementById('hb-' + id).classList.toggle('open');
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function burst() {
+  const wrap = document.getElementById('confetti-wrap');
+  const colors = ['#f5c27a','#e8735a','#6b8f71','#4472a8','#bf7c36','#f9a8d4','#fcd34d','#a78bfa'];
+  wrap.innerHTML = '';
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  for (let i = 0; i < 24; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'confetti-dot';
+    const angle = (i / 24) * 360;
+    const dist = 60 + Math.random() * 140;
+    const tx = Math.cos(angle * Math.PI / 180) * dist + 'px';
+    const ty = Math.sin(angle * Math.PI / 180) * dist + 'px';
+    dot.style.cssText = `background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-4.5px 0 0 -4.5px;animation:confetti-fly .9s ease-out forwards;animation-delay:${i*18}ms`;
+    wrap.appendChild(dot);
+  }
+  setTimeout(() => wrap.innerHTML = '', 1600);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+loadState();
+renderHome();
+renderDates();
+
+const now2 = new Date();
+document.getElementById('review-date-sub').textContent =
+  `Week of ${MONTHS[now2.getMonth()]} ${now2.getDate()}, ${now2.getFullYear()}`;
+</script>
+</body>
+</html>
