@@ -704,20 +704,32 @@ function initFirestore() {
   });
 
   ref('trips').onSnapshot(snap => {
-    if (!snap.exists) { ref('trips').set({items: TRIPS_2026.map((x,i)=>({...x,id:'trip-'+i}))}); return; }
-    trips = snap.data().items || [];
+    if (!snap.exists) {
+      trips = TRIPS_2026.map((x,i) => ({...x, id:'trip-'+i}));
+      ref('trips').set({items: trips});
+    } else {
+      trips = snap.data().items || [];
+    }
     if (isActive('dates')) renderDates();
   });
 
   ref('logistics').onSnapshot(snap => {
-    if (!snap.exists) { ref('logistics').set({items: LOGISTICS_LIST.map((text,i)=>({id:'log-'+i,text}))}); return; }
-    logisticsList = snap.data().items || [];
+    if (!snap.exists) {
+      logisticsList = LOGISTICS_LIST.map((text,i) => ({id:'log-'+i, text}));
+      ref('logistics').set({items: logisticsList});
+    } else {
+      logisticsList = snap.data().items || [];
+    }
     if (isActive('dates')) renderDates();
   });
 
   ref('bucket').onSnapshot(snap => {
-    if (!snap.exists) { ref('bucket').set({items: BUCKET_LIST.map((text,i)=>({id:'bkt-'+i,text}))}); return; }
-    bucketList = snap.data().items || [];
+    if (!snap.exists) {
+      bucketList = BUCKET_LIST.map((text,i) => ({id:'bkt-'+i, text}));
+      ref('bucket').set({items: bucketList});
+    } else {
+      bucketList = snap.data().items || [];
+    }
     if (isActive('dates')) renderDates();
   });
 }
