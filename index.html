@@ -1341,16 +1341,6 @@ const PLAN_DAYS = [
 ];
 const MEAL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
-function getPlanWeekStart() {
-  const today = new Date();
-  const dow = today.getDay(); // 0=Sun, 6=Sat
-  // On Sat (6) or Sun (0), plan for next week; otherwise plan for current week
-  const daysUntilNextMon = dow === 0 ? 1 : dow === 6 ? 2 : (8 - dow) % 7 || 7;
-  const offset = (dow === 6 || dow === 0) ? daysUntilNextMon : (1 - dow + 7) % 7;
-  const mon = new Date(today);
-  mon.setDate(today.getDate() + (dow === 6 || dow === 0 ? daysUntilNextMon : -(dow === 0 ? 6 : dow - 1)));
-  return mon;
-}
 
 function formatPlanLabel() {
   const today = new Date();
@@ -1428,8 +1418,14 @@ function toggleChip(dayKey, type) {
   if (!weekPlan[dayKey]) weekPlan[dayKey] = {};
   weekPlan[dayKey][type] = !weekPlan[dayKey][type];
   savePlan();
-  // just update the chip visually without full re-render
-  renderPlan();
+  // Update only the toggled chip, preserving any in-progress typed notes
+  const on = weekPlan[dayKey][type];
+  document.querySelectorAll('.plan-slot-chip').forEach(chip => {
+    const oc = chip.getAttribute('onclick') || '';
+    if (oc.includes(`'${dayKey}'`) && oc.includes(`'${type}'`)) {
+      chip.classList.toggle('on', on);
+    }
+  });
 }
 
 let _planDebounce = null;
@@ -1681,7 +1677,8 @@ const CAT_EMOJIS = {Dining:'🍽️',Groceries:'🛒',Shopping:'🛍️',Enterta
 let budgetTargets = {};
 function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}); }
 
-let _budgetMonth = new Date().toLocaleString('en-US',{month:'long'});
+const monthName = d => MONTHS_LIST[d.getMonth()];
+let _budgetMonth = monthName(new Date());
 
 function renderBudget() {
   const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -1820,7 +1817,7 @@ function addExpense() {
   const amount   = parseFloat(document.getElementById('b-amount').value);
   const shared   = document.getElementById('b-shared').checked;
   if (!date || !category || !desc || isNaN(amount)) return;
-  const month = new Date(date + 'T12:00:00').toLocaleString('en-US',{month:'long'});
+  const month = monthName(new Date(date + 'T12:00:00'));
   expenses.push({id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared});
   saveExpenses();
   document.getElementById('b-desc').value = '';
@@ -1904,7 +1901,7 @@ function deleteRecurring(id) {
 
 function loadRecurring() {
   const today = new Date().toISOString().slice(0,10);
-  const month = new Date().toLocaleString('en-US',{month:'long'});
+  const month = monthName(new Date());
   const year  = new Date().getFullYear().toString();
   let added = 0;
   for (const r of recurringItems) {
@@ -1933,7 +1930,7 @@ function loadRecurring() {
 function bulkAddExpenses() {
   const person = document.getElementById('bulk-person').value;
   const date   = document.getElementById('bulk-date').value || new Date().toISOString().slice(0,10);
-  const month  = new Date(date+'T12:00:00').toLocaleString('en-US',{month:'long'});
+  const month  = monthName(new Date(date+'T12:00:00'));
   const lines  = document.getElementById('bulk-text').value.trim().split('\n').filter(l=>l.trim());
   const CATS   = new Set(['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities']);
   let added = 0, errors = 0;
@@ -1965,8 +1962,6 @@ function bulkAddExpenses() {
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initFirestore();
-renderHome();
-renderDates();
 
 const now2 = new Date();
 document.getElementById('review-date-sub').textContent =
