@@ -2061,7 +2061,7 @@ function renderRecurring() {
   }
   el.innerHTML = recurringItems.map(r => `
     <div class="recurring-item">
-      <span class="rec-person-badge ${r.person}">${r.person[0]}</span>
+      <span class="rec-person-badge ${r.person}">${r.person==='Aidan'?'AF':'AM'}</span>
       <div class="rec-info">
         <div class="rec-desc">${escHtml(r.description)}</div>
         <div class="rec-meta">${r.category}${r.shared?' · 50/50':''}</div>
