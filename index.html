@@ -1792,20 +1792,35 @@ function renderBudget() {
   const pillContainer = document.getElementById('budget-month-pills');
   if (pillContainer) {
     const available = [...new Set(expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month))];
-    // If current _budgetMonth has no data for this year (and not in All view), snap to most recent
-    if (_budgetMonth !== 'all' && available.length && !available.includes(filterMonth)) {
+    // If current _budgetMonth has no data for this year (and not in a range view), snap to most recent
+    const rangeViews = ['all', '3m', '6m'];
+    if (!rangeViews.includes(_budgetMonth) && available.length && !available.includes(filterMonth)) {
       _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
     }
     pillContainer.innerHTML =
       `<div class="bmonth-pill${'all'===_budgetMonth?' active':''}" onclick="setBudgetMonth('all')">All</div>` +
+      `<div class="bmonth-pill${'6m'===_budgetMonth?' active':''}" onclick="setBudgetMonth('6m')">6M</div>` +
+      `<div class="bmonth-pill${'3m'===_budgetMonth?' active':''}" onclick="setBudgetMonth('3m')">3M</div>` +
       MONTHS_LIST.filter(m => available.includes(m)).map(m =>
         `<div class="bmonth-pill${m===_budgetMonth?' active':''}" onclick="setBudgetMonth('${m}')">${m.slice(0,3)}</div>`
       ).join('');
   }
 
+  // For 3M/6M views, collect the last N calendar months across any year
+  const getLastNMonthPeriods = n => {
+    const periods = [];
+    const d = new Date(); d.setDate(1);
+    for (let i = 0; i < n; i++) {
+      periods.push({ year: d.getFullYear().toString(), month: monthName(d) });
+      d.setMonth(d.getMonth() - 1);
+    }
+    return periods;
+  };
   const monthTx = _budgetMonth === 'all'
     ? expenses.filter(e => e.date.startsWith(filterYear))
-    : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
+    : _budgetMonth === '3m' || _budgetMonth === '6m'
+      ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => ps.some(p => e.date.startsWith(p.year) && e.month === p.month)); })()
+      : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
   const searchQ = (document.getElementById('b-search')?.value || '').toLowerCase();
   const filtered = monthTx
     .filter(e => filterPerson ? e.person === filterPerson : true)
