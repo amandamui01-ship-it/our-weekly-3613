@@ -121,7 +121,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .todo-text{font-size:13px;color:var(--text);flex:1}
 .todo-del{font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;padding:0 2px;line-height:1}
 .todo-item:hover .todo-del{opacity:.4}
-.todo-edit-input{flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0}
+.todo-edit-input{flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font-family:inherit;font-size:13px;color:inherit;outline:none;padding:0}
 .todo-del:hover{opacity:1!important;color:var(--coral)}
 .add-todo{display:flex;gap:8px;margin-top:10px}
 .add-todo input{flex:1;padding:9px 13px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
@@ -626,7 +626,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <!-- Period picker -->
   <div class="budget-period-row">
     <select id="b-filter-year" onchange="renderBudget()">
-      <option value="2026">2026</option>
+      <option value="2027">2027</option>
+      <option value="2026" selected>2026</option>
       <option value="2025">2025</option>
     </select>
     <div class="budget-month-pills" id="budget-month-pills"></div>
@@ -1062,6 +1063,16 @@ function initFirestore() {
       ref('expenses').set({items: expenses});
     } else {
       expenses = snap.data().items || [];
+      // Backfill missing month field
+      let changed = false;
+      expenses = expenses.map(e => {
+        if (!e.month && e.date) {
+          changed = true;
+          return {...e, month: monthName(new Date(e.date + 'T12:00:00'))};
+        }
+        return e;
+      });
+      if (changed) ref('expenses').set({items: expenses});
     }
     if (isActive('budget')) renderBudget();
   });
@@ -1406,8 +1417,8 @@ function renderDates() {
 
   document.getElementById('bucket-list').innerHTML =
     bucketList.map(b => `
-      <div class="list-item">${escHtml(b.text)}
-        <button class="list-del" onclick="deleteListItem('bucket','${b.id}')">×</button>
+      <div class="list-item" id="list-item-${b.id}" onclick="editBucketItem('${b.id}')" style="cursor:pointer">${escHtml(b.text)}
+        <button class="list-del" onclick="deleteListItem('bucket','${b.id}');event.stopPropagation()">×</button>
       </div>`).join('') + `
     <div class="add-list-row">
       <input type="text" id="new-bucket" placeholder="Add idea..." onkeydown="if(event.key==='Enter')addListItem('bucket')">
@@ -1571,8 +1582,14 @@ function tripEmoji(label) {
 function parseSortDate(dateStr) {
   if (!dateStr) return null;
   const first = dateStr.replace(/[–—\-].*/, '').trim();
-  const year = new Date().getFullYear();
-  const d = new Date(`${first} ${year}`);
+  const today = new Date(); today.setHours(0,0,0,0);
+  let year = today.getFullYear();
+  let d = new Date(`${first} ${year}`);
+  if (isNaN(d)) return null;
+  // If the parsed date is more than 2 months in the past, assume next year
+  if (d < new Date(today.getFullYear(), today.getMonth() - 2, 1)) {
+    d = new Date(`${first} ${year + 1}`);
+  }
   return isNaN(d) ? null : d.toISOString().slice(0, 10);
 }
 
@@ -1657,6 +1674,22 @@ function editListItem(id) {
   el.childNodes[0].replaceWith(input);
   input.focus(); input.select();
   const save = () => { const v = input.value.trim(); if (v && v !== item.text) { item.text = v; saveLogistics(); } renderDates(); };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderDates(); });
+  input.addEventListener('click', e => e.stopPropagation());
+}
+
+function editBucketItem(id) {
+  const item = bucketList.find(x => x.id === id);
+  if (!item) return;
+  const el = document.getElementById('list-item-' + id);
+  if (!el) return;
+  const input = document.createElement('input');
+  input.value = item.text;
+  input.style.cssText = 'flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
+  el.childNodes[0].replaceWith(input);
+  input.focus(); input.select();
+  const save = () => { const v = input.value.trim(); if (v && v !== item.text) { item.text = v; saveBucket(); } renderDates(); };
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderDates(); });
   input.addEventListener('click', e => e.stopPropagation());
@@ -1832,6 +1865,7 @@ function calcOwes(txList) {
   let net = {Aidan: 0, Amanda: 0};
   for (const tx of txList) {
     if (!tx.shared) continue;
+    if (tx.person !== 'Aidan' && tx.person !== 'Amanda') continue;
     const half = tx.amount / 2;
     net[tx.person] += half;        // payer gets credited half back
     const other = tx.person === 'Aidan' ? 'Amanda' : 'Aidan';
@@ -1853,7 +1887,7 @@ let _budgetMonth = monthName(new Date());
 function renderBudget() {
   const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const yearSel = document.getElementById('b-filter-year');
-  const filterYear = yearSel ? yearSel.value : '2026';
+  const filterYear = yearSel ? yearSel.value : new Date().getFullYear().toString();
   const curYear = new Date().getFullYear().toString();
   const filterMonth = _budgetMonth;
   const filterPerson = document.getElementById('b-filter-person')?.value || '';
@@ -1922,7 +1956,10 @@ function renderBudget() {
   const trendMonths = MONTHS_LIST.filter(m => monthlySpend[m] !== undefined);
   document.getElementById('budget-trend').innerHTML = trendMonths.length ? trendMonths.map(m => {
     const pct = Math.round((monthlySpend[m]||0) / maxSpend * 100);
-    const isActive = m === filterMonth ? ' active' : '';
+    const inWindow = _budgetMonth === 'all' ? true
+      : (_budgetMonth === '3m' || _budgetMonth === '6m') ? getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6).some(p => p.month === m)
+      : m === filterMonth;
+    const isActive = inWindow ? ' active' : '';
     const barPx = Math.max(2, Math.round(pct / 100 * 52));
     return `<div class="btrend-col${isActive}" onclick="setBudgetMonth('${m}')" title="${m}: ${fmt(monthlySpend[m]||0)}" style="cursor:pointer">
       <div class="btrend-bar" style="height:${barPx}px"></div>
