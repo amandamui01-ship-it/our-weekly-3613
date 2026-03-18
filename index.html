@@ -1041,14 +1041,15 @@ function initFirestore() {
   });
 }
 
-function saveTodos()     { db.collection('state').doc('todos').set({items: todos});            }
-function saveEntries()   { db.collection('state').doc('entries').set({items: newEntries});     }
-function saveTrips()     { db.collection('state').doc('trips').set({items: trips});            }
-function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList});}
-function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList});      }
-function savePlan()      { db.collection('state').doc('weekplan').set({plan: weekPlan});       }
-function saveExpenses()   { db.collection('state').doc('expenses').set({items: expenses});       }
-function saveRecurring()  { db.collection('state').doc('recurring').set({items: recurringItems}); }
+const _onSaveErr = e => console.error('Save failed:', e);
+function saveTodos()     { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr);            }
+function saveEntries()   { db.collection('state').doc('entries').set({items: newEntries}).catch(_onSaveErr);     }
+function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
+function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
+function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
+function savePlan()      { db.collection('state').doc('weekplan').set({plan: weekPlan}).catch(_onSaveErr);       }
+function saveExpenses()   { db.collection('state').doc('expenses').set({items: expenses}).catch(_onSaveErr);       }
+function saveRecurring()  { db.collection('state').doc('recurring').set({items: recurringItems}).catch(_onSaveErr); }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(name) {
@@ -1084,9 +1085,11 @@ function renderHome() {
 
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
 
-  const _nextForStat = trips.find(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= new Date().setHours(0,0,0,0));
+  const _today = new Date(); _today.setHours(0,0,0,0);
+  const _sortedTrips = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate));
+  const _nextForStat = _sortedTrips.find(t => !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= _today);
   document.getElementById('stat-next-trip').textContent = _nextForStat
-    ? _nextForStat.dates.split(/[–—]/)[0].trim()
+    ? _nextForStat.dates.split(/[–—-]/)[0].trim()
     : '—';
 
   const all = getAllEntries();
@@ -1097,8 +1100,7 @@ function renderHome() {
     document.getElementById('stat-last-entry').textContent = '—';
   }
 
-  const _today = new Date(); _today.setHours(0,0,0,0);
-  const _upcoming = trips.filter(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
+  const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
   document.getElementById('home-trips').innerHTML = _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f4ede3">
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:100px;flex-shrink:0">${t.dates}</div>
@@ -1213,12 +1215,13 @@ function renderTodos() {
   }).join('');
 
   const done = todos.filter(t => t.done);
+  const doneCollapsed = document.getElementById('done-items-list')?.style.display === 'none';
   const doneHtml = done.length ? `
     <div class="card todo-category">
       <div class="todo-cat-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'" style="cursor:pointer">
         ✅ Completed (${done.length}) <span style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px">tap to toggle</span>
       </div>
-      <div class="todo-items">${done.map(renderTodoItem).join('')}</div>
+      <div class="todo-items" id="done-items-list" style="display:${doneCollapsed?'none':''}">${done.map(renderTodoItem).join('')}</div>
     </div>` : '';
 
   document.getElementById('todos-container').innerHTML = activeHtml + doneHtml;
@@ -1455,7 +1458,7 @@ document.addEventListener('input', e => {
 
 function parseSortDate(dateStr) {
   if (!dateStr) return null;
-  const first = dateStr.replace(/[–—].*/, '').trim();
+  const first = dateStr.replace(/[–—\-].*/, '').trim();
   const year = new Date().getFullYear();
   const d = new Date(`${first} ${year}`);
   return isNaN(d) ? null : d.toISOString().slice(0, 10);
@@ -1615,7 +1618,8 @@ function burst() {
 // ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
 function renderNextTrip() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const next = trips.find(t => t.sortDate && !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= today);
+  const next = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate))
+    .find(t => !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= today);
   const card = document.getElementById('next-trip-card');
   if (!next) { card.style.display = 'none'; return; }
   card.style.display = '';
@@ -1675,7 +1679,7 @@ const CAT_COLORS = {Dining:'#d96a52',Groceries:'#5c7a62',Shopping:'#bf7c36',Ente
 const CAT_EMOJIS = {Dining:'🍽️',Groceries:'🛒',Shopping:'🛍️',Entertainment:'🎬',Transportation:'🚗',Housing:'🏠',Travel:'✈️',Utilities:'💡',Pet:'🐾',Subscriptions:'📱',Insurance:'🛡️',Savings:'🏦',Investments:'📈',Income:'💰',Misc:'📦'};
 
 let budgetTargets = {};
-function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}); }
+function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}).catch(_onSaveErr); }
 
 const monthName = d => MONTHS_LIST[d.getMonth()];
 let _budgetMonth = monthName(new Date());
@@ -1692,8 +1696,12 @@ function renderBudget() {
   const pillContainer = document.getElementById('budget-month-pills');
   if (pillContainer) {
     const available = [...new Set(expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month))];
+    // If current _budgetMonth has no data for this year, snap to the most recent available month
+    if (available.length && !available.includes(filterMonth)) {
+      _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
+    }
     pillContainer.innerHTML = MONTHS_LIST.filter(m => available.includes(m)).map(m =>
-      `<div class="bmonth-pill${m===filterMonth?' active':''}" onclick="setBudgetMonth('${m}')">${m.slice(0,3)}</div>`
+      `<div class="bmonth-pill${m===_budgetMonth?' active':''}" onclick="setBudgetMonth('${m}')">${m.slice(0,3)}</div>`
     ).join('');
   }
 
@@ -1820,6 +1828,7 @@ function addExpense() {
   const month = monthName(new Date(date + 'T12:00:00'));
   expenses.push({id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared});
   saveExpenses();
+  document.getElementById('b-category').value = '';
   document.getElementById('b-desc').value = '';
   document.getElementById('b-amount').value = '';
   document.getElementById('b-shared').checked = false;
