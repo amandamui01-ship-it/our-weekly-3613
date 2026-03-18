@@ -603,7 +603,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="card">
     <div class="card-title">Notes & Reminders</div>
     <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
-      oninput="savePlan()"
       style="width:100%;min-height:90px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px;font-family:inherit;background:var(--surface);resize:vertical;outline:none;transition:border-color .15s;color:var(--text)"
       onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
   </div>
@@ -1037,10 +1036,6 @@ function initFirestore() {
       ref('expenses').set({items: expenses});
     } else {
       expenses = snap.data().items || [];
-      if (!expenses.some(e => e.date.startsWith('2025'))) {
-        expenses = [...BUDGET_SEED_2025.map(e=>({...e})), ...expenses];
-        db.collection('state').doc('expenses').set({items: expenses});
-      }
     }
     if (isActive('budget')) renderBudget();
   });
@@ -1088,6 +1083,11 @@ function renderHome() {
     `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda & Aidan!</span>`;
 
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
+
+  const _nextForStat = trips.find(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= new Date().setHours(0,0,0,0));
+  document.getElementById('stat-next-trip').textContent = _nextForStat
+    ? _nextForStat.dates.split(/[–—]/)[0].trim()
+    : '—';
 
   const all = getAllEntries();
   if (all.length > 0) {
@@ -1175,8 +1175,8 @@ function saveEntry() {
     well:     get('r-well'),
     stress:   get('r-stress'),
     adjust:   get('r-adjust'),
-    budget:   get('r-budget'),
-    savings:  get('r-savings'),
+    budget:   '',
+    savings:  '',
     logistics:get('r-logistics'),
     appts:    get('r-appts'),
     upcoming: get('r-upcoming'),
@@ -1188,7 +1188,7 @@ function saveEntry() {
   };
   newEntries.unshift(entry);
   saveEntries();
-  ['r-well','r-stress','r-adjust','r-budget','r-savings','r-logistics','r-appts','r-upcoming','r-theme','r-amanda','r-aidan','r-misc']
+  ['r-well','r-stress','r-adjust','r-logistics','r-appts','r-upcoming','r-theme','r-amanda','r-aidan','r-misc']
     .forEach(id => document.getElementById(id).value = '');
   setHeart(0);
   document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
@@ -1457,13 +1457,22 @@ document.addEventListener('input', e => {
   }
 });
 
+function parseSortDate(dateStr) {
+  if (!dateStr) return null;
+  const first = dateStr.replace(/[–—].*/, '').trim();
+  const year = new Date().getFullYear();
+  const d = new Date(`${first} ${year}`);
+  return isNaN(d) ? null : d.toISOString().slice(0, 10);
+}
+
 function addTrip() {
   const dates  = document.getElementById('new-trip-dates').value.trim();
   const label  = document.getElementById('new-trip-name').value.trim();
   if (!label) return;
   const aidanDays  = parseFloat(document.getElementById('new-trip-aidan').value)  || 0;
   const amandaDays = parseFloat(document.getElementById('new-trip-amanda').value) || 0;
-  trips.push({ id:'trip-'+Date.now(), dates, label, aidanDays, amandaDays });
+  const sortDate   = parseSortDate(dates);
+  trips.push({ id:'trip-'+Date.now(), dates, label, aidanDays, amandaDays, sortDate });
   saveTrips();
   renderDates();
 }
