@@ -981,6 +981,16 @@ function initFirestore() {
       ref('trips').set({items: trips});
     } else {
       trips = snap.data().items || [];
+      // Back-fill sortDate for any trips loaded from Firebase that are missing it
+      let changed = false;
+      trips = trips.map(t => {
+        if (!t.sortDate) {
+          const seed = TRIPS_2026.find(s => s.label === t.label);
+          if (seed?.sortDate) { changed = true; return {...t, sortDate: seed.sortDate}; }
+        }
+        return t;
+      });
+      if (changed) ref('trips').set({items: trips});
     }
     if (isActive('dates')) renderDates();
     if (isActive('home'))  renderHome();
