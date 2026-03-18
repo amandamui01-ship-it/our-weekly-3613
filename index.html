@@ -262,6 +262,27 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .bsum-value{font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:700}
 .budget-owes-card{min-width:180px;text-align:center}
 
+/* ── Budget snapshot strip ── */
+.budget-snapshot{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.bsnap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 14px;box-shadow:var(--shadow);text-align:center}
+.bsnap-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:6px}
+.bsnap-val{font-family:'Playfair Display',Georgia,serif;font-size:24px;font-weight:700;line-height:1}
+.bsnap-sub{font-size:11px;color:var(--text-3);margin-top:4px}
+
+/* ── Budget trend bars ── */
+.budget-trend{display:flex;align-items:flex-end;gap:4px;height:72px}
+.btrend-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.btrend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .3s;background:var(--border);min-height:2px}
+.btrend-lbl{font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
+.btrend-col.active .btrend-bar{background:var(--amber)}
+.btrend-col.active .btrend-lbl{color:var(--amber)}
+
+/* ── Budget quick-add 2-row ── */
+.bqa-row1{display:grid;grid-template-columns:auto auto 1fr;gap:8px;margin-bottom:8px}
+.bqa-row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bqa-row2 .bq-amt{width:110px}
+.bqa-row2 .bq-date{flex:1;min-width:130px}
+
 .budget-cat-row{display:grid;grid-template-columns:110px 1fr 80px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light)}
 .budget-cat-row:last-child{border-bottom:none}
 .budget-cat-name{font-size:12px;font-weight:600;color:var(--text-2)}
@@ -305,6 +326,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .page{padding:20px 16px 40px}
   .trip-grid,.home-stats{grid-template-columns:1fr}
   .budget-top-row{grid-template-columns:1fr}
+  .budget-snapshot{grid-template-columns:1fr 1fr}
   .budget-summary-cards{grid-template-columns:1fr 1fr}
   .budget-tools-row{grid-template-columns:1fr!important}
   .welcome-banner{padding:24px 22px}
@@ -600,9 +622,19 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="budget-month-pills" id="budget-month-pills"></div>
   </div>
 
+  <!-- Snapshot strip -->
+  <div class="budget-snapshot" id="budget-snapshot"></div>
+
+  <!-- Monthly trend -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title" style="margin-bottom:12px">Monthly Spending</div>
+    <div class="budget-trend" id="budget-trend"></div>
+  </div>
+
   <!-- Quick-add form -->
   <div class="card budget-quickadd-card" style="margin-bottom:16px">
-    <div class="budget-quickadd">
+    <div class="card-title" style="margin-bottom:12px">+ Add Expense</div>
+    <div class="bqa-row1">
       <select id="b-person" class="bq-sel bq-person">
         <option value="Amanda">Amanda</option>
         <option value="Aidan">Aidan</option>
@@ -616,19 +648,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <option>Transportation</option><option>Travel</option><option>Utilities</option>
       </select>
       <input class="bq-input bq-desc" id="b-desc" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
+    </div>
+    <div class="bqa-row2">
       <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00" min="0" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
       <input type="date" class="bq-input bq-date" id="b-date">
-      <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50</label>
+      <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50 split</label>
       <button class="btn btn-primary bq-btn" onclick="addExpense()">+ Add</button>
-    </div>
-  </div>
-
-  <!-- Summary + owes -->
-  <div class="budget-top-row" style="margin-bottom:16px">
-    <div id="budget-summary" class="budget-summary-cards"></div>
-    <div class="card budget-owes-card" id="budget-owes-wrap">
-      <div class="card-title">Settlement</div>
-      <div id="budget-owes"></div>
     </div>
   </div>
 
@@ -681,9 +706,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div class="card-title" style="margin-bottom:0">Transactions</div>
-      <select id="b-filter-person" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
-        <option value="">Both</option><option>Amanda</option><option>Aidan</option>
-      </select>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:140px">
+        <select id="b-filter-person" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+          <option value="">Both</option><option>Amanda</option><option>Aidan</option>
+        </select>
+      </div>
     </div>
     <div id="budget-transactions"></div>
   </div>
@@ -940,6 +968,11 @@ function initFirestore() {
     newEntries = snap.data().items || [];
     if (isActive('history')) renderHistory();
     if (isActive('home'))    renderHome();
+  });
+
+  ref('budgetTargets').onSnapshot(snap => {
+    budgetTargets = snap.exists ? (snap.data().targets || {}) : {};
+    if (isActive('budget')) renderBudget();
   });
 
   ref('trips').onSnapshot(snap => {
@@ -1623,6 +1656,10 @@ function calcOwes(txList) {
 
 const MONTHS_LIST = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const CAT_COLORS = {Dining:'#d96a52',Groceries:'#5c7a62',Shopping:'#bf7c36',Entertainment:'#4472a8',Transportation:'#9b6fa8',Housing:'#6b5c47',Travel:'#3a9ea5',Utilities:'#e0a030',Pet:'#e07a5f',Subscriptions:'#81b29a',Insurance:'#b5838d',Savings:'#4a7c59',Investments:'#2d6a4f',Income:'#52b788',Misc:'#aaa'};
+const CAT_EMOJIS = {Dining:'🍽️',Groceries:'🛒',Shopping:'🛍️',Entertainment:'🎬',Transportation:'🚗',Housing:'🏠',Travel:'✈️',Utilities:'💡',Pet:'🐾',Subscriptions:'📱',Insurance:'🛡️',Savings:'🏦',Investments:'📈',Income:'💰',Misc:'📦'};
+
+let budgetTargets = {};
+function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}); }
 
 let _budgetMonth = new Date().toLocaleString('en-US',{month:'long'});
 
@@ -1644,33 +1681,43 @@ function renderBudget() {
   }
 
   const monthTx = expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
-  const filtered = filterPerson ? monthTx.filter(e => e.person === filterPerson) : monthTx;
+  const searchQ = (document.getElementById('b-search')?.value || '').toLowerCase();
+  const filtered = monthTx
+    .filter(e => filterPerson ? e.person === filterPerson : true)
+    .filter(e => searchQ ? (e.description.toLowerCase().includes(searchQ) || e.category.toLowerCase().includes(searchQ)) : true);
 
-  // Summary
+  // Snapshot strip
   const income    = monthTx.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
   const spending  = monthTx.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
   const saved     = monthTx.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
   const net_      = income - spending - saved;
-  document.getElementById('budget-summary').innerHTML = `
-    <div class="bsum-card"><div class="bsum-label">Income</div><div class="bsum-value" style="color:var(--sage)">${fmt(income)}</div></div>
-    <div class="bsum-card"><div class="bsum-label">Spending</div><div class="bsum-value" style="color:var(--coral)">${fmt(spending)}</div></div>
-    <div class="bsum-card"><div class="bsum-label">Saved</div><div class="bsum-value" style="color:var(--blue)">${fmt(saved)}</div></div>
-    <div class="bsum-card"><div class="bsum-label">Net</div><div class="bsum-value" style="color:${net_>=0?'var(--sage)':'var(--coral)'}">${net_<0?'−':''}${fmt(net_)}</div></div>`;
-
-  // Who owes whom
   const owes = calcOwes(monthTx);
   const diff = owes.Aidan - owes.Amanda;
-  const oweEl = document.getElementById('budget-owes');
-  if (Math.abs(diff) < 0.01) {
-    oweEl.innerHTML = `<div style="color:var(--sage);font-weight:700;padding:12px 0;font-size:14px">All square ✅</div>`;
-  } else {
-    const who = diff > 0 ? 'Amanda' : 'Aidan';
-    const whom = diff > 0 ? 'Aidan' : 'Amanda';
-    oweEl.innerHTML = `<div style="padding:8px 0">
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">${who} owes ${whom}</div>
-      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--amber)">${fmt(Math.abs(diff))}</div>
-    </div>`;
+  const settleStr = Math.abs(diff) < 0.01 ? 'All square ✅' : `${diff>0?'Amanda':'Aidan'} owes ${diff>0?'Aidan':'Amanda'} ${fmt(Math.abs(diff))}`;
+  const settleColor = Math.abs(diff) < 0.01 ? 'var(--sage)' : 'var(--amber)';
+  document.getElementById('budget-snapshot').innerHTML = `
+    <div class="bsnap"><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
+    <div class="bsnap"><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
+    <div class="bsnap"><div class="bsnap-label">Saved</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
+    <div class="bsnap"><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${Math.abs(diff)<0.01?'14':'18'}px">${settleStr}</div></div>`;
+
+  // Monthly trend bars
+  const yearTx = expenses.filter(e => e.date.startsWith(filterYear));
+  const monthlySpend = {};
+  for (const e of yearTx) {
+    if (EXPENSE_CATS_EXCL.has(e.category)) continue;
+    monthlySpend[e.month] = (monthlySpend[e.month]||0) + e.amount;
   }
+  const maxSpend = Math.max(...Object.values(monthlySpend), 1);
+  const trendMonths = MONTHS_LIST.filter(m => monthlySpend[m] !== undefined);
+  document.getElementById('budget-trend').innerHTML = trendMonths.length ? trendMonths.map(m => {
+    const pct = Math.round((monthlySpend[m]||0) / maxSpend * 100);
+    const isActive = m === filterMonth ? ' active' : '';
+    return `<div class="btrend-col${isActive}" onclick="setBudgetMonth('${m}')" title="${m}: ${fmt(monthlySpend[m]||0)}" style="cursor:pointer">
+      <div class="btrend-bar" style="height:${pct}%"></div>
+      <div class="btrend-lbl">${m.slice(0,3)}</div>
+    </div>`;
+  }).join('') : '<div style="color:var(--text-3);font-size:13px">No data yet.</div>';
 
   // Category breakdown (spending only, no Income/Savings/Investments)
   const catTotals = {};
@@ -1684,13 +1731,19 @@ function renderBudget() {
     const aidanAmt  = monthTx.filter(e=>e.person==='Aidan'&&e.category===cat).reduce((s,e)=>s+e.amount,0);
     const amandaAmt = monthTx.filter(e=>e.person==='Amanda'&&e.category===cat).reduce((s,e)=>s+e.amount,0);
     const color = CAT_COLORS[cat] || 'var(--amber)';
+    const emoji = CAT_EMOJIS[cat] || '📦';
+    const target = budgetTargets[cat] || 0;
+    const barPct = target > 0 ? Math.min(100, Math.round(total/target*100)) : Math.round(total/maxCat*100);
+    const barColor = target > 0 && total > target ? 'var(--coral)' : color;
+    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : `<span class="bcat-set-target" onclick="promptTarget('${cat}')" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
     return `<div class="budget-cat-row">
-      <div class="budget-cat-name">${cat}</div>
+      <div class="budget-cat-name">${emoji} ${cat}</div>
       <div class="budget-cat-bars">
-        <div class="budget-cat-bar-wrap"><div class="budget-cat-bar" style="width:${Math.round(total/maxCat*100)}%;background:${color}"></div></div>
-        <div style="display:flex;gap:8px;margin-top:2px">
-          <span style="font-size:10px;color:var(--blue)">A: ${fmt(aidanAmt)}</span>
-          <span style="font-size:10px;color:var(--coral)">A: ${fmt(amandaAmt)}</span>
+        <div class="budget-cat-bar-wrap"><div class="budget-cat-bar" style="width:${barPct}%;background:${barColor}"></div></div>
+        <div style="display:flex;gap:8px;margin-top:2px;align-items:center">
+          <span style="font-size:10px;color:var(--blue)">Aidan: ${fmt(aidanAmt)}</span>
+          <span style="font-size:10px;color:var(--coral)">Amanda: ${fmt(amandaAmt)}</span>
+          ${targetStr}
         </div>
       </div>
       <div class="budget-cat-amt">${fmt(total)}</div>
@@ -1725,6 +1778,17 @@ function renderBudget() {
 
 function setBudgetMonth(m) {
   _budgetMonth = m;
+  renderBudget();
+}
+
+function promptTarget(cat) {
+  const cur = budgetTargets[cat] || '';
+  const val = prompt(`Monthly budget target for ${cat}:`, cur);
+  if (val === null) return;
+  const n = parseFloat(val);
+  if (!isNaN(n) && n > 0) budgetTargets[cat] = n;
+  else delete budgetTargets[cat];
+  saveBudgetTargets();
   renderBudget();
 }
 
