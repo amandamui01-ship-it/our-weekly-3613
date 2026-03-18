@@ -980,8 +980,8 @@ function initFirestore() {
       ref('trips').set({items: trips});
     } else {
       trips = snap.data().items || [];
-      // Back-fill sortDate for any trips loaded from Firebase that are missing it
       let changed = false;
+      // Back-fill sortDate for any trips missing it
       trips = trips.map(t => {
         if (!t.sortDate) {
           const seed = TRIPS_2026.find(s => s.label === t.label);
@@ -989,6 +989,13 @@ function initFirestore() {
         }
         return t;
       });
+      // Add any TRIPS_2026 entries not yet in Firebase (e.g. newly added seed trips)
+      for (const seed of TRIPS_2026) {
+        if (!trips.some(t => t.label === seed.label)) {
+          trips.push({...seed, id: 'trip-seed-' + seed.label.replace(/\W+/g,'')});
+          changed = true;
+        }
+      }
       if (changed) ref('trips').set({items: trips});
     }
     if (isActive('dates')) renderDates();
