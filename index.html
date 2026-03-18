@@ -113,8 +113,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .todo-items{display:flex;flex-direction:column;gap:6px}
 .todo-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:9px;transition:all .15s}
 .todo-item:hover{border-color:var(--border)}
-.todo-item.done{opacity:.5}
-.todo-item.done .todo-text{text-decoration:line-through;color:var(--text-3)}
+.todo-item.done{opacity:.5;transition:opacity .4s .2s}
+.todo-item.done .todo-text{text-decoration:line-through;color:var(--text-3);transition:color .3s}
 .todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;background:white;font-size:11px;font-weight:700;color:white}
 .todo-item.done .todo-cb{background:var(--sage);border-color:var(--sage)}
 .todo-text{font-size:13px;color:var(--text);flex:1}
@@ -1256,7 +1256,19 @@ function renderTodoItem(t) {
 
 function toggleTodo(id) {
   const t = todos.find(x => x.id === id);
-  if (t) { t.done = !t.done; saveTodos(); renderTodos(); }
+  if (!t) return;
+  if (!t.done) {
+    // Show strikethrough in place first, then move to completed after a beat
+    const el = document.getElementById('todo-' + id);
+    if (el) {
+      el.classList.add('done');
+      setTimeout(() => { t.done = true; saveTodos(); renderTodos(); }, 700);
+    } else {
+      t.done = true; saveTodos(); renderTodos();
+    }
+  } else {
+    t.done = false; saveTodos(); renderTodos();
+  }
 }
 
 function deleteTodo(id) {
