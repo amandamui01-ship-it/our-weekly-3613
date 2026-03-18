@@ -983,6 +983,7 @@ function initFirestore() {
       trips = snap.data().items || [];
     }
     if (isActive('dates')) renderDates();
+    if (isActive('home'))  renderHome();
   });
 
   ref('logistics').onSnapshot(snap => {
