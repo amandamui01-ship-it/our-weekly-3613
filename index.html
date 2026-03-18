@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>our weekly ♥</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='black' d='M20,35 A15,15,0,0,0,50,35 A15,15,0,0,0,80,35 Q80,57,50,80 Q20,57,20,35 Z'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -1153,18 +1153,29 @@ function saveEntry() {
 
 // ─── TO-DOS ──────────────────────────────────────────────────────────────────
 function renderTodos() {
-  document.getElementById('todos-container').innerHTML = TODO_CATEGORIES.map(cat => {
-    const items = todos.filter(t => t.cat === cat.id);
+  const activeHtml = TODO_CATEGORIES.map(cat => {
+    const items = todos.filter(t => t.cat === cat.id && !t.done);
     return `
       <div class="card todo-category">
         <div class="todo-cat-title">${cat.label}</div>
-        <div class="todo-items">${items.map(renderTodoItem).join('')}</div>
+        <div class="todo-items">${items.length ? items.map(renderTodoItem).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">Nothing here yet!</div>'}</div>
         <div class="add-todo">
           <input type="text" placeholder="Add item..." id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')">
           <button onclick="addTodo('${cat.id}')">+ Add</button>
         </div>
       </div>`;
   }).join('');
+
+  const done = todos.filter(t => t.done);
+  const doneHtml = done.length ? `
+    <div class="card todo-category">
+      <div class="todo-cat-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'" style="cursor:pointer">
+        ✅ Completed (${done.length}) <span style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px">tap to toggle</span>
+      </div>
+      <div class="todo-items">${done.map(renderTodoItem).join('')}</div>
+    </div>` : '';
+
+  document.getElementById('todos-container').innerHTML = activeHtml + doneHtml;
 }
 
 function renderTodoItem(t) {
