@@ -154,6 +154,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-card:hover .trip-del{opacity:.45}
 .trip-del:hover{opacity:1!important;color:var(--coral)}
 .add-trip-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border);grid-column:1/-1}
+.pto-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.pto-inputs{display:flex;gap:6px;flex-wrap:wrap}
+.pto-inputs input{flex:1;min-width:80px;font-size:12px;padding:6px 8px}
+@media(max-width:500px){.pto-grid{grid-template-columns:1fr}.trip-grid{grid-template-columns:1fr}}
 .add-trip-form input{padding:9px 12px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
 .add-trip-form input:focus{border-color:var(--amber);border-style:solid}
 .list-item .list-del{margin-left:auto;font-size:17px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;padding:0 2px;line-height:1;flex-shrink:0}
@@ -1290,18 +1294,18 @@ function renderDates() {
       <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div style="background:var(--blue-bg);border-radius:9px;padding:10px 12px">
           <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:6px">Aidan PTO</div>
-          <div style="display:flex;gap:6px">
-            <input type="number" id="new-trip-aidan-vac"  placeholder="🏖️ Vacation" min="0" step="0.5" class="bq-input" style="flex:1;font-size:12px;padding:6px 8px">
-            <input type="number" id="new-trip-aidan-wfh"  placeholder="🏠 WFH"      min="0" step="0.5" class="bq-input" style="flex:1;font-size:12px;padding:6px 8px">
-            <input type="number" id="new-trip-aidan-per"  placeholder="👤 Personal"  min="0" step="0.5" class="bq-input" style="flex:1;font-size:12px;padding:6px 8px">
+          <div class="pto-inputs">
+            <input type="number" id="new-trip-aidan-vac"  placeholder="🏖️ Vacation" min="0" step="0.5" class="bq-input">
+            <input type="number" id="new-trip-aidan-wfh"  placeholder="🏠 WFH"      min="0" step="0.5" class="bq-input">
+            <input type="number" id="new-trip-aidan-per"  placeholder="👤 Personal"  min="0" step="0.5" class="bq-input">
           </div>
         </div>
         <div style="background:var(--coral-bg);border-radius:9px;padding:10px 12px">
           <div style="font-size:11px;font-weight:700;color:var(--coral);margin-bottom:6px">Amanda PTO</div>
-          <div style="display:flex;gap:6px">
-            <input type="number" id="new-trip-amanda-vac" placeholder="🏖️ Vacation" min="0" step="0.5" class="bq-input" style="flex:1;font-size:12px;padding:6px 8px">
-            <input type="number" id="new-trip-amanda-wfh" placeholder="🏠 WFH"      min="0" step="0.5" class="bq-input" style="flex:1;font-size:12px;padding:6px 8px">
-            <input type="number" id="new-trip-amanda-per" placeholder="👤 Personal"  min="0" step="0.5" class="bq-input" style="flex:1;font-size:12px;padding:6px 8px">
+          <div class="pto-inputs">
+            <input type="number" id="new-trip-amanda-vac" placeholder="🏖️ Vacation" min="0" step="0.5" class="bq-input">
+            <input type="number" id="new-trip-amanda-wfh" placeholder="🏠 WFH"      min="0" step="0.5" class="bq-input">
+            <input type="number" id="new-trip-amanda-per" placeholder="👤 Personal"  min="0" step="0.5" class="bq-input">
           </div>
         </div>
       </div>
@@ -1338,7 +1342,7 @@ function renderDates() {
   const mW = trips.reduce((s,t) => s+(t.amandaWfh||0), 0);
   const mP = trips.reduce((s,t) => s+(t.amandaPersonal||0), 0);
   document.getElementById('vaca-tracker').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="pto-grid">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">Aidan</div>
         ${ptoBar('🏖️ Vacation', aV, 26, 'var(--blue)')}
