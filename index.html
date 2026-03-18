@@ -1272,8 +1272,9 @@ function addTodo(cat) {
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
   const isPast = t => t.sortDate && new Date(t.sortDate + 'T00:00:00') < today;
-  const upcoming = trips.filter(t => !isPast(t));
-  const past     = trips.filter(t =>  isPast(t));
+  const sortByDate = (a, b) => (a.sortDate || '9999').localeCompare(b.sortDate || '9999');
+  const upcoming = trips.filter(t => !isPast(t)).sort(sortByDate);
+  const past     = trips.filter(t =>  isPast(t)).sort(sortByDate);
 
   const tripCardHtml = (t, done) => `
     <div class="trip-card${done ? ' past' : ''}">
