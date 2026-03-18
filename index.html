@@ -131,6 +131,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
 .trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .trip-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--amber)}
+.trip-card.past{opacity:.55}
+.trip-card.past::before{background:var(--sage)}
 .trip-dates{font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .trip-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3}
 .trip-days{font-size:11px;color:var(--text-3)}
@@ -1052,7 +1054,7 @@ function renderHome() {
   }
 
   const _today = new Date(); _today.setHours(0,0,0,0);
-  const _upcoming = TRIPS_2026.filter(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
+  const _upcoming = trips.filter(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
   document.getElementById('home-trips').innerHTML = _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f4ede3">
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:100px;flex-shrink:0">${t.dates}</div>
@@ -1207,13 +1209,19 @@ function addTodo(cat) {
 
 // ─── DATES ───────────────────────────────────────────────────────────────────
 function renderDates() {
-  document.getElementById('trip-grid').innerHTML = trips.map(t => `
-    <div class="trip-card">
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isPast = t => t.sortDate && new Date(t.sortDate + 'T00:00:00') < today;
+  const upcoming = trips.filter(t => !isPast(t));
+  const past     = trips.filter(t =>  isPast(t));
+
+  const tripCardHtml = (t, done) => `
+    <div class="trip-card${done ? ' past' : ''}">
       <button class="trip-del" onclick="deleteTrip('${t.id}')">×</button>
       <div class="trip-dates">${escHtml(t.dates)}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
-    </div>
-  `).join('') + `
+    </div>`;
+
+  document.getElementById('trip-grid').innerHTML = upcoming.map(t => tripCardHtml(t, false)).join('') + `
     <div class="add-trip-form">
       <input type="text" id="new-trip-dates"  placeholder="Dates (e.g. Jun 5–7)">
       <input type="text" id="new-trip-name"   placeholder="Trip or event name">
@@ -1222,6 +1230,15 @@ function renderDates() {
       <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
     </div>`;
 
+  if (past.length) {
+    document.getElementById('trip-grid').innerHTML += `
+      <div style="grid-column:1/-1;margin-top:8px">
+        <div class="todo-cat-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'" style="cursor:pointer;margin-bottom:10px">
+          ✅ Past Adventures (${past.length}) <span style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px">tap to toggle</span>
+        </div>
+        <div class="trip-grid" style="margin-bottom:0">${past.map(t => tripCardHtml(t, true)).join('')}</div>
+      </div>`;
+  }
 
   const aidanUsed   = trips.reduce((s,t) => s+(t.aidanDays||0), 0);
   const amandaUsed  = trips.reduce((s,t) => s+(t.amandaDays||0), 0);
@@ -1549,7 +1566,7 @@ function burst() {
 // ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
 function renderNextTrip() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const next = TRIPS_2026.find(t => t.sortDate && !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= today);
+  const next = trips.find(t => t.sortDate && !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= today);
   const card = document.getElementById('next-trip-card');
   if (!next) { card.style.display = 'none'; return; }
   card.style.display = '';
