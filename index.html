@@ -219,6 +219,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-chip.gym.on {background:var(--sage);color:white;border-color:var(--sage)}
 .plan-slot-chip.date   {background:var(--coral-bg);color:var(--coral);border-color:#f0c4ba}
 .plan-slot-chip.date.on{background:var(--coral);color:white;border-color:var(--coral)}
+.plan-slot-chip.friends    {background:var(--blue-bg);color:var(--blue);border-color:#c5d8fc}
+.plan-slot-chip.friends.on {background:var(--blue);color:white;border-color:var(--blue)}
 .plan-slot-input{flex:1;border:none;background:transparent;font-size:13px;font-family:inherit;color:var(--text);outline:none;padding:0}
 .plan-slot-input::placeholder{color:var(--text-3)}
 
@@ -332,6 +334,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </button>
   </div>
 
+  <div class="card" id="next-trip-card" style="text-align:center;padding:24px 20px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
+    <div style="font-size:13px;color:var(--text-3);margin-bottom:14px" id="next-trip-name">—</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
+  </div>
+
   <div class="card japan-card">
     <div class="japan-card-label">✈️ Japan countdown</div>
     <div class="japan-card-sub">Oct 24, 2026 — Tokyo awaits</div>
@@ -370,8 +379,15 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <div class="card">
-    <div class="card-title">Coming Up ✈️</div>
+    <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️ ↗</div>
     <div id="home-trips"></div>
+  </div>
+
+  <div class="card" style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,#fff0f5 0%,#fff8f0 100%);border-color:#f5c6d0">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#e0607a;margin-bottom:4px">💕 Our Anniversary</div>
+    <div style="font-size:13px;color:var(--text-3);margin-bottom:14px">October 1st</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:#e0607a;line-height:1" id="anniv-days">—</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
   </div>
 </div>
 
@@ -385,8 +401,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="step-dot" id="dot-1"></div>
     <div class="step-dot" id="dot-2"></div>
     <div class="step-dot" id="dot-3"></div>
-    <div class="step-dot" id="dot-4"></div>
-    <span class="step-label" id="step-label-text">Step 1 of 5</span>
+    <span class="step-label" id="step-label-text">Step 1 of 4</span>
   </div>
 
   <div class="card">
@@ -408,30 +423,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <textarea id="r-adjust" placeholder="What would you do differently?"></textarea>
       </div>
       <div class="step-nav">
-        <button class="btn btn-primary" onclick="nextStep(1)">Next → Budget 💰</button>
+        <button class="btn btn-primary" onclick="nextStep(1)">Next → Logistics 🏠</button>
       </div>
     </div>
 
-    <!-- Step 2: Budget -->
+    <!-- Step 2: Logistics -->
     <div class="step-page" id="step-1">
-      <div class="step-title">💰 Budget & Finances</div>
-      <div class="step-sub">Quick money check-in — no spreadsheets required.</div>
-      <div class="field">
-        <label>Any big purchases or financial moves this week?</label>
-        <textarea id="r-budget" placeholder="Spendy moments, unexpected costs, good deals..."></textarea>
-      </div>
-      <div class="field">
-        <label>Savings & goals progress</label>
-        <textarea id="r-savings" placeholder="Japan fund? Car situation? Any wins?"></textarea>
-      </div>
-      <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
-        <button class="btn btn-primary" onclick="nextStep(2)">Next → Logistics 🏠</button>
-      </div>
-    </div>
-
-    <!-- Step 3: Logistics -->
-    <div class="step-page" id="step-2">
       <div class="step-title">🏠 Logistics & Household</div>
       <div class="step-sub">Keep the house (and life) running smoothly.</div>
       <div class="field">
@@ -443,13 +440,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <textarea id="r-appts" placeholder="Haircuts, vet, car stuff, doctor..."></textarea>
       </div>
       <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
-        <button class="btn btn-primary" onclick="nextStep(3)">Next → Calendar 📅</button>
+        <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(2)">Next → Calendar 📅</button>
       </div>
     </div>
 
-    <!-- Step 4: Calendar -->
-    <div class="step-page" id="step-3">
+    <!-- Step 3: Calendar -->
+    <div class="step-page" id="step-2">
       <div class="step-title">📅 Upcoming Week</div>
       <div class="step-sub">What's on deck? Scan the calendar and set a vibe.</div>
       <div class="field">
@@ -471,13 +468,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <input type="text" id="r-theme" placeholder="Or type your own theme...">
       </div>
       <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
-        <button class="btn btn-primary" onclick="nextStep(4)">Next → Us ❤️</button>
+        <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="nextStep(3)">Next → Us ❤️</button>
       </div>
     </div>
 
-    <!-- Step 5: Us -->
-    <div class="step-page" id="step-4">
+    <!-- Step 4: Us -->
+    <div class="step-page" id="step-3">
       <div class="step-title">❤️ Us Check-in</div>
       <div class="step-sub">The most important part. How are we doing?</div>
       <div class="field">
@@ -503,7 +500,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <textarea id="r-misc" placeholder="Wild cards, funny moments, things to look back on..."></textarea>
       </div>
       <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(3)">← Back</button>
+        <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
         <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
       </div>
     </div>
@@ -849,21 +846,21 @@ const SEED_ENTRIES = [
 ];
 
 const TRIPS_2026 = [
-  { dates:"Apr 3–6",       label:"Erica & Kevin Engagement Party 💍", aidanDays:1,   amandaDays:1   },
-  { dates:"Apr 9–12",      label:"Ben's Bachelor Party 🍺",           aidanDays:1,   amandaDays:0   },
-  { dates:"Apr 18–19",     label:"Cindy Visiting 🏠",                  aidanDays:0,   amandaDays:0   },
-  { dates:"May 2",         label:"Trout Fishing Weekend 🎣",           aidanDays:0,   amandaDays:0   },
-  { dates:"Early May",     label:"Aidan's Parents Visiting 👨‍👩‍👧",        aidanDays:0,   amandaDays:0   },
-  { dates:"May 20",        label:"Lauv in Chicago 🎵",                 aidanDays:0,   amandaDays:0   },
-  { dates:"Jun 5–7",       label:"Kohler-Andre State Park 🏕️",        aidanDays:0,   amandaDays:0   },
-  { dates:"Jun 20",        label:"Ben's Wedding 🎊",                   aidanDays:1.5, amandaDays:1.5 },
-  { dates:"Jun 27",        label:"Ed Sheeran in Chicago 🎶",           aidanDays:0,   amandaDays:0   },
-  { dates:"Jul 25",        label:"Camping with Corey + Co 🏕️",        aidanDays:0,   amandaDays:0   },
-  { dates:"Jul 30 – Aug 2",label:"Lollapalooza 🎸",                    aidanDays:0,   amandaDays:0   },
-  { dates:"Aug 21–23",     label:"Peninsula State Park Camping 🌲",    aidanDays:0.5, amandaDays:0.5 },
-  { dates:"Aug 29",        label:"Patrick's Wedding 💒",               aidanDays:0,   amandaDays:0   },
-  { dates:"Oct 24 – Nov 8",label:"JAPAN 🗾✨",                         aidanDays:5,   amandaDays:15  },
-  { dates:"Late Dec",      label:"Christmas in Missoula 🎄",           aidanDays:3,   amandaDays:3   },
+  { dates:"Apr 3–6",       sortDate:"2026-04-03", label:"Erica & Kevin Engagement Party 💍", aidanDays:1,   amandaDays:1   },
+  { dates:"Apr 9–12",      sortDate:"2026-04-09", label:"Ben's Bachelor Party 🍺",           aidanDays:1,   amandaDays:0   },
+  { dates:"Apr 18–19",     sortDate:"2026-04-18", label:"Cindy Visiting 🏠",                  aidanDays:0,   amandaDays:0   },
+  { dates:"May 2",         sortDate:"2026-05-02", label:"Trout Fishing Weekend 🎣",           aidanDays:0,   amandaDays:0   },
+  { dates:"Early May",     sortDate:"2026-05-08", label:"Aidan's Parents Visiting 👨‍👩‍👧",        aidanDays:0,   amandaDays:0   },
+  { dates:"May 20",        sortDate:"2026-05-20", label:"Lauv in Chicago 🎵",                 aidanDays:0,   amandaDays:0   },
+  { dates:"Jun 5–7",       sortDate:"2026-06-05", label:"Kohler-Andre State Park 🏕️",        aidanDays:0,   amandaDays:0   },
+  { dates:"Jun 20",        sortDate:"2026-06-20", label:"Ben's Wedding 🎊",                   aidanDays:1.5, amandaDays:1.5 },
+  { dates:"Jun 27",        sortDate:"2026-06-27", label:"Ed Sheeran in Chicago 🎶",           aidanDays:0,   amandaDays:0   },
+  { dates:"Jul 25",        sortDate:"2026-07-25", label:"Camping with Corey + Co 🏕️",        aidanDays:0,   amandaDays:0   },
+  { dates:"Jul 30 – Aug 2",sortDate:"2026-07-30", label:"Lollapalooza 🎸",                    aidanDays:0,   amandaDays:0   },
+  { dates:"Aug 21–23",     sortDate:"2026-08-21", label:"Peninsula State Park Camping 🌲",    aidanDays:0.5, amandaDays:0.5 },
+  { dates:"Aug 29",        sortDate:"2026-08-29", label:"Patrick's Wedding 💒",               aidanDays:0,   amandaDays:0   },
+  { dates:"Oct 24 – Nov 8",sortDate:"2026-10-24", label:"JAPAN 🗾✨",                         aidanDays:5,   amandaDays:15  },
+  { dates:"Late Dec",      sortDate:"2026-12-22", label:"Christmas in Missoula 🎄",           aidanDays:3,   amandaDays:3   },
 ];
 
 const LOGISTICS_LIST = [
@@ -1054,12 +1051,16 @@ function renderHome() {
     document.getElementById('stat-last-entry').textContent = '—';
   }
 
-  document.getElementById('home-trips').innerHTML = TRIPS_2026.map(t => `
+  const _today = new Date(); _today.setHours(0,0,0,0);
+  const _upcoming = TRIPS_2026.filter(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
+  document.getElementById('home-trips').innerHTML = _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f4ede3">
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:100px;flex-shrink:0">${t.dates}</div>
       <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
     </div>
-  `).join('');
+  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:10px">See all dates ↗</div>`;
+  renderNextTrip();
+  renderAnniversary();
 }
 
 // ─── COFFEE ROULETTE ─────────────────────────────────────────────────────────
@@ -1099,13 +1100,13 @@ function nextStep(n) {
   document.getElementById('step-' + currentStep).classList.remove('active');
   currentStep = n;
   document.getElementById('step-' + n).classList.add('active');
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const dot = document.getElementById('dot-' + i);
     dot.classList.remove('active','done');
     if (i < n)  dot.classList.add('done');
     if (i === n) dot.classList.add('active');
   }
-  document.getElementById('step-label-text').textContent = `Step ${n+1} of 5`;
+  document.getElementById('step-label-text').textContent = `Step ${n+1} of 4`;
   window.scrollTo(0, 0);
 }
 
@@ -1305,14 +1306,16 @@ function renderPlan() {
   // Schedule
   document.getElementById('plan-week').innerHTML = PLAN_DAYS.map(({key, label}) => {
     const d = p[key] || {};
-    const gymOn  = d.gym  ? 'on' : '';
-    const dateOn = d.date ? 'on' : '';
+    const gymOn     = d.gym     ? 'on' : '';
+    const dateOn    = d.date    ? 'on' : '';
+    const friendsOn = d.friends ? 'on' : '';
     return `<div class="plan-day">
       <div class="plan-day-label">${label}</div>
       <div class="plan-day-slots">
         <div class="plan-slot">
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
-          <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Date night">❤️ Date</span>
+          <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
+          <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
           <input class="plan-slot-input" placeholder="Plans, notes..." value="${escHtml(d.notes||'')}"
             oninput="updateDayNotes('${key}', this.value)">
         </div>
@@ -1530,6 +1533,27 @@ function burst() {
     wrap.appendChild(dot);
   }
   setTimeout(() => wrap.innerHTML = '', 1600);
+}
+
+// ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
+function renderNextTrip() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const next = TRIPS_2026.find(t => t.sortDate && !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= today);
+  const card = document.getElementById('next-trip-card');
+  if (!next) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('next-trip-name').textContent = `${next.dates} — ${next.label}`;
+  const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
+  document.getElementById('next-trip-days').textContent = days || 'Today!';
+}
+
+// ─── ANNIVERSARY COUNTDOWN ────────────────────────────────────────────────────
+function renderAnniversary() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  let anniv = new Date(today.getFullYear(), 9, 1); // Oct 1
+  if (anniv < today) anniv = new Date(today.getFullYear() + 1, 9, 1);
+  const days = Math.ceil((anniv - today) / 864e5);
+  document.getElementById('anniv-days').textContent = days || '🎉 Today!';
 }
 
 // ─── JAPAN COUNTDOWN ─────────────────────────────────────────────────────────
