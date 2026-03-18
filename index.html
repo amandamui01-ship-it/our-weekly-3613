@@ -1609,8 +1609,8 @@ function editTripInline(id) {
       <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)">
       <input id="tedit-name-${id}"  value="${escHtml(t.label)}"  placeholder="Trip name">
       <div class="trip-edit-actions">
-        <button class="trip-edit-save"   onclick="saveTripEdit('${id}')">Save</button>
-        <button class="trip-edit-cancel" onclick="renderDates()">Cancel</button>
+        <button class="trip-edit-save"   onclick="saveTripEdit('${id}');event.stopPropagation()">Save</button>
+        <button class="trip-edit-cancel" onclick="renderDates();event.stopPropagation()">Cancel</button>
       </div>
     </div>`;
   document.getElementById('tedit-name-' + id).focus();
