@@ -1463,6 +1463,35 @@ document.addEventListener('input', e => {
   }
 });
 
+const TRIP_EMOJIS = [
+  [/\bjapan\b/i,           '🗾'],
+  [/\bcamping|camp\b/i,    '🏕️'],
+  [/\bwedding\b/i,         '💒'],
+  [/\bbachelor\b/i,        '🍺'],
+  [/\bbachelorette\b/i,    '👯'],
+  [/\bengagement\b/i,      '💍'],
+  [/\bconcert|music|lollapalooza\b/i, '🎵'],
+  [/\bchicago\b/i,         '🌆'],
+  [/\bfishing\b/i,         '🎣'],
+  [/\bski|skiing|snowboard\b/i, '⛷️'],
+  [/\bbeach\b/i,           '🏖️'],
+  [/\bhike|hiking\b/i,     '🥾'],
+  [/\bchristmas|holiday\b/i, '🎄'],
+  [/\bbirthday\b/i,        '🎂'],
+  [/\bvisiting|visit\b/i,  '🏠'],
+  [/\bparents|family\b/i,  '👨‍👩‍👧'],
+  [/\btrip|travel|flight\b/i, '✈️'],
+  [/\bspa\b/i,             '💆'],
+  [/\bstate park|park\b/i, '🌲'],
+];
+
+function tripEmoji(label) {
+  for (const [re, emoji] of TRIP_EMOJIS) {
+    if (re.test(label)) return emoji;
+  }
+  return '✨';
+}
+
 function parseSortDate(dateStr) {
   if (!dateStr) return null;
   const first = dateStr.replace(/[–—\-].*/, '').trim();
@@ -1477,8 +1506,9 @@ function addTrip() {
   if (!label) return;
   const aidanDays  = parseFloat(document.getElementById('new-trip-aidan').value)  || 0;
   const amandaDays = parseFloat(document.getElementById('new-trip-amanda').value) || 0;
-  const sortDate   = parseSortDate(dates);
-  trips.push({ id:'trip-'+Date.now(), dates, label, aidanDays, amandaDays, sortDate });
+  const sortDate    = parseSortDate(dates);
+  const labelWithEmoji = `${tripEmoji(label)} ${label}`;
+  trips.push({ id:'trip-'+Date.now(), dates, label: labelWithEmoji, aidanDays, amandaDays, sortDate });
   saveTrips();
   renderDates();
 }
