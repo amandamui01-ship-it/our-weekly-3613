@@ -120,6 +120,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .todo-text{font-size:13px;color:var(--text);flex:1}
 .todo-del{font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;padding:0 2px;line-height:1}
 .todo-item:hover .todo-del{opacity:.4}
+.todo-edit{font-size:13px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;padding:0 2px;line-height:1;flex-shrink:0;font-family:inherit}
+.todo-item:hover .todo-edit{opacity:.4}
+.todo-edit:hover{opacity:1!important;color:var(--amber)}
+.todo-edit-input{flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0}
 .todo-del:hover{opacity:1!important;color:var(--coral)}
 .add-todo{display:flex;gap:8px;margin-top:10px}
 .add-todo input{flex:1;padding:9px 13px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
@@ -153,6 +157,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-card .trip-del{position:absolute;top:8px;right:10px;font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;line-height:1;padding:2px 4px}
 .trip-card:hover .trip-del{opacity:.45}
 .trip-del:hover{opacity:1!important;color:var(--coral)}
+.trip-card .trip-edit-btn{position:absolute;top:8px;left:10px;font-size:13px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;line-height:1;padding:2px 4px}
+.trip-card:hover .trip-edit-btn{opacity:.45}
+.trip-edit-btn:hover{opacity:1!important;color:var(--amber)}
+.trip-edit-form{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.trip-edit-form input{border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:var(--text);outline:none;padding:2px 0;text-align:center;width:100%}
+.trip-edit-actions{display:flex;gap:6px;justify-content:center;margin-top:4px}
+.trip-edit-save{font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;border:none;background:var(--amber);color:white;cursor:pointer;font-family:inherit}
+.trip-edit-cancel{font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-3);cursor:pointer;font-family:inherit}
 .add-trip-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border);grid-column:1/-1}
 .pto-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .pto-inputs{display:flex;gap:6px;flex-wrap:wrap}
@@ -1251,6 +1263,7 @@ function renderTodoItem(t) {
     <div class="todo-item${t.done?' done':''}" id="todo-${t.id}">
       <div class="todo-cb" onclick="toggleTodo('${t.id}')">${t.done ? '✓' : ''}</div>
       <span class="todo-text">${escHtml(t.text)}</span>
+      <button class="todo-edit" onclick="editTodo('${t.id}')">✏️</button>
       <span class="todo-del" onclick="deleteTodo('${t.id}')">×</span>
     </div>`;
 }
@@ -1270,6 +1283,21 @@ function toggleTodo(id) {
   } else {
     t.done = false; saveTodos(); renderTodos();
   }
+}
+
+function editTodo(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  const el = document.querySelector(`#todo-${id} .todo-text`);
+  if (!el) return;
+  const input = document.createElement('input');
+  input.className = 'todo-edit-input';
+  input.value = t.text;
+  el.replaceWith(input);
+  input.focus(); input.select();
+  const save = () => { const v = input.value.trim(); if (v && v !== t.text) { t.text = v; saveTodos(); } renderTodos(); };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderTodos(); });
 }
 
 function deleteTodo(id) {
@@ -1294,7 +1322,8 @@ function renderDates() {
   const past     = trips.filter(t =>  isPast(t)).sort(sortByDate);
 
   const tripCardHtml = (t, done) => `
-    <div class="trip-card${done ? ' past' : ''}">
+    <div class="trip-card${done ? ' past' : ''}" data-id="${t.id}">
+      <button class="trip-edit-btn" onclick="editTripInline('${t.id}')">✏️</button>
       <button class="trip-del" onclick="deleteTrip('${t.id}')">×</button>
       <div class="trip-dates">${escHtml(t.dates)}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
@@ -1576,6 +1605,35 @@ function deleteTrip(id) {
   trips = trips.filter(t => t.id !== id);
   saveTrips();
   renderDates();
+}
+
+function editTripInline(id) {
+  const t = trips.find(x => x.id === id);
+  if (!t) return;
+  const card = document.querySelector(`.trip-card[data-id="${id}"]`);
+  if (!card) return;
+  card.innerHTML = `
+    <div class="trip-edit-form">
+      <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)">
+      <input id="tedit-name-${id}"  value="${escHtml(t.label)}"  placeholder="Trip name">
+      <div class="trip-edit-actions">
+        <button class="trip-edit-save"   onclick="saveTripEdit('${id}')">Save</button>
+        <button class="trip-edit-cancel" onclick="renderDates()">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById('tedit-name-' + id).focus();
+}
+
+function saveTripEdit(id) {
+  const t = trips.find(x => x.id === id);
+  if (!t) return;
+  const dates = document.getElementById('tedit-dates-' + id)?.value.trim();
+  const label = document.getElementById('tedit-name-'  + id)?.value.trim();
+  if (!label) return;
+  t.dates = dates || t.dates;
+  t.label = label;
+  if (dates) t.sortDate = parseSortDate(dates) || t.sortDate;
+  saveTrips(); renderDates();
 }
 
 function addListItem(type) {
