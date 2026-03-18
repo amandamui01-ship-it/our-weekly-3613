@@ -1972,12 +1972,12 @@ function renderBudget() {
       Object.entries(byDate).map(([date, txs]) => `
         <div class="budget-tx-group">
           <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
-          ${txs.map(e=>`<div class="budget-tx">
+          ${txs.map(e=>`<div class="budget-tx" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
             <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
             <div class="budget-tx-info"><span class="budget-tx-desc">${escHtml(e.description)||'—'}</span><span class="budget-tx-cat">${e.category}</span></div>
             <span class="budget-tx-shared">${e.shared?'50/50':''}</span>
             <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
-            <button class="budget-tx-del" onclick="deleteExpense('${e.id}')">×</button>
+            <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
           </div>`).join('')}
         </div>`).join('') + `</div>`;
   }
@@ -2025,6 +2025,49 @@ function deleteExpense(id) {
   expenses = expenses.filter(e => e.id !== id);
   saveExpenses();
   renderBudget();
+}
+
+const EXPENSE_CATS_LIST = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
+
+function editExpense(id) {
+  const e = expenses.find(x => x.id === id);
+  if (!e) return;
+  const el = document.getElementById('tx-' + id);
+  if (!el) return;
+  el.style.cssText = 'grid-column:1/-1;display:block;padding:8px 4px;background:var(--surface-warm);border-radius:8px';
+  el.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      <select id="txe-person-${id}" class="bq-input" style="width:80px;font-size:12px;padding:4px 6px">
+        <option${e.person==='Amanda'?' selected':''}>Amanda</option>
+        <option${e.person==='Aidan'?' selected':''}>Aidan</option>
+      </select>
+      <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
+      <select id="txe-cat-${id}" class="bq-input" style="font-size:12px;padding:4px 6px">
+        ${EXPENSE_CATS_LIST.map(c=>`<option${c===e.category?' selected':''}>${c}</option>`).join('')}
+      </select>
+      <input id="txe-amt-${id}" type="number" value="${e.amount}" class="bq-input" style="width:80px;font-size:12px;padding:4px 8px">
+      <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="font-size:12px;padding:4px 8px">
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> 50/50</label>
+      <button class="trip-edit-save" onclick="saveExpenseEdit('${id}');event.stopPropagation()">Save</button>
+      <button class="trip-edit-cancel" onclick="renderBudget();event.stopPropagation()">Cancel</button>
+    </div>`;
+  document.getElementById('txe-desc-' + id).focus();
+}
+
+function saveExpenseEdit(id) {
+  const e = expenses.find(x => x.id === id);
+  if (!e) return;
+  const person  = document.getElementById('txe-person-' + id)?.value;
+  const desc    = document.getElementById('txe-desc-'   + id)?.value.trim();
+  const cat     = document.getElementById('txe-cat-'    + id)?.value;
+  const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value);
+  const date    = document.getElementById('txe-date-'   + id)?.value;
+  const shared  = document.getElementById('txe-shared-' + id)?.checked;
+  if (!desc || isNaN(amt)) return;
+  e.person = person; e.description = desc; e.category = cat;
+  e.amount = amt; e.date = date; e.shared = shared;
+  e.month = monthName(new Date(date + 'T12:00:00'));
+  saveExpenses(); renderBudget();
 }
 
 // ─── RECURRING & BULK ────────────────────────────────────────────────────────
