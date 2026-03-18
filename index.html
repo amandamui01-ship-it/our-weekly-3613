@@ -282,7 +282,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Budget trend bars ── */
 .budget-trend{display:flex;align-items:flex-end;gap:4px;height:72px}
-.btrend-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.btrend-col{display:flex;flex-direction:column-reverse;align-items:center;gap:3px;flex:1}
 .btrend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .3s;background:var(--border);min-height:2px}
 .btrend-lbl{font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
 .btrend-col.active .btrend-bar{background:var(--amber)}
@@ -1923,8 +1923,9 @@ function renderBudget() {
   document.getElementById('budget-trend').innerHTML = trendMonths.length ? trendMonths.map(m => {
     const pct = Math.round((monthlySpend[m]||0) / maxSpend * 100);
     const isActive = m === filterMonth ? ' active' : '';
+    const barPx = Math.max(2, Math.round(pct / 100 * 52));
     return `<div class="btrend-col${isActive}" onclick="setBudgetMonth('${m}')" title="${m}: ${fmt(monthlySpend[m]||0)}" style="cursor:pointer">
-      <div class="btrend-bar" style="height:${pct}%"></div>
+      <div class="btrend-bar" style="height:${barPx}px"></div>
       <div class="btrend-lbl">${m.slice(0,3)}</div>
     </div>`;
   }).join('') : '<div style="color:var(--text-3);font-size:13px">No data yet.</div>';
