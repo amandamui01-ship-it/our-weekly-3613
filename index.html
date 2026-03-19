@@ -861,7 +861,8 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 const auth = firebase.auth();
-const storage = firebase.storage();
+let storage = null;
+try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage unavailable:', e); }
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -1376,7 +1377,7 @@ function saveEntry() {
   saveEntries();
   // Handle optional photo upload
   const photoFile = document.getElementById('r-photo')?.files[0];
-  if (photoFile) {
+  if (photoFile && storage) {
     const photoRef = storage.ref('reviews/' + entry.id);
     photoRef.put(photoFile).then(s => s.ref.getDownloadURL()).then(url => {
       entry.photoUrl = url;
@@ -2134,6 +2135,7 @@ function goToPhoto(i) {
 
 async function uploadHomePhoto(file) {
   if (!file) return;
+  if (!storage) { showToast('Storage not available — check Firebase setup'); return; }
   showToast('Uploading... 📸');
   try {
     const id = 'photo-' + Date.now();
@@ -2152,7 +2154,7 @@ function deleteCurrentPhoto() {
   if (!photos.length) return;
   if (!confirm('Remove this photo?')) return;
   const p = photos[photoIdx];
-  storage.ref('photos/' + p.id).delete().catch(() => {});
+  if (storage) storage.ref('photos/' + p.id).delete().catch(() => {});
   photos.splice(photoIdx, 1);
   photoIdx = Math.max(0, photoIdx - 1);
   savePhotos();
