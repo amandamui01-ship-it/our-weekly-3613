@@ -143,6 +143,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--amber)}
 .trip-card.past{opacity:.55}
 .trip-card.past::before{background:var(--sage)}
+.trip-card.overlap{border-color:var(--coral);background:var(--coral-bg)}
+.trip-card.overlap::before{background:var(--coral)}
 .trip-dates{font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .trip-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3}
 .trip-days{font-size:11px;color:var(--text-3)}
@@ -583,7 +585,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="page-sub">All the good stuff to look forward to this year. 🎉</div>
 
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Trips & Events ✈️</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
+      <button class="btn btn-sm" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap">📅 Export to Calendar</button>
+    </div>
     <div class="trip-grid" id="trip-grid"></div>
   </div>
 
@@ -1357,10 +1362,28 @@ function renderDates() {
   const upcoming = trips.filter(t => !isPast(t)).sort(sortByDate);
   const past     = trips.filter(t =>  isPast(t)).sort(sortByDate);
 
+  // Compute overlapping trip IDs (check upcoming trips only)
+  const icsToIso = s => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+  const ranges = upcoming.filter(t => t.sortDate).map(t => ({
+    id: t.id,
+    start: t.sortDate,
+    endExcl: icsToIso(parseICSEndDate(t.dates, t.sortDate)),
+  }));
+  const overlapping = new Set();
+  for (let i = 0; i < ranges.length; i++) {
+    for (let j = i + 1; j < ranges.length; j++) {
+      const a = ranges[i], b = ranges[j];
+      if (a.start < b.endExcl && b.start < a.endExcl) {
+        overlapping.add(a.id);
+        overlapping.add(b.id);
+      }
+    }
+  }
+
   const tripCardHtml = (t, done) => `
-    <div class="trip-card${done ? ' past' : ''}" data-id="${t.id}" onclick="editTripInline('${t.id}')" style="cursor:pointer">
+    <div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}" data-id="${t.id}" onclick="editTripInline('${t.id}')" style="cursor:pointer">
       <button class="trip-del" onclick="deleteTrip('${t.id}');event.stopPropagation()">×</button>
-      <div class="trip-dates">${escHtml(t.dates)}</div>
+      <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
     </div>`;
 
@@ -1608,6 +1631,101 @@ function tripEmoji(label) {
   return '✨';
 }
 
+function parseICSEndDate(datesStr, sortDate) {
+  // ICS all-day DTEND is exclusive (day after last day)
+  const addOne = s => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().slice(0,10).replace(/-/g,''); };
+  if (!datesStr || !sortDate) return addOne(sortDate);
+  const year = parseInt(sortDate.slice(0, 4));
+  const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+  // Match end of range: "Apr 3–6", "Oct 24 – Nov 8", "Jul 30 – Aug 2"
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d+)/);
+  if (rangeMatch) {
+    const endDay = parseInt(rangeMatch[2]);
+    let endMonth;
+    if (rangeMatch[1]) {
+      endMonth = months[rangeMatch[1].toLowerCase().slice(0,3)];
+    } else {
+      const startMonthMatch = datesStr.match(/([A-Za-z]+)/);
+      if (startMonthMatch) endMonth = months[startMonthMatch[1].toLowerCase().slice(0,3)];
+    }
+    if (endMonth !== undefined && !isNaN(endDay)) {
+      // Handle year rollover (e.g. Dec end in Jan)
+      let endYear = year;
+      const startMonth = parseInt(sortDate.slice(5,7)) - 1;
+      if (endMonth < startMonth - 1) endYear++;
+      const d = new Date(endYear, endMonth, endDay + 1); // +1 exclusive
+      return d.toISOString().slice(0,10).replace(/-/g,'');
+    }
+  }
+  return addOne(sortDate);
+}
+
+function exportToCalendar() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isVague = t => !t.dates || !/^[A-Za-z]+\s+\d/.test(t.dates.trim()) || /^(early|late|mid|end of)/i.test(t.dates.trim());
+  const allUpcoming = trips.filter(t => t.sortDate && new Date(t.sortDate + 'T00:00:00') >= today);
+  const upcoming = allUpcoming.filter(t => !isVague(t)).sort((a,b) => a.sortDate.localeCompare(b.sortDate));
+  const skipped  = allUpcoming.filter(t =>  isVague(t));
+  if (!upcoming.length) { alert('No upcoming trips with specific dates to export!'); return; }
+  const esc = s => s.replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Our Weekly//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Our Weekly Dates',
+  ];
+  const prevMonday = dateStr => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const dow = date.getDay();
+    const daysBack = dow === 0 ? 6 : dow - 1;
+    date.setDate(date.getDate() - (daysBack === 0 ? 7 : daysBack));
+    return date.toISOString().slice(0, 10).replace(/-/g, '');
+  };
+  upcoming.forEach(t => {
+    // Main event
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:our-weekly-${t.id}@ourweekly`,
+      `DTSTART;VALUE=DATE:${t.sortDate.replace(/-/g,'')}`,
+      `DTEND;VALUE=DATE:${parseICSEndDate(t.dates, t.sortDate)}`,
+      `SUMMARY:${esc(t.label)}`,
+      'CLASS:PRIVATE',
+      'CATEGORIES:Our Weekly',
+      'END:VEVENT'
+    );
+    // Separate Monday reminder event
+    const monday = prevMonday(t.sortDate);
+    const mondayDate = new Date(parseInt(monday.slice(0,4)), parseInt(monday.slice(4,6)) - 1, parseInt(monday.slice(6,8)) + 1);
+    const nextDay = mondayDate.toISOString().slice(0,10).replace(/-/g,'');
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:our-weekly-reminder-${t.id}@ourweekly`,
+      `DTSTART;VALUE=DATE:${monday}`,
+      `DTEND;VALUE=DATE:${nextDay}`,
+      `SUMMARY:📅 This week: ${esc(t.label)} (${esc(t.dates)})`,
+      'CLASS:PRIVATE',
+      'TRANSP:TRANSPARENT',
+      'CATEGORIES:Our Weekly',
+      'END:VEVENT'
+    );
+  });
+  lines.push('END:VCALENDAR');
+  if (!confirm(`Export ${upcoming.length} events + ${upcoming.length} Monday reminders?\n\nTo avoid duplicates: in Outlook, filter your calendar by category "Our Weekly" and delete those events first, then open the new file.`)) return;
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'our-weekly-dates.ics'; a.click();
+  URL.revokeObjectURL(url);
+  if (skipped.length) {
+    showToast(`Exported ${upcoming.length} event${upcoming.length!==1?'s':''}. Skipped ${skipped.length} vague-date event${skipped.length!==1?'s':''} (${skipped.map(t=>t.label).join(', ')}).`);
+  } else {
+    showToast(`Exported ${upcoming.length} event${upcoming.length!==1?'s':''}.`);
+  }
+}
+
 function parseSortDate(dateStr) {
   if (!dateStr) return null;
   const first = dateStr.replace(/[–—\-].*/, '').trim();
@@ -1628,7 +1746,7 @@ function addTrip() {
   if (!label) return;
   const g = id => parseFloat(document.getElementById(id)?.value) || 0;
   const sortDate    = parseSortDate(dates);
-  const labelWithEmoji = `${tripEmoji(label)} ${label}`;
+  const labelWithEmoji = `${label} ${tripEmoji(label)}`;
   trips.push({
     id: 'trip-'+Date.now(), dates, label: labelWithEmoji, sortDate,
     aidanVacation:   g('new-trip-aidan-vac'),
