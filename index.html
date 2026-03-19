@@ -171,10 +171,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-edit-save{font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;border:none;background:var(--amber);color:white;cursor:pointer;font-family:inherit}
 .trip-edit-cancel{font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-3);cursor:pointer;font-family:inherit}
 .add-trip-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;padding-top:16px;border-top:1px dashed var(--border);grid-column:1/-1}
-.pto-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.pto-inputs{display:flex;gap:6px;flex-wrap:wrap}
-.pto-inputs input{flex:1;min-width:80px;font-size:12px;padding:6px 8px}
-@media(max-width:500px){.pto-grid{grid-template-columns:1fr}.trip-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.trip-grid{grid-template-columns:1fr}}
 .add-trip-form input{padding:9px 12px;border:1px dashed var(--border);border-radius:9px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
 .add-trip-form input:focus{border-color:var(--amber);border-style:solid}
 .list-item .list-del{margin-left:auto;font-size:17px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;padding:0 2px;line-height:1;flex-shrink:0}
@@ -593,11 +590,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Vacation Time Tracker</div>
-    <div id="vaca-tracker"></div>
-  </div>
-
-  <div class="card" style="margin-bottom:16px">
     <div class="card-title">Logistics to Figure Out 📋</div>
     <div class="list-items" id="logistics-list"></div>
   </div>
@@ -976,7 +968,7 @@ const DEFAULT_TODOS = [
   { id:"t13", text:"Clean up office",                                cat:"priorities",done:false },
 ];
 
-const TODO_CATEGORIES = [
+let todoCategories = [
   { id:"todo",       label:"📋 Active To-Dos"      },
   { id:"projects",   label:"🔨 Household Projects"  },
   { id:"needs",      label:"🛋️ Household Needs"    },
@@ -999,6 +991,13 @@ function isActive(name) {
 
 function initFirestore() {
   const ref = key => db.collection('state').doc(key);
+
+  ref('todoCategories').onSnapshot(snap => {
+    if (!snap.exists) { ref('todoCategories').set({items: todoCategories}); return; }
+    const saved = snap.data().items;
+    if (saved && saved.length) todoCategories = saved;
+    if (isActive('todos')) renderTodos();
+  });
 
   ref('todos').onSnapshot(snap => {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
@@ -1113,7 +1112,8 @@ function initFirestore() {
 }
 
 const _onSaveErr = e => console.error('Save failed:', e);
-function saveTodos()     { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr);            }
+function saveTodos()           { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr); }
+function saveTodoCategories()  { db.collection('state').doc('todoCategories').set({items: todoCategories}).catch(_onSaveErr); }
 function saveEntries()   { db.collection('state').doc('entries').set({items: newEntries}).catch(_onSaveErr);     }
 function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
@@ -1272,11 +1272,19 @@ function saveEntry() {
 
 // ─── TO-DOS ──────────────────────────────────────────────────────────────────
 function renderTodos() {
-  const activeHtml = TODO_CATEGORIES.map(cat => {
+  const activeHtml = todoCategories.map((cat, idx) => {
     const items = todos.filter(t => t.cat === cat.id && !t.done);
+    const isFirst = idx === 0, isLast = idx === todoCategories.length - 1;
     return `
       <div class="card todo-category">
-        <div class="todo-cat-title">${cat.label}</div>
+        <div class="todo-cat-title">
+          <span style="flex:1">${escHtml(cat.label)}</span>
+          <span style="display:flex;gap:4px;margin-left:8px">
+            <button onclick="moveTodoSection('${cat.id}',-1)" ${isFirst?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:0 3px;opacity:${isFirst?0.3:1}" title="Move up">▲</button>
+            <button onclick="moveTodoSection('${cat.id}',1)"  ${isLast?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:0 3px;opacity:${isLast?0.3:1}" title="Move down">▼</button>
+            <button onclick="deleteTodoSection('${cat.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-3);padding:0 3px" title="Delete section">×</button>
+          </span>
+        </div>
         <div class="todo-items">${items.length ? items.map(renderTodoItem).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">Nothing here yet!</div>'}</div>
         <div class="add-todo">
           <input type="text" placeholder="Add item..." id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')">
@@ -1295,7 +1303,15 @@ function renderTodos() {
       <div class="todo-items" id="done-items-list" style="display:${doneCollapsed?'none':''}">${done.map(renderTodoItem).join('')}</div>
     </div>` : '';
 
-  document.getElementById('todos-container').innerHTML = activeHtml + doneHtml;
+  const addSectionHtml = `
+    <div class="card" style="padding:16px 20px">
+      <div class="add-list-row">
+        <input type="text" id="new-section-name" placeholder="New section name..." onkeydown="if(event.key==='Enter')addTodoSection()">
+        <button onclick="addTodoSection()">+ Add Section</button>
+      </div>
+    </div>`;
+
+  document.getElementById('todos-container').innerHTML = activeHtml + doneHtml + addSectionHtml;
 }
 
 function renderTodoItem(t) {
@@ -1346,6 +1362,38 @@ function deleteTodo(id) {
   saveTodos(); renderTodos();
 }
 
+function addTodoSection() {
+  const input = document.getElementById('new-section-name');
+  const label = input.value.trim();
+  if (!label) return;
+  todoCategories.push({ id: 'cat-' + Date.now(), label });
+  saveTodoCategories();
+  renderTodos();
+}
+
+function deleteTodoSection(id) {
+  const cat = todoCategories.find(c => c.id === id);
+  const count = todos.filter(t => t.cat === id && !t.done).length;
+  const msg = count > 0
+    ? `Delete "${cat?.label}"? This will also delete the ${count} item${count!==1?'s':''} inside.`
+    : `Delete "${cat?.label}"?`;
+  if (!confirm(msg)) return;
+  todoCategories = todoCategories.filter(c => c.id !== id);
+  todos = todos.filter(t => t.cat !== id);
+  saveTodoCategories();
+  saveTodos();
+  renderTodos();
+}
+
+function moveTodoSection(id, dir) {
+  const idx = todoCategories.findIndex(c => c.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= todoCategories.length) return;
+  [todoCategories[idx], todoCategories[newIdx]] = [todoCategories[newIdx], todoCategories[idx]];
+  saveTodoCategories();
+  renderTodos();
+}
+
 function addTodo(cat) {
   const input = document.getElementById('add-' + cat);
   const text = input.value.trim();
@@ -1391,24 +1439,6 @@ function renderDates() {
     <div class="add-trip-form">
       <input type="text" id="new-trip-dates"  placeholder="Dates (e.g. Jun 5–7)">
       <input type="text" id="new-trip-name"   placeholder="Trip or event name">
-      <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:var(--blue-bg);border-radius:9px;padding:10px 12px">
-          <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:6px">Aidan PTO</div>
-          <div class="pto-inputs">
-            <input type="number" id="new-trip-aidan-vac"  placeholder="🏖️ Vacation" min="0" step="0.5" class="bq-input">
-            <input type="number" id="new-trip-aidan-wfh"  placeholder="🏠 WFH"      min="0" step="0.5" class="bq-input">
-            <input type="number" id="new-trip-aidan-per"  placeholder="👤 Personal"  min="0" step="0.5" class="bq-input">
-          </div>
-        </div>
-        <div style="background:var(--coral-bg);border-radius:9px;padding:10px 12px">
-          <div style="font-size:11px;font-weight:700;color:var(--coral);margin-bottom:6px">Amanda PTO</div>
-          <div class="pto-inputs">
-            <input type="number" id="new-trip-amanda-vac" placeholder="🏖️ Vacation" min="0" step="0.5" class="bq-input">
-            <input type="number" id="new-trip-amanda-wfh" placeholder="🏠 WFH"      min="0" step="0.5" class="bq-input">
-            <input type="number" id="new-trip-amanda-per" placeholder="👤 Personal"  min="0" step="0.5" class="bq-input">
-          </div>
-        </div>
-      </div>
       <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
     </div>`;
 
@@ -1422,40 +1452,6 @@ function renderDates() {
       </div>`;
   }
 
-  const ptoBar = (label, used, total, color) => {
-    const pct = Math.min(100, Math.round(used / total * 100));
-    const over = used > total;
-    return `<div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:3px">
-        <span>${label}</span>
-        <span style="color:${over?'var(--coral)':'var(--text-3)'}">${used} / ${total}${over?' ⚠️':''}</span>
-      </div>
-      <div style="background:var(--border);border-radius:99px;height:6px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${over?'var(--coral)':color};border-radius:99px;transition:width .4s"></div>
-      </div>
-    </div>`;
-  };
-  const aV = trips.reduce((s,t) => s+(t.aidanVacation||t.aidanDays||0), 0);
-  const aW = trips.reduce((s,t) => s+(t.aidanWfh||0), 0);
-  const aP = trips.reduce((s,t) => s+(t.aidanPersonal||0), 0);
-  const mV = trips.reduce((s,t) => s+(t.amandaVacation||t.amandaDays||0), 0);
-  const mW = trips.reduce((s,t) => s+(t.amandaWfh||0), 0);
-  const mP = trips.reduce((s,t) => s+(t.amandaPersonal||0), 0);
-  document.getElementById('vaca-tracker').innerHTML = `
-    <div class="pto-grid">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">Aidan</div>
-        ${ptoBar('🏖️ Vacation', aV, 26, 'var(--blue)')}
-        ${ptoBar('🏠 WFH', aW, 7, 'var(--sage)')}
-        ${ptoBar('👤 Personal (unpaid)', aP, 10, 'var(--amber)')}
-      </div>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--coral);margin-bottom:10px">Amanda</div>
-        ${ptoBar('🏖️ Vacation', mV, 16, 'var(--coral)')}
-        ${ptoBar('🏠 WFH', mW, 7, 'var(--sage)')}
-        ${ptoBar('👤 Personal (unpaid)', mP, 10, 'var(--amber)')}
-      </div>
-    </div>`;
 
   document.getElementById('logistics-list').innerHTML =
     logisticsList.map(l => `
@@ -1744,19 +1740,12 @@ function addTrip() {
   const dates  = document.getElementById('new-trip-dates').value.trim();
   const label  = document.getElementById('new-trip-name').value.trim();
   if (!label) return;
-  const g = id => parseFloat(document.getElementById(id)?.value) || 0;
-  const sortDate    = parseSortDate(dates);
+  const sortDate       = parseSortDate(dates);
   const labelWithEmoji = `${label} ${tripEmoji(label)}`;
-  trips.push({
-    id: 'trip-'+Date.now(), dates, label: labelWithEmoji, sortDate,
-    aidanVacation:   g('new-trip-aidan-vac'),
-    aidanWfh:        g('new-trip-aidan-wfh'),
-    aidanPersonal:   g('new-trip-aidan-per'),
-    amandaVacation:  g('new-trip-amanda-vac'),
-    amandaWfh:       g('new-trip-amanda-wfh'),
-    amandaPersonal:  g('new-trip-amanda-per'),
-  });
+  trips.push({ id:'trip-'+Date.now(), dates, label:labelWithEmoji, sortDate });
+  logisticsList.push({ id:'log-'+Date.now(), text:`Figure out PTO for ${labelWithEmoji}` });
   saveTrips();
+  saveLogistics();
   renderDates();
 }
 
