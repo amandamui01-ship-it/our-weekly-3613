@@ -1278,7 +1278,7 @@ function renderTodos() {
     return `
       <div class="card todo-category">
         <div class="todo-cat-title">
-          <span style="flex:1">${escHtml(cat.label)}</span>
+          <span style="flex:1;cursor:pointer" title="Click to rename" onclick="editTodoSection('${cat.id}')">${escHtml(cat.label)}</span>
           <span style="display:flex;gap:4px;margin-left:8px">
             <button onclick="moveTodoSection('${cat.id}',-1)" ${isFirst?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:0 3px;opacity:${isFirst?0.3:1}" title="Move up">▲</button>
             <button onclick="moveTodoSection('${cat.id}',1)"  ${isLast?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:0 3px;opacity:${isLast?0.3:1}" title="Move down">▼</button>
@@ -1369,6 +1369,26 @@ function addTodoSection() {
   todoCategories.push({ id: 'cat-' + Date.now(), label });
   saveTodoCategories();
   renderTodos();
+}
+
+function editTodoSection(id) {
+  const cat = todoCategories.find(c => c.id === id);
+  if (!cat) return;
+  const el = document.querySelector(`.todo-cat-title span[onclick*="${id}"]`);
+  if (!el) return;
+  const input = document.createElement('input');
+  input.className = 'todo-edit-input';
+  input.value = cat.label;
+  input.style.cssText = 'flex:1;font-weight:700;font-size:13px';
+  el.replaceWith(input);
+  input.focus(); input.select();
+  const save = () => {
+    const v = input.value.trim();
+    if (v && v !== cat.label) { cat.label = v; saveTodoCategories(); }
+    renderTodos();
+  };
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderTodos(); });
 }
 
 function deleteTodoSection(id) {
