@@ -364,7 +364,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 [data-theme="dark"] .japan-card{background:linear-gradient(135deg,#1a1228 0%,#0e1820 100%)}
 [data-theme="dark"] #login-overlay{background:var(--bg)}
 [data-theme="dark"] .coffee-card{background:linear-gradient(135deg,#2e2010 0%,#1e1808 100%)}
-.dark-toggle{position:relative;width:40px;height:24px;background:var(--border);border-radius:12px;border:none;cursor:pointer;transition:background .3s;flex-shrink:0;margin-left:auto;margin-right:2px;align-self:center}
+.dark-toggle{position:relative;width:40px;height:24px;background:var(--border);border-radius:12px;border:none;cursor:pointer;transition:background .3s;flex-shrink:0;align-self:center;vertical-align:middle}
 .dark-toggle.active{background:var(--sage)}
 .dark-toggle::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .dark-toggle.active::after{transform:translateX(16px)}
@@ -430,12 +430,17 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
   <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
   <div class="nav-tab" onclick="showPage('history')">📖 History</div>
-  <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
+  <div style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
+    <span style="font-size:13px;line-height:1">☀️</span>
+    <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
+    <span style="font-size:13px;line-height:1">🌙</span>
+  </div>
   <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 16px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap">Sign out</div>
 </nav>
 
 <!-- ── HOME ── -->
 <div class="page active" id="page-home">
+
   <div class="welcome-banner">
     <div class="welcome-date" id="home-date-label"></div>
     <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
@@ -444,22 +449,26 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </button>
   </div>
 
-  <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0">
-    <div class="card" id="next-trip-card" style="text-align:center;padding:20px 14px;margin:0">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
-      <div style="font-family:'Playfair Display',Georgia,serif;font-size:42px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:5px">days away</div>
+  <div class="home-stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+    <div class="home-stat">
+      <div class="home-stat-val" id="stat-next-trip">—</div>
+      <div class="home-stat-lbl">Next Trip</div>
     </div>
-    <div class="card" style="text-align:center;padding:20px 14px;margin:0;background:linear-gradient(135deg,#fff0f5 0%,#fff8f0 100%);border-color:#f5c6d0">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#e0607a;margin-bottom:4px">💕 Anniversary</div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:10px">October 1st</div>
-      <div style="font-family:'Playfair Display',Georgia,serif;font-size:42px;font-weight:700;color:#e0607a;line-height:1" id="anniv-days">—</div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:5px">days away</div>
+    <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
+      <div class="home-stat-val" id="stat-todos">—</div>
+      <div class="home-stat-lbl">Open To-Dos ↗</div>
+    </div>
+    <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
+      <div class="home-stat-val" id="stat-last-entry">—</div>
+      <div class="home-stat-lbl">Last Review ↗</div>
+    </div>
+    <div class="home-stat">
+      <div class="home-stat-val" id="stat-streak">—</div>
+      <div class="home-stat-lbl">Week Streak 🔥</div>
     </div>
   </div>
 
-  <div class="card japan-card">
+  <div class="card japan-card" style="margin-bottom:16px">
     <div class="japan-card-label">✈️ Japan Countdown</div>
     <div class="japan-card-sub">Oct 24, 2026 — Tokyo awaits 🌸 楽しみにしてる</div>
     <div class="japan-countdown">
@@ -473,7 +482,33 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:20px" id="photo-card">
+  <div class="card" id="next-trip-card" style="text-align:center;padding:20px;margin-bottom:16px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
+    <div style="font-size:13px;color:var(--text-3);margin-bottom:10px" id="next-trip-name">—</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️</div>
+    <div id="home-trips"></div>
+  </div>
+
+  <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+    <div class="coffee-card" style="margin:0">
+      <span class="coffee-icon">☕</span>
+      <div class="coffee-title-label">this week's coffee pick</div>
+      <div class="coffee-name" id="coffee-name">—</div>
+      <div class="coffee-area" id="coffee-area">tap spin to discover</div>
+      <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="margin-bottom:12px">Mood 💭</div>
+      <div class="mood-grid" id="mood-widget"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px" id="photo-card">
     <div class="card-title" style="margin-bottom:12px">Our Photos 📸</div>
     <div class="photo-widget-wrap" id="photo-widget-wrap">
       <div class="photo-widget-empty" id="photo-widget-empty">
@@ -492,44 +527,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
-    <div class="coffee-card" style="margin:0">
-      <span class="coffee-icon">☕</span>
-      <div class="coffee-title-label">this week's coffee pick</div>
-      <div class="coffee-name" id="coffee-name">—</div>
-      <div class="coffee-area" id="coffee-area">tap spin to discover</div>
-      <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
-    </div>
-    <div class="card" style="margin:0">
-      <div class="card-title" style="margin-bottom:12px">Mood 💭</div>
-      <div class="mood-grid" id="mood-widget">
-        <!-- rendered by renderMoodWidget() -->
-      </div>
-    </div>
-  </div>
-
-  <div class="home-stats" style="grid-template-columns:repeat(4,1fr)">
-    <div class="home-stat">
-      <div class="home-stat-val" id="stat-next-trip">Apr 3</div>
-      <div class="home-stat-lbl">Next Trip</div>
-    </div>
-    <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
-      <div class="home-stat-val" id="stat-todos">—</div>
-      <div class="home-stat-lbl">Open To-Dos ↗</div>
-    </div>
-    <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
-      <div class="home-stat-val" id="stat-last-entry">—</div>
-      <div class="home-stat-lbl">Last Review ↗</div>
-    </div>
-    <div class="home-stat">
-      <div class="home-stat-val" id="stat-streak">—</div>
-      <div class="home-stat-lbl">Week Streak 🔥</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️</div>
-    <div id="home-trips"></div>
+  <div class="card" style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,#fff0f5 0%,#fff8f0 100%);border-color:#f5c6d0">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#e0607a;margin-bottom:4px">💕 Our Anniversary</div>
+    <div style="font-size:13px;color:var(--text-3);margin-bottom:14px">October 1st</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:#e0607a;line-height:1" id="anniv-days">—</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
   </div>
 
 </div>
