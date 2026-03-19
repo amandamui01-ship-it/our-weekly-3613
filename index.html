@@ -215,8 +215,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Japan Countdown ── */
 .japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:30px 24px;margin-bottom:20px;position:relative;overflow:hidden}
 .japan-card::before{content:'🗾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
-.japan-card-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.45);margin-bottom:4px}
-.japan-card-sub{font-size:12px;color:rgba(255,255,255,.25);margin-bottom:20px}
+.japan-card-label{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:4px;letter-spacing:0}
+.japan-card-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px}
 .japan-countdown{display:flex;align-items:center;justify-content:center;gap:6px}
 .japan-unit{display:flex;flex-direction:column;align-items:center;min-width:68px}
 .japan-num{font-family:'Playfair Display',Georgia,serif;font-size:46px;font-weight:700;color:white;line-height:1;letter-spacing:-.02em}
@@ -380,7 +380,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Mood widget ── */
 .mood-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mood-person{text-align:center;padding:10px 8px;border-radius:10px;background:var(--surface-warm);border:1px solid var(--border-light)}
+.mood-person{text-align:center;padding:12px 8px;border-radius:10px;background:var(--surface-warm);border:1px solid var(--border-light);display:flex;flex-direction:column;align-items:center;justify-content:center}
 .mood-person-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px}
 .mood-emoji-btn{font-size:36px;background:none;border:none;cursor:pointer;padding:6px;border-radius:10px;transition:transform .15s,background .15s;display:block;margin:0 auto}
 .mood-emoji-btn:hover{transform:scale(1.15);background:var(--amber-bg)}
@@ -431,9 +431,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
   <div class="nav-tab" onclick="showPage('history')">📖 History</div>
   <div style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
-    <span style="font-size:13px;line-height:1">☀️</span>
+    <span style="font-size:13px;line-height:1;filter:drop-shadow(0 0 2px rgba(0,0,0,.18))">☀️</span>
     <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
-    <span style="font-size:13px;line-height:1">🌙</span>
+    <span style="font-size:13px;line-height:1;filter:drop-shadow(0 0 2px rgba(0,0,0,.18))">🌙</span>
   </div>
   <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 16px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap">Sign out</div>
 </nav>
@@ -449,11 +449,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </button>
   </div>
 
-  <div class="home-stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
-    <div class="home-stat">
-      <div class="home-stat-val" id="stat-next-trip">—</div>
-      <div class="home-stat-lbl">Next Trip</div>
-    </div>
+  <div class="home-stats" style="margin-bottom:16px">
     <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
       <div class="home-stat-val" id="stat-todos">—</div>
       <div class="home-stat-lbl">Open To-Dos ↗</div>
@@ -468,6 +464,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
+  <div class="card" id="next-trip-card" style="text-align:center;padding:20px;margin-bottom:16px">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
+    <div style="font-size:13px;color:var(--text-3);margin-bottom:10px" id="next-trip-name">—</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
+  </div>
+
   <div class="card japan-card" style="margin-bottom:16px">
     <div class="japan-card-label">✈️ Japan Countdown</div>
     <div class="japan-card-sub">Oct 24, 2026 — Tokyo awaits 🌸 楽しみにしてる</div>
@@ -480,13 +483,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="japan-sep">:</div>
       <div class="japan-unit"><span class="japan-num" id="jc-secs">—</span><span class="japan-lbl">secs</span></div>
     </div>
-  </div>
-
-  <div class="card" id="next-trip-card" style="text-align:center;padding:20px;margin-bottom:16px">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
-    <div style="font-size:13px;color:var(--text-3);margin-bottom:10px" id="next-trip-name">—</div>
-    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
