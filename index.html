@@ -2180,31 +2180,36 @@ function renderMoodWidget() {
     <div class="mood-person">
       <div class="mood-person-name" style="color:var(--coral)">Amanda</div>
       ${amanda
-        ? `<button class="mood-emoji-btn" onclick="openEmojiPicker('amanda')" title="Change mood">${amanda}</button>`
-        : `<button class="mood-set-btn" onclick="openEmojiPicker('amanda')">+ Set mood</button>`}
+        ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'amanda')" title="Change mood">${amanda}</button>`
+        : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'amanda')">+ Set mood</button>`}
     </div>
     <div class="mood-person">
       <div class="mood-person-name" style="color:var(--blue)">Aidan</div>
       ${aidan
-        ? `<button class="mood-emoji-btn" onclick="openEmojiPicker('aidan')" title="Change mood">${aidan}</button>`
-        : `<button class="mood-set-btn" onclick="openEmojiPicker('aidan')">+ Set mood</button>`}
+        ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'aidan')" title="Change mood">${aidan}</button>`
+        : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'aidan')">+ Set mood</button>`}
     </div>`;
 }
 
-function openEmojiPicker(person) {
+function openEmojiPicker(e, person) {
+  e.stopPropagation();
   document.getElementById('emoji-picker-popup')?.remove();
   const popup = document.createElement('div');
   popup.id = 'emoji-picker-popup';
   popup.className = 'emoji-picker-popup';
-  // Position near center
-  Object.assign(popup.style, { bottom: '80px', left: '50%', transform: 'translateX(-50%)' });
-  popup.innerHTML = MOOD_EMOJIS.map(e =>
-    `<button onclick="pickMood('${person}','${e}')">${e}</button>`
+  popup.innerHTML = MOOD_EMOJIS.map(em =>
+    `<button onclick="pickMood('${person}','${em}')">${em}</button>`
   ).join('');
   document.body.appendChild(popup);
-  // Position properly relative to viewport
-  const rect = popup.getBoundingClientRect();
-  if (rect.bottom > window.innerHeight) popup.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+  // Position above/below the button
+  const btn = e.currentTarget;
+  const br = btn.getBoundingClientRect();
+  const pr = popup.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - br.bottom;
+  let top = spaceBelow >= pr.height + 8 ? br.bottom + 8 : br.top - pr.height - 8;
+  let left = br.left + br.width / 2 - pr.width / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - pr.width - 8));
+  Object.assign(popup.style, { position: 'fixed', top: top + 'px', left: left + 'px', transform: 'none', bottom: 'auto' });
   setTimeout(() => document.addEventListener('click', removePicker, { once: true }), 50);
 }
 function removePicker() { document.getElementById('emoji-picker-popup')?.remove(); }
