@@ -209,7 +209,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Confetti ── */
 .confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden}
-.confetti-dot{position:absolute;width:9px;height:9px;border-radius:50%;opacity:0}
+.confetti-dot{position:absolute;width:11px;height:11px;border-radius:50%;opacity:0}
 @keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
 
 /* ── Japan Countdown ── */
@@ -343,6 +343,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
   .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:repeat(2,1fr)!important}
+  .home-2col{grid-template-columns:1fr!important}
   .budget-top-row{grid-template-columns:1fr}
   .budget-snapshot{grid-template-columns:1fr 1fr}
   .budget-summary-cards{grid-template-columns:1fr 1fr}
@@ -363,10 +364,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 [data-theme="dark"] .japan-card{background:linear-gradient(135deg,#1a1228 0%,#0e1820 100%)}
 [data-theme="dark"] #login-overlay{background:var(--bg)}
 [data-theme="dark"] .coffee-card{background:linear-gradient(135deg,#2e2010 0%,#1e1808 100%)}
-.dark-toggle{background:none;border:none;font-size:18px;cursor:pointer;padding:14px 10px;color:var(--text-2);flex-shrink:0;line-height:1}
+.dark-toggle{position:relative;width:40px;height:24px;background:var(--border);border-radius:12px;border:none;cursor:pointer;transition:background .3s;flex-shrink:0;margin-left:auto;margin-right:2px;align-self:center}
+.dark-toggle.active{background:var(--sage)}
+.dark-toggle::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.dark-toggle.active::after{transform:translateX(16px)}
 
 /* ── Photo widget ── */
-.photo-widget-wrap{position:relative;width:100%;padding-top:58%;border-radius:10px;overflow:hidden;background:var(--border-light);margin-bottom:10px}
+.photo-widget-wrap{position:relative;width:100%;padding-top:44%;border-radius:10px;overflow:hidden;background:var(--border-light);margin-bottom:10px}
 .photo-widget-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .6s}
 .photo-widget-img.fade-out{opacity:0}
 .photo-widget-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-3);font-size:13px}
@@ -426,8 +430,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
   <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
   <div class="nav-tab" onclick="showPage('history')">📖 History</div>
-  <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
-  <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="margin-left:auto;padding:14px 16px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap">Sign out</div>
+  <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
+  <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 16px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap">Sign out</div>
 </nav>
 
 <!-- ── HOME ── -->
@@ -440,11 +444,19 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </button>
   </div>
 
-  <div class="card" id="next-trip-card" style="text-align:center;padding:24px 20px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
-    <div style="font-size:13px;color:var(--text-3);margin-bottom:14px" id="next-trip-name">—</div>
-    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
+  <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0">
+    <div class="card" id="next-trip-card" style="text-align:center;padding:20px 14px;margin:0">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:4px">Next Adventure 🗺️</div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:42px;font-weight:700;color:var(--text);line-height:1" id="next-trip-days">—</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:5px">days away</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px 14px;margin:0;background:linear-gradient(135deg,#fff0f5 0%,#fff8f0 100%);border-color:#f5c6d0">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#e0607a;margin-bottom:4px">💕 Anniversary</div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:10px">October 1st</div>
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:42px;font-weight:700;color:#e0607a;line-height:1" id="anniv-days">—</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:5px">days away</div>
+    </div>
   </div>
 
   <div class="card japan-card">
@@ -480,18 +492,19 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="coffee-card">
-    <span class="coffee-icon">☕</span>
-    <div class="coffee-title-label">this week's coffee shop pick</div>
-    <div class="coffee-name" id="coffee-name">—</div>
-    <div class="coffee-area" id="coffee-area">tap spin to discover</div>
-    <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
-  </div>
-
-  <div class="card" style="margin-bottom:20px">
-    <div class="card-title" style="margin-bottom:12px">Mood This Week 💭</div>
-    <div class="mood-grid" id="mood-widget">
-      <!-- rendered by renderMoodWidget() -->
+  <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+    <div class="coffee-card" style="margin:0">
+      <span class="coffee-icon">☕</span>
+      <div class="coffee-title-label">this week's coffee pick</div>
+      <div class="coffee-name" id="coffee-name">—</div>
+      <div class="coffee-area" id="coffee-area">tap spin to discover</div>
+      <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="margin-bottom:12px">Mood 💭</div>
+      <div class="mood-grid" id="mood-widget">
+        <!-- rendered by renderMoodWidget() -->
+      </div>
     </div>
   </div>
 
@@ -519,12 +532,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div id="home-trips"></div>
   </div>
 
-  <div class="card" style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,#fff0f5 0%,#fff8f0 100%);border-color:#f5c6d0">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#e0607a;margin-bottom:4px">💕 Our Anniversary</div>
-    <div style="font-size:13px;color:var(--text-3);margin-bottom:14px">October 1st</div>
-    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:700;color:#e0607a;line-height:1" id="anniv-days">—</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
-  </div>
 </div>
 
 <!-- ── THIS WEEK'S REVIEW ── -->
@@ -1455,7 +1462,9 @@ function toggleTodo(id) {
     const el = document.getElementById('todo-' + id);
     if (el) {
       el.classList.add('done');
-      burst();
+      const cb = el.querySelector('.todo-cb') || el;
+      const r = cb.getBoundingClientRect();
+      burstAt(r.left + r.width / 2, r.top + r.height / 2, 28, 90);
       setTimeout(() => {
         el.classList.add('collapsing');
         setTimeout(() => { t.done = true; saveTodos(); renderTodos(); }, 350);
@@ -2073,14 +2082,14 @@ function toggleDarkMode() {
   const next = isDark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('ow-theme', next);
-  document.getElementById('dark-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+  document.getElementById('dark-toggle').classList.toggle('active', next === 'dark');
 }
 (function applyTheme() {
   const t = localStorage.getItem('ow-theme');
   if (t) {
     document.documentElement.setAttribute('data-theme', t);
     const btn = document.getElementById('dark-toggle');
-    if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+    if (btn) btn.classList.toggle('active', t === 'dark');
   }
 })();
 
@@ -2286,22 +2295,24 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3200);
 }
 
-function burst() {
+function burstAt(cx, cy, count = 36, maxDist = 120) {
   const wrap = document.getElementById('confetti-wrap');
   const colors = ['#f5c27a','#e8735a','#6b8f71','#4472a8','#bf7c36','#f9a8d4','#fcd34d','#a78bfa'];
   wrap.innerHTML = '';
-  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < count; i++) {
     const dot = document.createElement('div');
     dot.className = 'confetti-dot';
-    const angle = (i / 24) * 360;
-    const dist = 60 + Math.random() * 140;
+    const angle = (i / count) * 360;
+    const dist = 40 + Math.random() * maxDist;
     const tx = Math.cos(angle * Math.PI / 180) * dist + 'px';
     const ty = Math.sin(angle * Math.PI / 180) * dist + 'px';
-    dot.style.cssText = `background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-4.5px 0 0 -4.5px;animation:confetti-fly .9s ease-out forwards;animation-delay:${i*18}ms`;
+    dot.style.cssText = `background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-5.5px 0 0 -5.5px;animation:confetti-fly .9s ease-out forwards;animation-delay:${i*15}ms`;
     wrap.appendChild(dot);
   }
   setTimeout(() => wrap.innerHTML = '', 1600);
+}
+function burst() {
+  burstAt(window.innerWidth / 2, window.innerHeight / 2, 36, 160);
 }
 
 // ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
