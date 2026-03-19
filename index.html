@@ -63,9 +63,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Inputs ── */
 .field{margin-bottom:18px}
 .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-bottom:6px}
-.field textarea,.field input[type=text],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
+.field textarea,.field input[type=text],.field input[type=password],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
 .field textarea{min-height:90px}
-.field textarea:focus,.field input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
+.field textarea:focus,.field input[type=text]:focus,.field input[type=password]:focus,.field input[type=number]:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
 
 /* ── HOME ── */
 .welcome-banner{background:linear-gradient(135deg,#2d2417 0%,#5c3c1e 100%);border-radius:18px;padding:36px 40px;color:white;margin-bottom:20px;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center}
