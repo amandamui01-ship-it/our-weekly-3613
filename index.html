@@ -342,7 +342,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
-  .trip-grid,.home-stats{grid-template-columns:1fr}
+  .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:repeat(2,1fr)!important}
   .budget-top-row{grid-template-columns:1fr}
   .budget-snapshot{grid-template-columns:1fr 1fr}
   .budget-summary-cards{grid-template-columns:1fr 1fr}
@@ -350,6 +350,50 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .welcome-banner{padding:24px 22px}
   .welcome-greeting{font-size:24px}
 }
+
+/* ── Dark mode ── */
+[data-theme="dark"]{
+  --bg:#1c1812;--surface:#252016;--surface-warm:#2b2318;
+  --border:#3a3020;--border-light:#302818;
+  --text:#f0e6d2;--text-2:#c4a882;--text-3:#8a7458;
+  --amber-bg:#2e2010;--sage-bg:#181e18;--coral-bg:#2e1812;--blue-bg:#141828;
+  --shadow:0 2px 12px rgba(0,0,0,.25);--shadow-lg:0 8px 32px rgba(0,0,0,.4);
+}
+[data-theme="dark"] .welcome-banner{background:linear-gradient(135deg,#3d2b12 0%,#2a1e0e 100%)}
+[data-theme="dark"] .japan-card{background:linear-gradient(135deg,#1a1228 0%,#0e1820 100%)}
+[data-theme="dark"] #login-overlay{background:var(--bg)}
+[data-theme="dark"] .coffee-card{background:linear-gradient(135deg,#2e2010 0%,#1e1808 100%)}
+.dark-toggle{background:none;border:none;font-size:18px;cursor:pointer;padding:14px 10px;color:var(--text-2);flex-shrink:0;line-height:1}
+
+/* ── Photo widget ── */
+.photo-widget-wrap{position:relative;width:100%;padding-top:58%;border-radius:10px;overflow:hidden;background:var(--border-light);margin-bottom:10px}
+.photo-widget-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .6s}
+.photo-widget-img.fade-out{opacity:0}
+.photo-widget-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-3);font-size:13px}
+.photo-dots{display:flex;justify-content:center;gap:6px;margin-bottom:10px}
+.photo-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .2s;cursor:pointer;border:none;padding:0}
+.photo-dot.active{background:var(--amber)}
+
+/* ── Mood widget ── */
+.mood-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mood-person{text-align:center;padding:10px 8px;border-radius:10px;background:var(--surface-warm);border:1px solid var(--border-light)}
+.mood-person-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px}
+.mood-emoji-btn{font-size:36px;background:none;border:none;cursor:pointer;padding:6px;border-radius:10px;transition:transform .15s,background .15s;display:block;margin:0 auto}
+.mood-emoji-btn:hover{transform:scale(1.15);background:var(--amber-bg)}
+.mood-set-btn{font-size:12px;color:var(--text-3);background:none;border:1px dashed var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;width:100%;margin-top:2px}
+.mood-set-btn:hover{color:var(--amber);border-color:var(--amber)}
+.emoji-picker-popup{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px;box-shadow:var(--shadow-lg);z-index:500;display:grid;grid-template-columns:repeat(5,1fr);gap:3px;width:210px}
+.emoji-picker-popup button{background:none;border:none;font-size:22px;cursor:pointer;padding:5px;border-radius:8px;transition:background .1s}
+.emoji-picker-popup button:hover{background:var(--amber-bg)}
+
+/* ── Review photo upload ── */
+.photo-upload-label{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer}
+.photo-upload-label:hover{background:var(--blue);color:white}
+#r-photo-preview{margin-top:8px;max-height:160px;border-radius:10px;overflow:hidden;display:none}
+#r-photo-preview img{width:100%;height:160px;object-fit:cover}
+
+/* ── History photo ── */
+.history-photo{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -382,6 +426,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
   <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
   <div class="nav-tab" onclick="showPage('history')">📖 History</div>
+  <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
   <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="margin-left:auto;padding:14px 16px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap">Sign out</div>
 </nav>
 
@@ -416,6 +461,25 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:20px" id="photo-card">
+    <div class="card-title" style="margin-bottom:12px">Our Photos 📸</div>
+    <div class="photo-widget-wrap" id="photo-widget-wrap">
+      <div class="photo-widget-empty" id="photo-widget-empty">
+        <span style="font-size:32px">📷</span>
+        <span>Add your first photo!</span>
+      </div>
+      <img class="photo-widget-img" id="photo-widget-img" src="" alt="" style="display:none">
+    </div>
+    <div class="photo-dots" id="photo-dots"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <label class="photo-upload-label">
+        📷 Add Photo
+        <input type="file" accept="image/*" style="display:none" onchange="uploadHomePhoto(this.files[0]);this.value=''">
+      </label>
+      <button id="photo-del-btn" onclick="deleteCurrentPhoto()" style="display:none;background:none;border:none;color:var(--text-3);font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px" onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--text-3)'">🗑 Remove</button>
+    </div>
+  </div>
+
   <div class="coffee-card">
     <span class="coffee-icon">☕</span>
     <div class="coffee-title-label">this week's coffee shop pick</div>
@@ -424,7 +488,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
   </div>
 
-  <div class="home-stats">
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title" style="margin-bottom:12px">Mood This Week 💭</div>
+    <div class="mood-grid" id="mood-widget">
+      <!-- rendered by renderMoodWidget() -->
+    </div>
+  </div>
+
+  <div class="home-stats" style="grid-template-columns:repeat(4,1fr)">
     <div class="home-stat">
       <div class="home-stat-val" id="stat-next-trip">Apr 3</div>
       <div class="home-stat-lbl">Next Trip</div>
@@ -436,6 +507,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
       <div class="home-stat-val" id="stat-last-entry">—</div>
       <div class="home-stat-lbl">Last Review ↗</div>
+    </div>
+    <div class="home-stat">
+      <div class="home-stat-val" id="stat-streak">—</div>
+      <div class="home-stat-lbl">Week Streak 🔥</div>
     </div>
   </div>
 
@@ -559,6 +634,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="field">
         <label>Anything else to remember?</label>
         <textarea id="r-misc" placeholder="Wild cards, funny moments, things to look back on..."></textarea>
+      </div>
+      <div class="field">
+        <label>This week's memory photo <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+        <label class="photo-upload-label" style="margin-top:4px">
+          📷 Choose Photo
+          <input type="file" id="r-photo" accept="image/*" style="display:none" onchange="previewReviewPhoto(this.files[0])">
+        </label>
+        <div id="r-photo-preview"></div>
       </div>
       <div class="step-nav">
         <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
@@ -759,6 +842,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 // ─── FIREBASE ────────────────────────────────────────────────────────────────
 firebase.initializeApp({
@@ -771,6 +855,7 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 const auth = firebase.auth();
+const storage = firebase.storage();
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -984,6 +1069,10 @@ let trips = [], logisticsList = [], bucketList = [];
 let weekPlan = {}; // { mon: { gym:false, date:false, notes:'' }, ... }
 let expenses = [];
 let recurringItems = [];
+let photos = [];
+let mood = { amanda: '', aidan: '', week: '' };
+let photoIdx = 0;
+let photoTimer = null;
 
 function isActive(name) {
   return document.getElementById('page-' + name)?.classList.contains('active');
@@ -997,6 +1086,18 @@ function initFirestore() {
     const saved = snap.data().items;
     if (saved && saved.length) todoCategories = saved;
     if (isActive('todos')) renderTodos();
+  });
+
+  ref('photos').onSnapshot(snap => {
+    if (!snap.exists) { ref('photos').set({items:[]}); return; }
+    photos = snap.data().items || [];
+    if (isActive('home')) renderPhotoWidget();
+  });
+
+  ref('mood').onSnapshot(snap => {
+    if (!snap.exists) { ref('mood').set(mood); return; }
+    mood = { amanda:'', aidan:'', week:'', ...snap.data() };
+    if (isActive('home')) renderMoodWidget();
   });
 
   ref('todos').onSnapshot(snap => {
@@ -1114,6 +1215,8 @@ function initFirestore() {
 const _onSaveErr = e => console.error('Save failed:', e);
 function saveTodos()           { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr); }
 function saveTodoCategories()  { db.collection('state').doc('todoCategories').set({items: todoCategories}).catch(_onSaveErr); }
+function savePhotos() { db.collection('state').doc('photos').set({items:photos}).catch(_onSaveErr); }
+function saveMood()   { db.collection('state').doc('mood').set(mood).catch(_onSaveErr); }
 function saveEntries()   { db.collection('state').doc('entries').set({items: newEntries}).catch(_onSaveErr);     }
 function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
@@ -1178,6 +1281,13 @@ function renderHome() {
       <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
     </div>
   `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:10px">See all dates ↗</div>`;
+  // Streak
+  const streak = getStreak();
+  const streakEl = document.getElementById('stat-streak');
+  if (streakEl) streakEl.textContent = streak > 0 ? streak : '—';
+
+  renderPhotoWidget();
+  renderMoodWidget();
   renderNextTrip();
   renderAnniversary();
 }
@@ -1261,8 +1371,22 @@ function saveEntry() {
   };
   newEntries.unshift(entry);
   saveEntries();
+  // Handle optional photo upload
+  const photoFile = document.getElementById('r-photo')?.files[0];
+  if (photoFile) {
+    const photoRef = storage.ref('reviews/' + entry.id);
+    photoRef.put(photoFile).then(s => s.ref.getDownloadURL()).then(url => {
+      entry.photoUrl = url;
+      const idx = newEntries.findIndex(e => e.id === entry.id);
+      if (idx !== -1) newEntries[idx].photoUrl = url;
+      saveEntries();
+    }).catch(() => {});
+  }
   ['r-well','r-stress','r-adjust','r-logistics','r-appts','r-upcoming','r-theme','r-amanda','r-aidan','r-misc']
     .forEach(id => document.getElementById(id).value = '');
+  const rp = document.getElementById('r-photo');
+  if (rp) { rp.value = ''; }
+  document.getElementById('r-photo-preview').style.display = 'none';
   setHeart(0);
   document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
   nextStep(0);
@@ -1312,6 +1436,7 @@ function renderTodos() {
     </div>`;
 
   document.getElementById('todos-container').innerHTML = activeHtml + doneHtml + addSectionHtml;
+  setTimeout(addSwipeToDelete, 50);
 }
 
 function renderTodoItem(t) {
@@ -1330,6 +1455,7 @@ function toggleTodo(id) {
     const el = document.getElementById('todo-' + id);
     if (el) {
       el.classList.add('done');
+      burst();
       setTimeout(() => {
         el.classList.add('collapsing');
         setTimeout(() => { t.done = true; saveTodos(); renderTodos(); }, 350);
@@ -1766,6 +1892,7 @@ function addTrip() {
   logisticsList.push({ id:'log-'+Date.now(), text:`Figure out PTO for ${labelWithEmoji}` });
   saveTrips();
   saveLogistics();
+  burst();
   renderDates();
 }
 
@@ -1906,6 +2033,7 @@ function renderHistory() {
           <div class="history-chevron">▼</div>
         </div>
         <div class="history-body" id="hb-${e.id}">
+          ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
           ${sections.map(s => `
             <div class="history-section">
               <div class="history-section-lbl">${s.lbl}</div>
@@ -1937,6 +2065,212 @@ function surpriseMe() {
 function toggleHistory(id) {
   document.getElementById('hh-' + id).classList.toggle('open');
   document.getElementById('hb-' + id).classList.toggle('open');
+}
+
+// ─── DARK MODE ────────────────────────────────────────────────────────────────
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ow-theme', next);
+  document.getElementById('dark-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+(function applyTheme() {
+  const t = localStorage.getItem('ow-theme');
+  if (t) {
+    document.documentElement.setAttribute('data-theme', t);
+    const btn = document.getElementById('dark-toggle');
+    if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+  }
+})();
+
+// ─── PHOTO WIDGET ─────────────────────────────────────────────────────────────
+function renderPhotoWidget() {
+  const wrap = document.getElementById('photo-widget-wrap');
+  const img  = document.getElementById('photo-widget-img');
+  const empty = document.getElementById('photo-widget-empty');
+  const dots = document.getElementById('photo-dots');
+  const delBtn = document.getElementById('photo-del-btn');
+  if (!wrap) return;
+  if (!photos.length) {
+    if (img)   { img.style.display = 'none'; img.src = ''; }
+    if (empty) empty.style.display = 'flex';
+    if (dots)  dots.innerHTML = '';
+    if (delBtn) delBtn.style.display = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  photoIdx = Math.min(photoIdx, photos.length - 1);
+  if (img) {
+    img.style.display = 'block';
+    if (img.src !== photos[photoIdx].url) {
+      img.classList.add('fade-out');
+      setTimeout(() => { img.src = photos[photoIdx].url; img.classList.remove('fade-out'); }, 300);
+    }
+  }
+  if (dots) {
+    dots.innerHTML = photos.map((_, i) =>
+      `<button class="photo-dot${i===photoIdx?' active':''}" onclick="goToPhoto(${i})"></button>`
+    ).join('');
+  }
+  if (delBtn) delBtn.style.display = photos.length ? '' : 'none';
+  // Start/restart auto-rotation
+  if (photoTimer) clearInterval(photoTimer);
+  if (photos.length > 1) {
+    photoTimer = setInterval(() => { photoIdx = (photoIdx + 1) % photos.length; renderPhotoWidget(); }, 5000);
+  }
+}
+
+function goToPhoto(i) {
+  photoIdx = i;
+  if (photoTimer) { clearInterval(photoTimer); photoTimer = null; }
+  renderPhotoWidget();
+}
+
+async function uploadHomePhoto(file) {
+  if (!file) return;
+  showToast('Uploading... 📸');
+  try {
+    const id = 'photo-' + Date.now();
+    const snap = await storage.ref('photos/' + id).put(file);
+    const url  = await snap.ref.getDownloadURL();
+    photos.push({ id, url });
+    photoIdx = photos.length - 1;
+    savePhotos();
+    showToast('Photo added! 💕');
+  } catch(e) {
+    showToast('Upload failed — try again');
+  }
+}
+
+function deleteCurrentPhoto() {
+  if (!photos.length) return;
+  if (!confirm('Remove this photo?')) return;
+  const p = photos[photoIdx];
+  storage.ref('photos/' + p.id).delete().catch(() => {});
+  photos.splice(photoIdx, 1);
+  photoIdx = Math.max(0, photoIdx - 1);
+  savePhotos();
+}
+
+// ─── MOOD OF THE WEEK ─────────────────────────────────────────────────────────
+const MOOD_EMOJIS = ['😊','😍','🥰','😄','🤩','😌','😴','🥺','😂','🫠','💪','🌟','💕','🎉','🌸','✨','🌈','🙌','🍕','😎'];
+
+function getISOWeek() {
+  const d = new Date(); d.setHours(0,0,0,0);
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + 3 - (copy.getDay() + 6) % 7);
+  const w1 = new Date(copy.getFullYear(), 0, 4);
+  return copy.getFullYear() + '-W' + String(1 + Math.round(((copy - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7)).padStart(2, '0');
+}
+
+function renderMoodWidget() {
+  const el = document.getElementById('mood-widget');
+  if (!el) return;
+  const thisWeek = getISOWeek();
+  const isCurrent = mood.week === thisWeek;
+  const amanda = isCurrent ? mood.amanda : '';
+  const aidan  = isCurrent ? mood.aidan  : '';
+  el.innerHTML = `
+    <div class="mood-person">
+      <div class="mood-person-name" style="color:var(--coral)">Amanda</div>
+      ${amanda
+        ? `<button class="mood-emoji-btn" onclick="openEmojiPicker('amanda')" title="Change mood">${amanda}</button>`
+        : `<button class="mood-set-btn" onclick="openEmojiPicker('amanda')">+ Set mood</button>`}
+    </div>
+    <div class="mood-person">
+      <div class="mood-person-name" style="color:var(--blue)">Aidan</div>
+      ${aidan
+        ? `<button class="mood-emoji-btn" onclick="openEmojiPicker('aidan')" title="Change mood">${aidan}</button>`
+        : `<button class="mood-set-btn" onclick="openEmojiPicker('aidan')">+ Set mood</button>`}
+    </div>`;
+}
+
+function openEmojiPicker(person) {
+  document.getElementById('emoji-picker-popup')?.remove();
+  const popup = document.createElement('div');
+  popup.id = 'emoji-picker-popup';
+  popup.className = 'emoji-picker-popup';
+  // Position near center
+  Object.assign(popup.style, { bottom: '80px', left: '50%', transform: 'translateX(-50%)' });
+  popup.innerHTML = MOOD_EMOJIS.map(e =>
+    `<button onclick="pickMood('${person}','${e}')">${e}</button>`
+  ).join('');
+  document.body.appendChild(popup);
+  // Position properly relative to viewport
+  const rect = popup.getBoundingClientRect();
+  if (rect.bottom > window.innerHeight) popup.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+  setTimeout(() => document.addEventListener('click', removePicker, { once: true }), 50);
+}
+function removePicker() { document.getElementById('emoji-picker-popup')?.remove(); }
+
+function pickMood(person, emoji) {
+  removePicker();
+  mood = { ...mood, [person]: emoji, week: getISOWeek() };
+  saveMood();
+  renderMoodWidget();
+}
+
+// ─── STREAK ───────────────────────────────────────────────────────────────────
+function getStreak() {
+  const entries = getAllEntries();
+  if (!entries.length) return 0;
+  const weekNum = dateStr => {
+    const d = new Date(dateStr + 'T12:00:00');
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const w1 = new Date(d.getFullYear(), 0, 4);
+    return d.getFullYear() * 100 + 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7);
+  };
+  const now = new Date().toISOString().slice(0, 10);
+  const thisW = weekNum(now);
+  const weeks = [...new Set(entries.map(e => weekNum(e.date)))].sort((a, b) => b - a);
+  if (!weeks.length || weeks[0] < thisW - 1) return 0;
+  let streak = 1;
+  for (let i = 1; i < weeks.length; i++) {
+    if (weeks[i - 1] - weeks[i] === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ─── REVIEW PHOTO PREVIEW ─────────────────────────────────────────────────────
+function previewReviewPhoto(file) {
+  if (!file) return;
+  const preview = document.getElementById('r-photo-preview');
+  if (!preview) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── SWIPE TO DELETE (mobile) ─────────────────────────────────────────────────
+function addSwipeToDelete() {
+  document.querySelectorAll('.todo-item:not(.done)').forEach(el => {
+    if (el.dataset.swipe) return; // already initialized
+    el.dataset.swipe = '1';
+    let startX = 0, dx = 0, active = false;
+    el.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX; dx = 0; active = true;
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (!active) return;
+      dx = e.touches[0].clientX - startX;
+      if (dx < 0) el.style.transform = `translateX(${Math.max(dx, -72)}px)`;
+      if (dx < -36) el.style.background = 'var(--coral-bg)';
+    }, { passive: true });
+    el.addEventListener('touchend', () => {
+      active = false;
+      if (dx < -60) {
+        deleteTodo(el.id.replace('todo-', ''));
+      } else {
+        el.style.transform = ''; el.style.background = '';
+      }
+      dx = 0;
+    });
+  });
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
