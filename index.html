@@ -515,11 +515,15 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <img class="photo-widget-img" id="photo-widget-img" src="" alt="" style="display:none">
     </div>
     <div class="photo-dots" id="photo-dots"></div>
+    <div id="photo-url-row" style="display:none;gap:6px;margin-bottom:8px;align-items:center">
+      <input id="photo-url-input" type="text" placeholder="Paste Google Photos link..." style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)">
+      <button onclick="addPhotoFromUrl()" style="padding:7px 14px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Add</button>
+      <button onclick="document.getElementById('photo-url-row').style.display='none'" style="padding:7px 10px;background:none;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-3)">✕</button>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <label class="photo-upload-label">
+      <button class="photo-upload-label" onclick="document.getElementById('photo-url-row').style.display='flex';document.getElementById('photo-url-input').focus()">
         📷 Add Photo
-        <input type="file" accept="image/*" style="display:none" onchange="uploadHomePhoto(this.files[0]);this.value=''">
-      </label>
+      </button>
       <button id="photo-del-btn" onclick="deleteCurrentPhoto()" style="display:none;background:none;border:none;color:var(--text-3);font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px" onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--text-3)'">🗑 Remove</button>
     </div>
   </div>
@@ -2133,28 +2137,22 @@ function goToPhoto(i) {
   renderPhotoWidget();
 }
 
-async function uploadHomePhoto(file) {
-  if (!file) return;
-  if (!storage) { showToast('Storage not available — check Firebase setup'); return; }
-  showToast('Uploading... 📸');
-  try {
-    const id = 'photo-' + Date.now();
-    const snap = await storage.ref('photos/' + id).put(file);
-    const url  = await snap.ref.getDownloadURL();
-    photos.push({ id, url });
-    photoIdx = photos.length - 1;
-    savePhotos();
-    showToast('Photo added! 💕');
-  } catch(e) {
-    showToast('Upload failed — try again');
-  }
+function addPhotoFromUrl() {
+  const input = document.getElementById('photo-url-input');
+  const url = input.value.trim();
+  if (!url) return;
+  const id = 'photo-' + Date.now();
+  photos.push({ id, url });
+  photoIdx = photos.length - 1;
+  savePhotos();
+  input.value = '';
+  document.getElementById('photo-url-row').style.display = 'none';
+  showToast('Photo added! 💕');
 }
 
 function deleteCurrentPhoto() {
   if (!photos.length) return;
   if (!confirm('Remove this photo?')) return;
-  const p = photos[photoIdx];
-  if (storage) storage.ref('photos/' + p.id).delete().catch(() => {});
   photos.splice(photoIdx, 1);
   photoIdx = Math.max(0, photoIdx - 1);
   savePhotos();
