@@ -272,9 +272,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-chip.date.on{background:var(--coral);color:white;border-color:var(--coral)}
 .plan-slot-chip.friends    {background:var(--blue-bg);color:var(--blue);border-color:#c5d8fc}
 .plan-slot-chip.friends.on {background:var(--blue);color:white;border-color:var(--blue)}
-.plan-slot-input{font-size:10px;font-weight:700;padding:2px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text);font-family:inherit;outline:none;min-width:60px;flex:1;max-width:180px;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
-.plan-slot-input:focus{border-style:solid;border-color:var(--amber);background:var(--amber-bg)}
-.plan-slot-input::placeholder{color:var(--text-3);font-weight:600}
+.plan-slot-notes{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;cursor:text;transition:border-color .15s,background .15s;max-width:100%;flex-wrap:wrap}
+.plan-slot-notes:focus-within{border-style:solid;border-color:var(--amber);background:var(--amber-bg);color:var(--text)}
+.plan-slot-notes-text{outline:none;min-width:1px;word-break:break-word;white-space:pre-wrap;font-family:inherit}
+.plan-slot-notes-text:empty::before{content:'Notes';color:var(--text-3);pointer-events:none}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .plan-meal-row{display:flex;flex-direction:column;gap:4px;background:var(--surface-warm);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
@@ -485,7 +486,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .plan-meal-day .day-short{display:inline}
   .plan-slot{flex-wrap:wrap;gap:5px;padding:8px 10px}
   .plan-slot-chip{font-size:9px;padding:2px 6px}
-  .plan-slot-input{flex-basis:100%;margin-top:2px;max-width:100%}
+  .plan-slot-notes{flex-basis:100%;margin-top:2px;max-width:100%}
   /* Dates: add-trip form single column */
   .add-trip-form{grid-template-columns:1fr}
   /* Budget spending by category: name + amount on row 1, bar on row 2 */
@@ -1981,8 +1982,12 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <input class="plan-slot-input" placeholder="Notes" value="${escHtml(d.notes||'')}"
-            oninput="updateDayNotes('${key}', this.value)">
+          <div class="plan-slot-notes" onclick="this.querySelector('.plan-slot-notes-text').focus()">
+            <span>📝</span><div class="plan-slot-notes-text" contenteditable="true"
+              oninput="updateDayNotes('${key}', this.innerText.trim())"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+            >${escHtml(d.notes||'')}</div>
+          </div>
         </div>
       </div>
     </div>`;
