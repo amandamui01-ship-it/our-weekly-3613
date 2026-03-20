@@ -2131,7 +2131,7 @@ function editTripInline(id) {
     <div class="trip-edit-form">
       <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)"
         onclick="event.stopPropagation()"
-        onkeydown="if(event.key==='Enter'){document.getElementById('tedit-name-${id}').focus();event.preventDefault()}if(event.key==='Escape'){renderDates();event.stopPropagation()}"
+        onkeydown="if(event.key==='Enter'){saveTripEdit('${id}');event.preventDefault()}if(event.key==='Escape'){renderDates();event.stopPropagation()}"
         onblur="setTimeout(()=>saveTripEditIfActive('${id}'),120)">
       <input id="tedit-name-${id}"  value="${escHtml(t.label)}"  placeholder="Trip name"
         onclick="event.stopPropagation()"
