@@ -1435,18 +1435,17 @@ function saveEntry() {
     misc:     get('r-misc'),
     hearts:   heartVal,
   };
-  newEntries.unshift(entry);
-  saveEntries();
-  // Handle optional photo upload
+  // Handle optional photo: resize to ≤900px wide, store as base64 in Firestore
   const photoFile = document.getElementById('r-photo')?.files[0];
-  if (photoFile && storage) {
-    const photoRef = storage.ref('reviews/' + entry.id);
-    photoRef.put(photoFile).then(s => s.ref.getDownloadURL()).then(url => {
-      entry.photoUrl = url;
-      const idx = newEntries.findIndex(e => e.id === entry.id);
-      if (idx !== -1) newEntries[idx].photoUrl = url;
-      saveEntries();
-    }).catch(() => {});
+  const finishSave = (dataUrl) => {
+    if (dataUrl) entry.photoUrl = dataUrl;
+    newEntries.unshift(entry);
+    saveEntries();
+  };
+  if (photoFile) {
+    resizePhoto(photoFile, 900, 0.75).then(finishSave).catch(() => finishSave(null));
+  } else {
+    finishSave(null);
   }
   ['r-well','r-stress','r-adjust','r-logistics','r-appts','r-upcoming','r-theme','r-amanda','r-aidan','r-misc']
     .forEach(id => document.getElementById(id).value = '');
@@ -2496,7 +2495,26 @@ function getStreak() {
   return streak;
 }
 
-// ─── REVIEW PHOTO PREVIEW ─────────────────────────────────────────────────────
+// ─── REVIEW PHOTO HELPERS ─────────────────────────────────────────────────────
+function resizePhoto(file, maxPx, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 function previewReviewPhoto(file) {
   if (!file) return;
   const preview = document.getElementById('r-photo-preview');
