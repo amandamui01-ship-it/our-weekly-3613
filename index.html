@@ -2615,7 +2615,7 @@ function burstReview() {
     const tx = Math.cos(angle * Math.PI / 180) * dist + 'px';
     const ty = Math.sin(angle * Math.PI / 180) * dist + 'px';
     const delay = Math.random() * 300;
-    const dur = 1.2 + Math.random() * .6;
+    const dur = 2.0 + Math.random() * 1.0;
     if (useEmoji) {
       const size = 20 + Math.round(Math.random() * 18);
       dot.style.cssText = `position:absolute;font-size:${size}px;line-height:1;left:${cx}px;top:${cy}px;margin:-${size/2}px 0 0 -${size/2}px;--tx:${tx};--ty:${ty};animation:confetti-fly ${dur}s ease-out forwards;animation-delay:${delay}ms;opacity:0`;
@@ -2627,7 +2627,7 @@ function burstReview() {
     }
     wrap.appendChild(dot);
   }
-  setTimeout(() => wrap.innerHTML = '', 2500);
+  setTimeout(() => wrap.innerHTML = '', 3800);
 }
 
 // ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
