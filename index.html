@@ -763,6 +763,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <div class="page" id="page-plan">
   <div class="page-title">Next Week</div>
   <div class="page-sub" id="plan-week-label">Plan ahead so the week actually happens. 🗓️</div>
+  <div id="plan-theme-banner" style="display:none;text-align:center;margin:-4px 0 20px"></div>
   <div style="text-align:center;margin-bottom:24px">
     <button class="btn btn-secondary" onclick="clearPlan()">🗑️ Clear & Start Fresh</button>
   </div>
@@ -1871,6 +1872,18 @@ function renderPlan() {
 
   document.getElementById('plan-week-label').textContent = formatPlanLabel();
 
+  // Theme from most recent review entry
+  const themeBanner = document.getElementById('plan-theme-banner');
+  const lastTheme = newEntries.find(e => !e.id.startsWith('seed-') && e.theme)?.theme;
+  if (themeBanner) {
+    if (lastTheme) {
+      themeBanner.innerHTML = `<span style="display:inline-block;padding:5px 16px;background:var(--amber-bg);color:var(--amber-dark);border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.04em">${escHtml(lastTheme)}</span>`;
+      themeBanner.style.display = 'block';
+    } else {
+      themeBanner.style.display = 'none';
+    }
+  }
+
   // Schedule
   document.getElementById('plan-week').innerHTML = PLAN_DAYS.map(({key, label}) => {
     const d = p[key] || {};
@@ -1884,7 +1897,7 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <input class="plan-slot-input" placeholder="notes" value="${escHtml(d.notes||'')}"
+          <input class="plan-slot-input" placeholder="Notes" value="${escHtml(d.notes||'')}"
             oninput="updateDayNotes('${key}', this.value)">
         </div>
       </div>
