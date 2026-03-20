@@ -436,6 +436,26 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .list-item:hover .list-drag-handle{opacity:.4}
 .list-item.dragging{opacity:.35}
 .list-item.drag-over{border-top:2px solid var(--amber)}
+
+/* ── Small-screen responsive fixes ── */
+@media(max-width:480px){
+  /* Nav: tighter tabs so they fit without scrolling */
+  #logo{font-size:15px;padding:12px 12px 12px 0}
+  .nav-tab{padding:12px 10px;font-size:12px}
+  /* Weekly schedule: narrower day label */
+  .plan-day{grid-template-columns:62px 1fr}
+  .plan-day-label{font-size:10px;padding:8px 4px;letter-spacing:0}
+  .plan-slot-chip{font-size:9px;padding:2px 6px}
+  /* Budget spending by category: name + amount on row 1, bar on row 2 */
+  .budget-cat-row{grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:3px 8px}
+  .budget-cat-name{grid-column:1;grid-row:1}
+  .budget-cat-amt{grid-column:2;grid-row:1}
+  .budget-cat-bars{grid-column:1/-1;grid-row:2}
+  /* Budget snapshot already 2-col at 680px */
+  /* Budget quick-add row 1 wrap nicely */
+  .bqa-row1{grid-template-columns:1fr 1fr}
+  .bq-desc{grid-column:1/-1}
+}
 </style>
 </head>
 <body>
@@ -460,8 +480,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 <!-- ── Nav ── -->
 <nav id="nav">
-  <div id="logo">our weekly ♥</div>
-  <div class="nav-tab active" onclick="showPage('home')">🏠 Home</div>
+  <div id="logo" onclick="showPage('home')" style="cursor:pointer">our weekly ♥</div>
   <div class="nav-tab" onclick="showPage('review')">✏️ This Week</div>
   <div class="nav-tab" onclick="showPage('plan')">🗓️ Next Week</div>
   <div class="nav-tab" onclick="showPage('todos')">✅ To-Dos</div>
@@ -545,29 +564,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="card" style="margin:0">
       <div class="card-title" style="margin-bottom:12px">Mood 💭</div>
       <div class="mood-grid" id="mood-widget"></div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-bottom:16px" id="photo-card">
-    <div class="card-title" style="margin-bottom:12px">Our Photos 📸</div>
-    <div class="photo-widget-wrap" id="photo-widget-wrap">
-      <div class="photo-widget-empty" id="photo-widget-empty">
-        <span style="font-size:32px">📷</span>
-        <span>Add your first photo!</span>
-      </div>
-      <img class="photo-widget-img" id="photo-widget-img" src="" alt="" style="display:none" onerror="removeBrokenPhoto(this)">
-    </div>
-    <div class="photo-dots" id="photo-dots"></div>
-    <div id="photo-url-row" style="display:none;gap:6px;margin-bottom:8px;align-items:center">
-      <input id="photo-url-input" type="text" placeholder="Paste a direct image URL (right-click photo → Copy image address)" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)">
-      <button onclick="addPhotoFromUrl()" style="padding:7px 14px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Add</button>
-      <button onclick="document.getElementById('photo-url-row').style.display='none'" style="padding:7px 10px;background:none;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;color:var(--text-3)">✕</button>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <button class="photo-upload-label" onclick="document.getElementById('photo-url-row').style.display='flex';document.getElementById('photo-url-input').focus()">
-        📷 Add Photo
-      </button>
-      <button id="photo-del-btn" onclick="deleteCurrentPhoto()" style="display:none;background:none;border:none;color:var(--text-3);font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px" onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--text-3)'">🗑 Remove</button>
     </div>
   </div>
 
@@ -1292,8 +1288,8 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const map = {home:0, review:1, plan:2, todos:3, dates:4, budget:5, history:6};
-  document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
+  const map = {home:-1, review:0, plan:1, todos:2, dates:3, budget:4, history:5};
+  if (map[name] >= 0) document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'todos')   renderTodos();
   if (name === 'history') renderHistory();
@@ -2832,10 +2828,10 @@ function editExpense(id) {
         <option${e.person==='Amanda'?' selected':''}>Amanda</option>
         <option${e.person==='Aidan'?' selected':''}>Aidan</option>
       </select>
-      <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
       <select id="txe-cat-${id}" class="bq-input" style="font-size:12px;padding:4px 6px">
         ${EXPENSE_CATS_LIST.map(c=>`<option${c===e.category?' selected':''}>${c}</option>`).join('')}
       </select>
+      <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
       <input id="txe-amt-${id}" type="number" value="${e.amount}" class="bq-input" style="width:80px;font-size:12px;padding:4px 8px">
       <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="font-size:12px;padding:4px 8px">
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> 50/50</label>
