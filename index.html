@@ -249,8 +249,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-chip.date.on{background:var(--coral);color:white;border-color:var(--coral)}
 .plan-slot-chip.friends    {background:var(--blue-bg);color:var(--blue);border-color:#c5d8fc}
 .plan-slot-chip.friends.on {background:var(--blue);color:white;border-color:var(--blue)}
-.plan-slot-input{width:0;min-width:0;flex:0;border:none;background:transparent;font-size:13px;font-family:inherit;color:var(--text);outline:none;padding:0;transition:flex .2s,min-width .2s;overflow:hidden}
-.plan-slot-input.has-value,.plan-slot-input:focus{flex:1;min-width:80px}
+.plan-slot-input{flex:1;border:none;background:transparent;font-size:13px;font-family:inherit;color:var(--text);outline:none;padding:0}
 .plan-slot-input::placeholder{color:var(--text-3)}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -1885,8 +1884,8 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <input class="plan-slot-input${d.notes ? ' has-value' : ''}" placeholder="note" value="${escHtml(d.notes||'')}"
-            oninput="updateDayNotes('${key}', this.value);this.classList.toggle('has-value',!!this.value)">
+          <input class="plan-slot-input" placeholder="notes" value="${escHtml(d.notes||'')}"
+            oninput="updateDayNotes('${key}', this.value)">
         </div>
       </div>
     </div>`;
