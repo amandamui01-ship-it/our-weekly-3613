@@ -830,10 +830,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- Recurring + Bulk paste -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch" class="budget-tools-row">
+  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:320px;gap:16px;margin-bottom:16px" class="budget-tools-row">
 
     <!-- Recurring -->
-    <div class="card" style="display:flex;flex-direction:column;height:320px">
+    <div class="card" style="display:flex;flex-direction:column;min-height:0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div class="card-title" style="margin-bottom:0">🔁 Recurring</div>
         <button id="rec-load-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurring()">Load This Month</button>
@@ -850,7 +850,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
 
     <!-- Bulk paste -->
-    <div class="card" style="display:flex;flex-direction:column;height:320px">
+    <div class="card" style="display:flex;flex-direction:column;min-height:0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div class="card-title" style="margin-bottom:0">📋 Bulk Paste</div>
         <div style="display:flex;gap:6px">
