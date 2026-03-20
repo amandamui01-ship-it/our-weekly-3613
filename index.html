@@ -2261,8 +2261,8 @@ function renderHistory() {
           <div class="history-preview">${escHtml(preview) || '—'}</div>
           ${e.theme ? `<div class="history-theme">${escHtml(e.theme.replace(/^[\p{Emoji}\s]+/u,'').split('(')[0].trim())}</div>` : ''}
           ${heartsHtml ? `<div class="history-hearts">${heartsHtml}</div>` : ''}
-          <div class="history-chevron">▼</div>
           ${!e.id.startsWith('seed-') ? `<button class="history-del" onclick="deleteEntry('${e.id}');event.stopPropagation()" title="Delete entry">×</button>` : ''}
+          <div class="history-chevron">▼</div>
         </div>
         <div class="history-body" id="hb-${e.id}">
           ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
