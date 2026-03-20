@@ -165,6 +165,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-card .trip-del{position:absolute;top:8px;right:10px;font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;background:none;border:none;font-family:inherit;line-height:1;padding:2px 4px}
 .trip-card:hover .trip-del{opacity:.45}
 .trip-del:hover{opacity:1!important;color:var(--coral)}
+@media(hover:none){.trip-card .trip-del{opacity:.3}}
 .trip-edit-form{display:flex;flex-direction:column;gap:4px;padding:0}
 .trip-edit-form input{border:none;border-bottom:1px solid var(--amber);background:transparent;font-family:'Inter',-apple-system,sans-serif;font-weight:700;color:var(--text);outline:none;padding:0;text-align:center;width:100%}
 .trip-edit-form input:nth-child(1){font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;line-height:1.2}
@@ -215,8 +216,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .toast.show{opacity:1;transform:translateY(0)}
 
 /* ── Confetti ── */
-.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden}
-.confetti-dot{position:absolute;width:11px;height:11px;border-radius:50%;opacity:0}
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti-dot{position:absolute;width:16px;height:16px;border-radius:50%;opacity:0}
 @keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
 
 /* ── Japan Countdown ── */
@@ -579,11 +580,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="card" style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,#fff0f5 0%,#fff8f0 100%);border-color:#f5c6d0">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#e0607a;margin-bottom:4px">💕 Our Anniversary</div>
-    <div style="font-size:13px;color:var(--text-3);margin-bottom:14px">October 1st</div>
-    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:800;color:#e0607a;line-height:1" id="anniv-days">—</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);margin-top:6px">days away</div>
+  <div class="card" style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Our Anniversary</div>
+    <div style="font-size:13px;color:var(--text-2);margin-bottom:14px">October 1st</div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:8px">days away</div>
   </div>
 
 </div>
@@ -1389,7 +1390,9 @@ function spinCoffee() {
       spinning = false;
       btn.textContent = '☕ Spin Again!';
       btn.disabled = false;
-      burst();
+      const card = document.querySelector('.coffee-card');
+      const r = card ? card.getBoundingClientRect() : null;
+      r ? burstAt(r.left + r.width/2, r.top + r.height/2, 48, 140) : burst();
     }
   }, 75);
 }
@@ -2127,6 +2130,7 @@ function editTripInline(id) {
   if (!t) return;
   const card = document.querySelector(`.trip-card[data-id="${id}"]`);
   if (!card) return;
+  _tripSaved = false;
   card.innerHTML = `
     <div class="trip-edit-form">
       <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)"
@@ -2141,13 +2145,17 @@ function editTripInline(id) {
   document.getElementById('tedit-name-' + id).focus();
 }
 
+let _tripSaved = false;
 function saveTripEditIfActive(id) {
+  if (_tripSaved) return;
   const focused = document.activeElement;
   if (focused && (focused.id === 'tedit-dates-'+id || focused.id === 'tedit-name-'+id)) return;
   saveTripEdit(id);
 }
 
 function saveTripEdit(id) {
+  if (_tripSaved) return;
+  _tripSaved = true;
   const t = trips.find(x => x.id === id);
   if (!t) return;
   const dates = document.getElementById('tedit-dates-' + id)?.value.trim();
@@ -2559,7 +2567,7 @@ function burstAt(cx, cy, count = 36, maxDist = 120) {
     const dist = 40 + Math.random() * maxDist;
     const tx = Math.cos(angle * Math.PI / 180) * dist + 'px';
     const ty = Math.sin(angle * Math.PI / 180) * dist + 'px';
-    dot.style.cssText = `background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-5.5px 0 0 -5.5px;animation:confetti-fly .9s ease-out forwards;animation-delay:${i*15}ms`;
+    dot.style.cssText = `background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-8px 0 0 -8px;animation:confetti-fly .9s ease-out forwards;animation-delay:${i*15}ms`;
     wrap.appendChild(dot);
   }
   setTimeout(() => wrap.innerHTML = '', 1600);
