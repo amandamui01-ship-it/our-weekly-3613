@@ -34,7 +34,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Nav ── */
 #nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(45,36,23,.06);overflow-x:auto}
 #logo{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--amber);padding:14px 20px 14px 0;border-right:1px solid var(--border);margin-right:8px;white-space:nowrap;letter-spacing:-.3px;flex-shrink:0}
-.nav-tab{padding:14px 16px;font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.nav-tab{padding:14px 16px;font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:1}
+@media(max-width:860px){.nav-tab{padding:14px 10px;font-size:13px}.nav-emoji{display:none}#logo{font-size:16px;padding:14px 12px 14px 0}}
+@media(max-width:640px){.nav-tab{padding:12px 8px;font-size:12px}}
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 
@@ -494,12 +496,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- ── Nav ── -->
 <nav id="nav">
   <div id="logo" onclick="showPage('home')" style="cursor:pointer">our weekly ♥</div>
-  <div class="nav-tab" onclick="showPage('review')">✏️ This Week</div>
-  <div class="nav-tab" onclick="showPage('plan')">🗓️ Next Week</div>
-  <div class="nav-tab" onclick="showPage('todos')">✅ To-Dos</div>
-  <div class="nav-tab" onclick="showPage('dates')">✈️ 2026 Dates</div>
-  <div class="nav-tab" onclick="showPage('budget')">💰 Budget</div>
-  <div class="nav-tab" onclick="showPage('history')">📖 History</div>
+  <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">✏️ </span>This Week</div>
+  <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">🗓️ </span>Next Week</div>
+  <div class="nav-tab" onclick="showPage('todos')"><span class="nav-emoji">✅ </span>To-Dos</div>
+  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>2026 Dates</div>
+  <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
+  <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">📖 </span>History</div>
   <div style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
     <span class="theme-icon">&#9728;</span>
     <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
