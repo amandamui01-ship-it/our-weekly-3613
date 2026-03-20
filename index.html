@@ -325,7 +325,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .budget-tx-cat{font-size:11px;color:var(--text-3)}
 .budget-tx-amt{font-weight:700;text-align:right;white-space:nowrap}
 .budget-tx-amt.income{color:var(--sage)}
-.budget-tx-shared{font-size:10px;color:var(--amber);font-weight:700;white-space:nowrap}
+.budget-tx-shared{font-size:11px;color:var(--amber-dark);font-weight:800;white-space:nowrap;background:var(--amber-bg);border-radius:4px;padding:1px 5px}
+.shared-tx{background:linear-gradient(90deg,var(--amber-bg) 0%,transparent 100%);border-radius:6px}
 .budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
 .budget-tx-del:hover{color:var(--coral)}
 
@@ -2354,13 +2355,22 @@ function addPhotoFromUrl() {
   const input = document.getElementById('photo-url-input');
   const url = input.value.trim();
   if (!url) return;
-  const id = 'photo-' + Date.now();
-  photos.push({ id, url });
-  photoIdx = photos.length - 1;
-  savePhotos();
-  input.value = '';
-  document.getElementById('photo-url-row').style.display = 'none';
-  showToast('Photo added! 💕');
+  showToast('Checking image…');
+  const test = new Image();
+  test.onload = () => {
+    const id = 'photo-' + Date.now();
+    photos.push({ id, url });
+    photoIdx = photos.length - 1;
+    savePhotos();
+    input.value = '';
+    document.getElementById('photo-url-row').style.display = 'none';
+    renderPhotoWidget();
+    showToast('Photo added! 💕');
+  };
+  test.onerror = () => {
+    showToast('⚠️ That URL didn\'t load. In Google Photos: open the photo, tap ⋮ → Share → Copy link won\'t work — instead long-press the photo itself → Copy image.');
+  };
+  test.src = url;
 }
 
 function deleteCurrentPhoto() {
@@ -2734,15 +2744,16 @@ function renderBudget() {
       Object.entries(byDate).map(([date, txs]) => `
         <div class="budget-tx-group">
           <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
-          ${txs.map(e=>`<div class="budget-tx" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
+          ${txs.map(e=>`<div class="budget-tx${e.shared?' shared-tx':''}" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
             <div class="budget-tx-left">
               <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
               <div class="budget-tx-info">
                 <span class="budget-tx-desc">${e.category}</span>
-                ${(e.description||e.shared)?`<span class="budget-tx-cat">${[e.description?escHtml(e.description):null,e.shared?'50/50':null].filter(Boolean).join(' · ')}</span>`:''}
+                ${e.description?`<span class="budget-tx-cat">${escHtml(e.description)}</span>`:''}
               </div>
             </div>
             <div class="budget-tx-right">
+              ${e.shared?`<span class="budget-tx-shared">½</span>`:''}
               <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
               <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
             </div>
