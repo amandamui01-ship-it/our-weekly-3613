@@ -21,7 +21,7 @@
   --shadow:0 2px 12px rgba(45,36,23,.08);
   --shadow-lg:0 8px 32px rgba(45,36,23,.12);
 }
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* ── Login overlay ── */
 #login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
@@ -252,7 +252,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-meal-input:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 
 /* ── Budget ── */
-.budget-period-row{display:flex;align-items:center;gap:14px;margin-bottom:28px;flex-wrap:wrap;padding-bottom:20px;border-bottom:1px solid var(--border-light)}
+.budget-period-row{display:flex;align-items:center;gap:14px;margin-top:20px;margin-bottom:16px;flex-wrap:wrap}
 .budget-period-row select{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
 .budget-period-row select:focus{border-color:var(--amber)}
 .budget-month-pills{display:flex;gap:8px;flex-wrap:wrap}
@@ -326,7 +326,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .budget-tx-amt{font-weight:700;text-align:right;white-space:nowrap}
 .budget-tx-amt.income{color:var(--sage)}
 .budget-tx-shared{font-size:11px;color:var(--amber-dark);font-weight:800;white-space:nowrap;background:var(--amber-bg);border-radius:4px;padding:1px 5px}
-.shared-tx{background:linear-gradient(90deg,var(--amber-bg) 0%,transparent 100%);border-radius:6px}
+.shared-tx{background:var(--amber-bg);border-radius:6px}
 .budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
 .budget-tx-del:hover{color:var(--coral)}
 
@@ -350,9 +350,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .budget-top-row{grid-template-columns:1fr}
   .budget-snapshot{grid-template-columns:1fr 1fr}
   .budget-summary-cards{grid-template-columns:1fr 1fr}
-  .budget-tools-row{grid-template-columns:1fr!important}
+  .budget-tools-row{grid-template-columns:1fr!important;grid-template-rows:auto!important}
   .welcome-banner{padding:24px 22px}
   .welcome-greeting{font-size:24px}
+  .bqa-row1{grid-template-columns:1fr 1fr}
+  .budget-trend{overflow-x:auto;padding-bottom:4px}
+  .budget-tools-row>.card{height:auto!important;min-height:300px}
 }
 
 /* ── Dark mode ── */
@@ -2753,7 +2756,7 @@ function renderBudget() {
               </div>
             </div>
             <div class="budget-tx-right">
-              ${e.shared?`<span class="budget-tx-shared">½</span>`:''}
+              ${e.shared?`<span class="budget-tx-shared">50/50</span>`:''}
               <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
               <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
             </div>
