@@ -2601,31 +2601,33 @@ function burst() {
 }
 
 function burstReview() {
-  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
   const wrap = document.getElementById('confetti-wrap');
-  const colors = ['#f5c27a','#e8735a','#6b8f71','#4472a8','#f9a8d4','#fcd34d','#a78bfa','#fb923c'];
-  const shapes = ['💕','⭐','✨','🌸','💛','💜','🧡','💙'];
+  const colors = ['#f5c27a','#e8735a','#6b8f71','#4472a8','#f9a8d4','#fcd34d','#a78bfa','#fb923c','#34d399','#f472b6'];
+  const shapes = ['💕','⭐','✨','🌸','💛','💜','🧡','💙','🎉','🌟','💖','🎊'];
   wrap.innerHTML = '';
-  const count = 64;
+  const count = 160;
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
   for (let i = 0; i < count; i++) {
-    const useEmoji = Math.random() < 0.35;
+    const useEmoji = Math.random() < 0.4;
     const dot = document.createElement('div');
-    const angle = (i / count) * 360 + (Math.random() - .5) * 20;
-    const dist = 60 + Math.random() * 220;
+    const angle = Math.random() * 360;
+    const dist = 80 + Math.random() * Math.max(window.innerWidth, window.innerHeight) * .7;
     const tx = Math.cos(angle * Math.PI / 180) * dist + 'px';
     const ty = Math.sin(angle * Math.PI / 180) * dist + 'px';
-    const delay = i * 10 + Math.random() * 80;
-    const size = 10 + Math.round(Math.random() * 12);
+    const delay = Math.random() * 300;
+    const dur = 1.2 + Math.random() * .6;
     if (useEmoji) {
-      dot.style.cssText = `position:absolute;font-size:${size+6}px;line-height:1;left:${cx}px;top:${cy}px;margin:-12px 0 0 -12px;--tx:${tx};--ty:${ty};animation:confetti-fly 1.1s ease-out forwards;animation-delay:${delay}ms;opacity:0`;
-      dot.textContent = shapes[i % shapes.length];
+      const size = 20 + Math.round(Math.random() * 18);
+      dot.style.cssText = `position:absolute;font-size:${size}px;line-height:1;left:${cx}px;top:${cy}px;margin:-${size/2}px 0 0 -${size/2}px;--tx:${tx};--ty:${ty};animation:confetti-fly ${dur}s ease-out forwards;animation-delay:${delay}ms;opacity:0`;
+      dot.textContent = shapes[Math.floor(Math.random() * shapes.length)];
     } else {
+      const size = 12 + Math.round(Math.random() * 16);
       dot.className = 'confetti-dot';
-      dot.style.cssText = `width:${size}px;height:${size}px;background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-${size/2}px 0 0 -${size/2}px;animation:confetti-fly 1.1s ease-out forwards;animation-delay:${delay}ms`;
+      dot.style.cssText = `width:${size}px;height:${size}px;background:${colors[i%colors.length]};--tx:${tx};--ty:${ty};left:${cx}px;top:${cy}px;margin:-${size/2}px 0 0 -${size/2}px;animation:confetti-fly ${dur}s ease-out forwards;animation-delay:${delay}ms`;
     }
     wrap.appendChild(dot);
   }
-  setTimeout(() => wrap.innerHTML = '', 2000);
+  setTimeout(() => wrap.innerHTML = '', 2500);
 }
 
 // ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
