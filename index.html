@@ -32,11 +32,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 #login-error{font-size:13px;color:var(--coral);text-align:center;min-height:20px;margin-bottom:12px}
 
 /* ── Nav ── */
-#nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(45,36,23,.06);overflow-x:auto}
-#logo{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--amber);padding:14px 20px 14px 0;border-right:1px solid var(--border);margin-right:8px;white-space:nowrap;letter-spacing:-.3px;flex-shrink:0}
-.nav-tab{padding:14px 16px;font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:1}
-@media(max-width:860px){.nav-tab{padding:14px 10px;font-size:13px}.nav-emoji{display:none}#logo{font-size:16px;padding:14px 12px 14px 0}}
-@media(max-width:640px){.nav-tab{padding:12px 8px;font-size:12px}}
+#nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(45,36,23,.06);overflow:hidden}
+#logo{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--amber);padding:14px 16px 14px 0;border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;letter-spacing:-.3px;flex-shrink:0}
+.nav-tab{padding:14px 12px;font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:1;min-width:0}
+@media(max-width:1050px){.nav-emoji{display:none}.nav-signout-icon{display:inline!important}.nav-tab{padding:14px 10px}}
+@media(max-width:780px){.nav-tab{padding:12px 8px;font-size:13px}#logo{font-size:15px;padding:12px 10px 12px 0}}
+@media(max-width:580px){.nav-tab{padding:11px 6px;font-size:12px}}
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 
@@ -507,7 +508,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
     <span class="theme-icon">&#9790;</span>
   </div>
-  <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 16px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap">Sign out</div>
+  <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 10px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap"><span class="nav-emoji">Sign out</span><span class="nav-signout-icon" style="display:none">↩</span></div>
 </nav>
 
 <!-- ── HOME ── -->
