@@ -889,9 +889,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         </select>
         <select id="b-filter-person" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
           <option value="">Both</option><option>Amanda</option><option>Aidan</option>
-        </select>
-        <select id="b-filter-shared" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
-          <option value="">All</option><option value="shared">50/50 only</option><option value="unshared">Not 50/50</option>
+          <option value="shared">50/50 only</option>
         </select>
       </div>
     </div>
@@ -2666,11 +2664,9 @@ function renderBudget() {
       availCats.map(c => `<option${c===prevCatSel?' selected':''}>${c}</option>`).join('');
   }
   const filterCat = catFilterEl?.value || '';
-  const filterShared = document.getElementById('b-filter-shared')?.value || '';
   const filtered = monthTx
-    .filter(e => filterPerson ? e.person === filterPerson : true)
+    .filter(e => filterPerson === 'shared' ? e.shared : filterPerson ? e.person === filterPerson : true)
     .filter(e => filterCat ? e.category === filterCat : true)
-    .filter(e => filterShared === 'shared' ? e.shared : filterShared === 'unshared' ? !e.shared : true)
     .filter(e => searchQ ? (e.description.toLowerCase().includes(searchQ) || e.category.toLowerCase().includes(searchQ)) : true);
 
   // Snapshot strip
