@@ -38,13 +38,31 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 @media(max-width:1050px){.nav-emoji{display:none}.nav-signout-icon{display:inline!important}.nav-tab{padding:14px 10px}}
 @media(max-width:780px){.nav-tab{padding:12px 8px;font-size:13px}#logo{font-size:15px;padding:12px 10px 12px 0}}
 @media(max-width:580px){.nav-tab{padding:11px 6px;font-size:12px}}
+
+/* ── Mobile hamburger ── */
+#hamburger{display:none;background:none;border:none;cursor:pointer;padding:10px;margin-left:auto;flex-shrink:0;color:var(--text-2)}
+#hamburger span{display:block;width:20px;height:2px;background:currentColor;margin:4px 0;border-radius:2px;transition:all .2s}
+#nav-menu{display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 4px 16px rgba(45,36,23,.1);z-index:99}
+#nav-menu.open{display:block}
+#nav-menu .menu-item{display:flex;align-items:center;gap:10px;padding:14px 20px;font-size:15px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:1px solid var(--border-light);transition:background .1s}
+#nav-menu .menu-item:last-child{border-bottom:none}
+#nav-menu .menu-item:hover{background:var(--amber-bg);color:var(--amber)}
+#nav-menu .menu-item.active{color:var(--amber);font-weight:700}
+#nav-menu .menu-divider{height:1px;background:var(--border);margin:0}
+@media(max-width:540px){
+  #hamburger{display:flex;flex-direction:column;justify-content:center}
+  .nav-tab{display:none}
+  #nav{overflow:visible;position:relative}
+  .nav-dark-controls{display:none!important}
+  #signout-btn{display:none!important}
+}
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 
 /* ── Pages ── */
-@keyframes fadeIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 .page{display:none;padding:32px 40px 60px;max-width:920px;margin:0 auto}
-.page.active{display:block;animation:fadeIn .22s ease}
+.page.active{display:block;animation:fadeIn .25s cubic-bezier(.2,.8,.4,1)}
 
 /* ── Cards ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow)}
@@ -240,8 +258,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Next Week Plan ── */
 .plan-week{display:grid;gap:8px}
-.plan-day{display:grid;grid-template-columns:48px 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.plan-day{display:grid;grid-template-columns:96px 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .plan-day-label{background:var(--amber-bg);color:var(--amber-dark);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:10px 8px;text-transform:uppercase;letter-spacing:.05em;text-align:center;line-height:1.3}
+.plan-day-label .day-short{display:none}
+.plan-meal-day .day-short{display:none}
 .plan-day-slots{display:flex;flex-direction:column;gap:0}
 .plan-slot{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border-light);transition:background .1s}
 .plan-slot:last-child{border-bottom:none}
@@ -404,7 +424,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .mood-emoji-btn:hover{transform:scale(1.15);background:var(--amber-bg)}
 .mood-set-btn{font-size:12px;color:var(--text-3);background:none;border:1px dashed var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;width:100%;margin-top:2px}
 .mood-set-btn:hover{color:var(--amber);border-color:var(--amber)}
-.emoji-picker-popup{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px;box-shadow:var(--shadow-lg);z-index:500;display:grid;grid-template-columns:repeat(5,1fr);gap:3px;width:210px}
+.emoji-picker-popup{position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px;box-shadow:var(--shadow-lg);z-index:500;display:grid;grid-template-columns:repeat(5,1fr);gap:3px;width:220px}
 .emoji-picker-popup button{background:none;border:none;font-size:22px;cursor:pointer;padding:5px;border-radius:8px;transition:background .1s}
 .emoji-picker-popup button:hover{background:var(--amber-bg)}
 
@@ -458,6 +478,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   /* Weekly schedule: chips wrap to first line, input on its own line below */
   .plan-day{grid-template-columns:32px 1fr}
   .plan-day-label{font-size:10px;padding:8px 4px;letter-spacing:0}
+  .plan-day-label .day-full{display:none}
+  .plan-day-label .day-short{display:inline}
+  .plan-meal-day .day-full{display:none}
+  .plan-meal-day .day-short{display:inline}
   .plan-slot{flex-wrap:wrap;gap:5px;padding:8px 10px}
   .plan-slot-chip{font-size:9px;padding:2px 6px}
   .plan-slot-input{flex-basis:100%;margin-top:2px}
@@ -503,12 +527,27 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>2026 Dates</div>
   <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
   <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">📖 </span>History</div>
-  <div style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
+  <div class="nav-dark-controls" style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
     <span class="theme-icon">&#9728;</span>
     <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
     <span class="theme-icon">&#9790;</span>
   </div>
   <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 10px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap"><span class="nav-emoji">Sign out</span><span class="nav-signout-icon" style="display:none">↩</span></div>
+  <button id="hamburger" onclick="toggleNavMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div id="nav-menu">
+    <div class="menu-item" onclick="showPage('home')">🏠 Home</div>
+    <div class="menu-item" onclick="showPage('review')">✏️ This Week</div>
+    <div class="menu-item" onclick="showPage('plan')">🗓️ Next Week</div>
+    <div class="menu-item" onclick="showPage('todos')">✅ To-Dos</div>
+    <div class="menu-item" onclick="showPage('dates')">✈️ 2026 Dates</div>
+    <div class="menu-item" onclick="showPage('budget')">💰 Budget</div>
+    <div class="menu-item" onclick="showPage('history')">📖 History</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" onclick="toggleDarkMode()">🌙 Dark mode</div>
+    <div class="menu-item" onclick="auth.signOut()">↩ Sign out</div>
+  </div>
 </nav>
 
 <!-- ── HOME ── -->
@@ -1306,19 +1345,44 @@ function saveExpenses()   { db.collection('state').doc('expenses').set({items: e
 function saveRecurring()  { db.collection('state').doc('recurring').set({items: recurringItems}).catch(_onSaveErr); }
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
+function toggleNavMenu() {
+  const menu = document.getElementById('nav-menu');
+  menu.classList.toggle('open');
+}
+function closeNavMenu() {
+  document.getElementById('nav-menu')?.classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#nav-menu') && !e.target.closest('#hamburger')) closeNavMenu();
+});
+
 function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  const map = {home:-1, review:0, plan:1, todos:2, dates:3, budget:4, history:5};
-  if (map[name] >= 0) document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
-  window.scrollTo(0, 0);
-  if (name === 'todos')   renderTodos();
-  if (name === 'history') renderHistory();
-  if (name === 'home')    renderHome();
-  if (name === 'dates')   renderDates();
-  if (name === 'plan')    renderPlan();
-  if (name === 'budget')  { renderBudget(); renderRecurring(); }
+  const doSwitch = () => {
+    document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.opacity = ''; p.style.transition = ''; });
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    const map = {home:-1, review:0, plan:1, todos:2, dates:3, budget:4, history:5};
+    if (map[name] >= 0) document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
+    const menuMap = {home:0, review:1, plan:2, todos:3, dates:4, budget:5, history:6};
+    document.querySelectorAll('#nav-menu .menu-item').forEach(i => i.classList.remove('active'));
+    if (menuMap[name] !== undefined) document.querySelectorAll('#nav-menu .menu-item')[menuMap[name]]?.classList.add('active');
+    window.scrollTo(0, 0);
+    closeNavMenu();
+    if (name === 'todos')   renderTodos();
+    if (name === 'history') renderHistory();
+    if (name === 'home')    renderHome();
+    if (name === 'dates')   renderDates();
+    if (name === 'plan')    renderPlan();
+    if (name === 'budget')  { renderBudget(); renderRecurring(); }
+  };
+  const current = document.querySelector('.page.active');
+  if (current && current.id !== 'page-' + name) {
+    current.style.transition = 'opacity 0.15s ease';
+    current.style.opacity = '0';
+    setTimeout(doSwitch, 150);
+  } else {
+    doSwitch();
+  }
 }
 
 // ─── HOME ────────────────────────────────────────────────────────────────────
@@ -1854,15 +1918,18 @@ function addListDragListeners() {
 
 // ─── PLAN ────────────────────────────────────────────────────────────────────
 const PLAN_DAYS = [
-  {key:'mon', label:'M'},
-  {key:'tue', label:'T'},
-  {key:'wed', label:'W'},
-  {key:'thu', label:'T'},
-  {key:'fri', label:'F'},
-  {key:'sat', label:'S'},
-  {key:'sun', label:'S'},
+  {key:'mon', label:'Mon', full:'Monday'},
+  {key:'tue', label:'Tue', full:'Tuesday'},
+  {key:'wed', label:'Wed', full:'Wednesday'},
+  {key:'thu', label:'Thu', full:'Thursday'},
+  {key:'fri', label:'Fri', full:'Friday'},
+  {key:'sat', label:'Sat', full:'Saturday'},
+  {key:'sun', label:'Sun', full:'Sunday'},
 ];
-const MEAL_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MEAL_DAYS = [
+  {short:'Mon', full:'Monday'}, {short:'Tue', full:'Tuesday'}, {short:'Wed', full:'Wednesday'},
+  {short:'Thu', full:'Thursday'}, {short:'Fri', full:'Friday'}, {short:'Sat', full:'Saturday'}, {short:'Sun', full:'Sunday'}
+];
 
 
 function formatPlanLabel() {
@@ -1901,13 +1968,13 @@ function renderPlan() {
   }
 
   // Schedule
-  document.getElementById('plan-week').innerHTML = PLAN_DAYS.map(({key, label}) => {
+  document.getElementById('plan-week').innerHTML = PLAN_DAYS.map(({key, label, full}) => {
     const d = p[key] || {};
     const gymOn     = d.gym     ? 'on' : '';
     const dateOn    = d.date    ? 'on' : '';
     const friendsOn = d.friends ? 'on' : '';
     return `<div class="plan-day">
-      <div class="plan-day-label">${label}</div>
+      <div class="plan-day-label"><span class="day-full">${full}</span><span class="day-short">${label}</span></div>
       <div class="plan-day-slots">
         <div class="plan-slot">
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
@@ -1922,12 +1989,12 @@ function renderPlan() {
 
   // Meals — weekdays: dinner only; weekends: all three
   const WEEKEND_DAYS = new Set(['sat','sun']);
-  document.getElementById('plan-meals').innerHTML = MEAL_DAYS.map(day => {
-    const k = day.toLowerCase();
+  document.getElementById('plan-meals').innerHTML = MEAL_DAYS.map(({short, full}) => {
+    const k = short.toLowerCase();
     const m = (p[k] && p[k].meals) || {};
     const isWeekend = WEEKEND_DAYS.has(k);
     return `<div class="plan-meal-row">
-      <div class="plan-meal-day">${day}</div>
+      <div class="plan-meal-day"><span class="day-full">${full}</span><span class="day-short">${short}</span></div>
       ${isWeekend ? `<input class="plan-meal-input" placeholder="Breakfast" value="${escHtml(m.breakfast||'')}"
         oninput="updateMeal('${k}','breakfast',this.value)">
       <input class="plan-meal-input" placeholder="Lunch" value="${escHtml(m.lunch||'')}"
@@ -2444,7 +2511,12 @@ function deleteCurrentPhoto() {
 }
 
 // ─── MOOD OF THE WEEK ─────────────────────────────────────────────────────────
-const MOOD_EMOJIS = ['😊','😍','🥰','😄','🤩','😌','😴','🥺','😂','🫠','💪','🌟','💕','🎉','🌸','✨','🌈','🙌','🍕','😎'];
+const MOOD_EMOJIS = [
+  '😊','😍','🥰','😄','🤩','😎','🥳','😜','🤪','😂',
+  '🫠','😌','😴','🥺','😤','🫶','💪','🌟','💕','🎉',
+  '🌸','✨','🌈','🙌','🍕','🧃','🫧','🐸','🦋','🌙',
+  '🔥','💅','🫣','😵‍💫','🤌','🫂','🥹','😬','🤯','🫀'
+];
 
 function getISOWeek() {
   const d = new Date(); d.setHours(0,0,0,0);
@@ -2485,16 +2557,20 @@ function openEmojiPicker(e, person) {
   popup.innerHTML = MOOD_EMOJIS.map(em =>
     `<button onclick="pickMood('${person}','${em}')">${em}</button>`
   ).join('');
+  popup.style.visibility = 'hidden';
   document.body.appendChild(popup);
-  // Position above/below the button
-  const btn = e.currentTarget;
-  const br = btn.getBoundingClientRect();
-  const pr = popup.getBoundingClientRect();
-  const spaceBelow = window.innerHeight - br.bottom;
-  let top = spaceBelow >= pr.height + 8 ? br.bottom + 8 : br.top - pr.height - 8;
-  let left = br.left + br.width / 2 - pr.width / 2;
-  left = Math.max(8, Math.min(left, window.innerWidth - pr.width - 8));
-  Object.assign(popup.style, { position: 'fixed', top: top + 'px', left: left + 'px', transform: 'none', bottom: 'auto' });
+  const br = e.currentTarget.getBoundingClientRect();
+  setTimeout(() => {
+    const pr = popup.getBoundingClientRect();
+    const scrollY = window.pageYOffset;
+    const scrollX = window.pageXOffset;
+    const spaceBelow = window.innerHeight - br.bottom;
+    let top = (spaceBelow >= pr.height + 8 ? br.bottom + 8 : br.top - pr.height - 8) + scrollY;
+    let left = br.left + br.width / 2 - pr.width / 2 + scrollX;
+    left = Math.max(8 + scrollX, Math.min(left, scrollX + window.innerWidth - pr.width - 8));
+    top  = Math.max(8 + scrollY, Math.min(top,  scrollY + window.innerHeight - pr.height - 8));
+    Object.assign(popup.style, { top: top + 'px', left: left + 'px', visibility: 'visible' });
+  }, 0);
   setTimeout(() => document.addEventListener('click', removePicker, { once: true }), 50);
 }
 function removePicker() { document.getElementById('emoji-picker-popup')?.remove(); }
