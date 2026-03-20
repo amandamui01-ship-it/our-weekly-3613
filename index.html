@@ -1214,13 +1214,6 @@ function initFirestore() {
         }
         return updated;
       });
-      // Add any TRIPS_2026 entries not yet in Firebase
-      for (const seed of TRIPS_2026) {
-        if (!trips.some(t => t.label === seed.label)) {
-          trips.push({...seed, id: 'trip-seed-' + seed.label.replace(/\W+/g,'')});
-          changed = true;
-        }
-      }
       if (changed) ref('trips').set({items: trips});
     }
     if (isActive('dates')) renderDates();
