@@ -439,20 +439,25 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Small-screen responsive fixes ── */
 @media(max-width:480px){
-  /* Nav: tighter tabs so they fit without scrolling */
+  /* Nav: tighter tabs */
   #logo{font-size:15px;padding:12px 12px 12px 0}
   .nav-tab{padding:12px 10px;font-size:12px}
-  /* Weekly schedule: narrower day label */
-  .plan-day{grid-template-columns:62px 1fr}
+  /* Cards: reduce side padding on small phones */
+  .card{padding:16px 14px}
+  /* Weekly schedule: chips wrap to first line, input on its own line below */
+  .plan-day{grid-template-columns:56px 1fr}
   .plan-day-label{font-size:10px;padding:8px 4px;letter-spacing:0}
+  .plan-slot{flex-wrap:wrap;gap:5px;padding:8px 10px}
   .plan-slot-chip{font-size:9px;padding:2px 6px}
+  .plan-slot-input{flex-basis:100%;margin-top:2px}
+  /* Dates: add-trip form single column */
+  .add-trip-form{grid-template-columns:1fr}
   /* Budget spending by category: name + amount on row 1, bar on row 2 */
   .budget-cat-row{grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:3px 8px}
   .budget-cat-name{grid-column:1;grid-row:1}
   .budget-cat-amt{grid-column:2;grid-row:1}
   .budget-cat-bars{grid-column:1/-1;grid-row:2}
-  /* Budget snapshot already 2-col at 680px */
-  /* Budget quick-add row 1 wrap nicely */
+  /* Budget quick-add */
   .bqa-row1{grid-template-columns:1fr 1fr}
   .bq-desc{grid-column:1/-1}
 }
