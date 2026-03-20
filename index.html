@@ -1884,7 +1884,7 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <input class="plan-slot-input" placeholder="Plans, notes..." value="${escHtml(d.notes||'')}"
+          <input class="plan-slot-input" placeholder="" value="${escHtml(d.notes||'')}"
             oninput="updateDayNotes('${key}', this.value)">
         </div>
       </div>
@@ -1899,11 +1899,11 @@ function renderPlan() {
     const isWeekend = WEEKEND_DAYS.has(k);
     return `<div class="plan-meal-row">
       <div class="plan-meal-day">${day}</div>
-      ${isWeekend ? `<input class="plan-meal-input" placeholder="Breakfast..." value="${escHtml(m.breakfast||'')}"
+      ${isWeekend ? `<input class="plan-meal-input" placeholder="Breakfast" value="${escHtml(m.breakfast||'')}"
         oninput="updateMeal('${k}','breakfast',this.value)">
-      <input class="plan-meal-input" placeholder="Lunch..." value="${escHtml(m.lunch||'')}"
+      <input class="plan-meal-input" placeholder="Lunch" value="${escHtml(m.lunch||'')}"
         oninput="updateMeal('${k}','lunch',this.value)">` : ''}
-      <input class="plan-meal-input" placeholder="Dinner..." value="${escHtml(m.dinner||'')}"
+      <input class="plan-meal-input" placeholder="Dinner" value="${escHtml(m.dinner||'')}"
         oninput="updateMeal('${k}','dinner',this.value)">
     </div>`;
   }).join('');
