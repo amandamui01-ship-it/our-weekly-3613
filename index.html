@@ -272,8 +272,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-chip.date.on{background:var(--coral);color:white;border-color:var(--coral)}
 .plan-slot-chip.friends    {background:var(--blue-bg);color:var(--blue);border-color:#c5d8fc}
 .plan-slot-chip.friends.on {background:var(--blue);color:white;border-color:var(--blue)}
-.plan-slot-input{flex:1;border:none;background:transparent;font-size:13px;font-family:inherit;color:var(--text);outline:none;padding:0}
-.plan-slot-input::placeholder{color:var(--text-3)}
+.plan-slot-input{font-size:10px;font-weight:700;padding:2px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text);font-family:inherit;outline:none;min-width:60px;flex:1;max-width:180px;text-transform:uppercase;letter-spacing:.04em;transition:border-color .15s,background .15s}
+.plan-slot-input:focus{border-style:solid;border-color:var(--amber);background:var(--amber-bg)}
+.plan-slot-input::placeholder{color:var(--text-3);font-weight:600}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .plan-meal-row{display:flex;flex-direction:column;gap:4px;background:var(--surface-warm);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
@@ -484,7 +485,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .plan-meal-day .day-short{display:inline}
   .plan-slot{flex-wrap:wrap;gap:5px;padding:8px 10px}
   .plan-slot-chip{font-size:9px;padding:2px 6px}
-  .plan-slot-input{flex-basis:100%;margin-top:2px}
+  .plan-slot-input{flex-basis:100%;margin-top:2px;max-width:100%}
   /* Dates: add-trip form single column */
   .add-trip-form{grid-template-columns:1fr}
   /* Budget spending by category: name + amount on row 1, bar on row 2 */
