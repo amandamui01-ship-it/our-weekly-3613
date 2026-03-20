@@ -126,7 +126,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .todo-item.collapsing{max-height:0!important;padding-top:0!important;padding-bottom:0!important;margin-bottom:0!important;opacity:0;border-width:0;transition:max-height .35s ease,opacity .25s,padding .35s,margin .35s,border-width .35s}
 .todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;background:white;font-size:11px;font-weight:700;color:white}
 .todo-item.done .todo-cb{background:var(--sage);border-color:var(--sage)}
-.todo-text{font-size:13px;color:var(--text);flex:1}
+.todo-text{font-size:13px;color:var(--text)}
 .todo-del{font-size:18px;color:var(--text-3);cursor:pointer;opacity:0;transition:opacity .15s;padding:0 2px;line-height:1}
 .todo-item:hover .todo-del{opacity:.4}
 .todo-edit-input{flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font-family:inherit;font-size:13px;color:inherit;outline:none;padding:0}
@@ -399,6 +399,37 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── History photo ── */
 .history-photo{width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin-bottom:14px}
+
+/* ── Review Day Banner ── */
+.review-day-banner{background:linear-gradient(135deg,var(--sage-bg) 0%,var(--amber-bg) 100%);border:1px solid #c8dcc8;border-radius:16px;padding:18px 28px;margin-bottom:20px;text-align:center;display:none}
+.review-day-banner.show{display:block}
+.review-day-title{font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:700;color:var(--sage);margin-bottom:4px}
+.review-day-sub{font-size:13px;color:var(--text-2);margin-bottom:14px}
+.review-day-btn{background:var(--sage);color:white;border:none;border-radius:10px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.review-day-btn:hover{background:#4a6650}
+
+/* ── Todo Priority & Drag ── */
+.todo-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
+.todo-item.priority-critical{border-left:3px solid var(--coral);background:var(--coral-bg)}
+.todo-priority-btn{font-size:16px;cursor:pointer;opacity:0;transition:opacity .15s;padding:0 4px;background:none;border:none;flex-shrink:0;line-height:1}
+.todo-item:hover .todo-priority-btn{opacity:.65}
+.todo-item.priority-urgent .todo-priority-btn,.todo-item.priority-critical .todo-priority-btn{opacity:1!important}
+.todo-drag-handle{color:var(--text-3);cursor:grab;opacity:0;transition:opacity .15s;padding:0 4px;font-size:14px;flex-shrink:0;line-height:1;user-select:none}
+.todo-item:hover .todo-drag-handle{opacity:.4}
+.todo-item.dragging{opacity:.35}
+.todo-item.drag-over{border-top:2px solid var(--amber)}
+.todo-category.cat-drag-over{border-color:var(--amber);box-shadow:0 0 0 2px rgba(191,124,54,.2)}
+
+/* ── List Item Priority & Drag (Dates tab) ── */
+.list-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
+.list-item.priority-critical{border-left:3px solid var(--coral);background:var(--coral-bg)}
+.list-priority-btn{font-size:16px;cursor:pointer;opacity:0;transition:opacity .15s;padding:0 4px;background:none;border:none;flex-shrink:0;line-height:1}
+.list-item:hover .list-priority-btn{opacity:.65}
+.list-item.priority-urgent .list-priority-btn,.list-item.priority-critical .list-priority-btn{opacity:1!important}
+.list-drag-handle{color:var(--text-3);cursor:grab;opacity:0;transition:opacity .15s;padding:0 4px;font-size:14px;flex-shrink:0;line-height:1;user-select:none}
+.list-item:hover .list-drag-handle{opacity:.4}
+.list-item.dragging{opacity:.35}
+.list-item.drag-over{border-top:2px solid var(--amber)}
 </style>
 </head>
 <body>
@@ -448,6 +479,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <button class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="showPage('review')">
       ✏️ Start This Week's Review →
     </button>
+  </div>
+
+  <div id="review-day-banner" class="review-day-banner">
+    <div class="review-day-title">📋 It's Review Day!</div>
+    <div class="review-day-sub">Time to reflect on the week together — grab a coffee and let's do this. ☕</div>
+    <button class="review-day-btn" onclick="showPage('review')">Start This Week's Review →</button>
   </div>
 
   <div class="home-stats" style="margin-bottom:16px">
@@ -815,7 +852,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <!-- Bulk paste -->
     <div class="card">
       <div class="card-title" style="margin-bottom:8px">📋 Bulk Paste</div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">One expense per line:<br><code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Description, amount, category, shared(y/n)</code><br>e.g. <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Costco, 84.15, Groceries, y</code></div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">One expense per line:<br><code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Category, amount, shared(y/n), description (optional)</code><br>e.g. <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:11px">Groceries, 84.15, y, Costco run</code></div>
       <div style="display:flex;gap:6px;margin-bottom:8px">
         <select id="bulk-person" class="bq-sel" style="width:110px">
           <option value="Amanda">Amanda</option>
@@ -823,7 +860,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         </select>
         <input type="date" id="bulk-date" class="bq-input" style="flex:1">
       </div>
-      <textarea id="bulk-text" placeholder="Costco, 84.15, Groceries, y&#10;Spotify, 13.70, Subscriptions, n&#10;Mirch Masala, 30.00, Dining, n"
+      <textarea id="bulk-text" placeholder="Groceries, 84.15, y, Costco run&#10;Subscriptions, 13.70, n, Spotify&#10;Dining, 30.00, n"
         style="width:100%;height:100px;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--surface);color:var(--text)"
         onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
       <button class="btn btn-primary" style="margin-top:8px;width:100%;justify-content:center" onclick="bulkAddExpenses()">Import Lines</button>
@@ -837,6 +874,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="card-title" style="margin-bottom:0">Transactions</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:140px">
+        <select id="b-filter-cat" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+          <option value="">All Categories</option>
+        </select>
         <select id="b-filter-person" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
           <option value="">Both</option><option>Amanda</option><option>Aidan</option>
         </select>
@@ -1268,6 +1308,9 @@ function renderHome() {
   document.getElementById('welcome-greeting').innerHTML =
     `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda & Aidan!</span>`;
 
+  const reviewBanner = document.getElementById('review-day-banner');
+  if (reviewBanner) reviewBanner.classList.toggle('show', now.getDay() === 0 || now.getDay() === 6);
+
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
 
   const _today = new Date(); _today.setHours(0,0,0,0);
@@ -1405,15 +1448,14 @@ function saveEntry() {
 // ─── TO-DOS ──────────────────────────────────────────────────────────────────
 function renderTodos() {
   const activeHtml = todoCategories.map((cat, idx) => {
-    const items = todos.filter(t => t.cat === cat.id && !t.done);
-    const isFirst = idx === 0, isLast = idx === todoCategories.length - 1;
+    const pOrder = {critical:0,urgent:1};
+    const items = todos.filter(t => t.cat === cat.id && !t.done)
+      .sort((a,b) => (pOrder[a.priority]??2) - (pOrder[b.priority]??2));
     return `
-      <div class="card todo-category">
+      <div class="card todo-category" draggable="true" data-cat-id="${cat.id}" style="cursor:default">
         <div class="todo-cat-title">
           <span style="flex:1;cursor:pointer" title="Click to rename" onclick="editTodoSection('${cat.id}')">${escHtml(cat.label)}</span>
           <span style="display:flex;gap:4px;margin-left:8px">
-            <button onclick="moveTodoSection('${cat.id}',-1)" ${isFirst?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:0 3px;opacity:${isFirst?0.3:1}" title="Move up">▲</button>
-            <button onclick="moveTodoSection('${cat.id}',1)"  ${isLast?'disabled':''} style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:0 3px;opacity:${isLast?0.3:1}" title="Move down">▼</button>
             <button onclick="deleteTodoSection('${cat.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-3);padding:0 3px" title="Delete section">×</button>
           </span>
         </div>
@@ -1445,13 +1487,21 @@ function renderTodos() {
 
   document.getElementById('todos-container').innerHTML = activeHtml + doneHtml + addSectionHtml;
   setTimeout(addSwipeToDelete, 50);
+  setTimeout(addTodoDragListeners, 50);
+  setTimeout(addCategoryDragListeners, 50);
 }
 
 function renderTodoItem(t) {
+  const pClass = t.priority === 'critical' ? ' priority-critical' : t.priority === 'urgent' ? ' priority-urgent' : '';
+  const pIcon  = t.priority === 'critical' ? '🔴' : t.priority === 'urgent' ? '🟡' : '○';
   return `
-    <div class="todo-item${t.done?' done':''}" id="todo-${t.id}" onclick="editTodo('${t.id}')" style="cursor:pointer">
+    <div class="todo-item${t.done?' done':''}${pClass}" id="todo-${t.id}" draggable="true" data-id="${t.id}" data-cat="${t.cat}" onclick="editTodo('${t.id}')" style="cursor:pointer">
       <div class="todo-cb" onclick="toggleTodo('${t.id}');event.stopPropagation()">${t.done ? '✓' : ''}</div>
-      <span class="todo-text">${escHtml(t.text)}</span>
+      <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0">
+        <span class="todo-text" style="flex:none">${escHtml(t.text)}</span>
+        <button class="todo-priority-btn" onclick="cycleTodoPriority('${t.id}');event.stopPropagation()" title="Set priority (○ → urgent → critical)">${pIcon}</button>
+      </span>
+      <span class="todo-drag-handle" onclick="event.stopPropagation()">⠿</span>
       <span class="todo-del" onclick="deleteTodo('${t.id}');event.stopPropagation()">×</span>
     </div>`;
 }
@@ -1558,6 +1608,84 @@ function addTodo(cat) {
   saveTodos(); renderTodos();
 }
 
+function cycleTodoPriority(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  const cycle = {undefined:'urgent', none:'urgent', urgent:'critical', critical:'none'};
+  t.priority = cycle[t.priority ?? 'none'];
+  saveTodos(); renderTodos();
+}
+
+let _todoDragId = null;
+function addTodoDragListeners() {
+  document.querySelectorAll('.todo-item[draggable]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      _todoDragId = el.dataset.id;
+      setTimeout(() => el.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!_todoDragId || el.dataset.id === _todoDragId || el.dataset.cat !== todos.find(x=>x.id===_todoDragId)?.cat) return;
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.todo-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!_todoDragId || el.dataset.id === _todoDragId) return;
+      const dragCat = todos.find(x => x.id === _todoDragId)?.cat;
+      if (el.dataset.cat !== dragCat) return;
+      const fromIdx = todos.findIndex(t => t.id === _todoDragId);
+      const toIdx   = todos.findIndex(t => t.id === el.dataset.id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const [moved] = todos.splice(fromIdx, 1);
+      const newTo   = todos.findIndex(t => t.id === el.dataset.id);
+      todos.splice(newTo, 0, moved);
+      _todoDragId = null;
+      saveTodos(); renderTodos();
+    });
+  });
+}
+
+let _catDragId = null;
+function addCategoryDragListeners() {
+  document.querySelectorAll('.todo-category[data-cat-id]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      if (e.target.closest('.todo-item')) return; // let item drag take over
+      _catDragId = el.dataset.catId;
+      setTimeout(() => el.style.opacity = '.4', 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.style.opacity = '';
+      document.querySelectorAll('.todo-category.cat-drag-over').forEach(x => x.classList.remove('cat-drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      if (!_catDragId || el.dataset.catId === _catDragId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.todo-category.cat-drag-over').forEach(x => x.classList.remove('cat-drag-over'));
+      el.classList.add('cat-drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!_catDragId || el.dataset.catId === _catDragId) return;
+      const fromIdx = todoCategories.findIndex(c => c.id === _catDragId);
+      const toIdx   = todoCategories.findIndex(c => c.id === el.dataset.catId);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const [moved] = todoCategories.splice(fromIdx, 1);
+      todoCategories.splice(toIdx, 0, moved);
+      _catDragId = null;
+      saveTodoCategories(); renderTodos();
+    });
+  });
+}
+
 // ─── DATES ───────────────────────────────────────────────────────────────────
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -1609,25 +1737,87 @@ function renderDates() {
   }
 
 
+  const listItemHtml = (item, type, editFn) => {
+    const pClass = item.priority === 'critical' ? ' priority-critical' : item.priority === 'urgent' ? ' priority-urgent' : '';
+    const pIcon  = item.priority === 'critical' ? '🔴' : item.priority === 'urgent' ? '🟡' : '○';
+    return `
+      <div class="list-item${pClass}" id="list-item-${item.id}" draggable="true" data-id="${item.id}" data-type="${type}" onclick="${editFn}('${item.id}')" style="cursor:pointer">
+        <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0">
+          <span style="flex:none">${escHtml(item.text)}</span>
+          <button class="list-priority-btn" onclick="cycleListPriority('${type}','${item.id}');event.stopPropagation()" title="Set priority">${pIcon}</button>
+        </span>
+        <span class="list-drag-handle" onclick="event.stopPropagation()">⠿</span>
+        <button class="list-del" onclick="deleteListItem('${type}','${item.id}');event.stopPropagation()">×</button>
+      </div>`;
+  };
+
+  const pOrd = {critical:0,urgent:1};
+  const sortedLogistics = [...logisticsList].sort((a,b) => (pOrd[a.priority]??2)-(pOrd[b.priority]??2));
+  const sortedBucket    = [...bucketList].sort((a,b) => (pOrd[a.priority]??2)-(pOrd[b.priority]??2));
+
   document.getElementById('logistics-list').innerHTML =
-    logisticsList.map(l => `
-      <div class="list-item" id="list-item-${l.id}" onclick="editListItem('${l.id}')" style="cursor:pointer">${escHtml(l.text)}
-        <button class="list-del" onclick="deleteListItem('logistics','${l.id}');event.stopPropagation()">×</button>
-      </div>`).join('') + `
+    sortedLogistics.map(l => listItemHtml(l, 'logistics', 'editListItem')).join('') + `
     <div class="add-list-row">
       <input type="text" id="new-logistics" placeholder="Add item..." onkeydown="if(event.key==='Enter')addListItem('logistics')">
       <button onclick="addListItem('logistics')">+ Add</button>
     </div>`;
 
   document.getElementById('bucket-list').innerHTML =
-    bucketList.map(b => `
-      <div class="list-item" id="list-item-${b.id}" onclick="editBucketItem('${b.id}')" style="cursor:pointer">${escHtml(b.text)}
-        <button class="list-del" onclick="deleteListItem('bucket','${b.id}');event.stopPropagation()">×</button>
-      </div>`).join('') + `
+    sortedBucket.map(b => listItemHtml(b, 'bucket', 'editBucketItem')).join('') + `
     <div class="add-list-row">
       <input type="text" id="new-bucket" placeholder="Add idea..." onkeydown="if(event.key==='Enter')addListItem('bucket')">
       <button onclick="addListItem('bucket')">+ Add</button>
     </div>`;
+
+  setTimeout(addListDragListeners, 50);
+}
+
+function cycleListPriority(type, id) {
+  const arr = type === 'logistics' ? logisticsList : bucketList;
+  const item = arr.find(x => x.id === id);
+  if (!item) return;
+  const cycle = {undefined:'urgent', none:'urgent', urgent:'critical', critical:'none'};
+  item.priority = cycle[item.priority ?? 'none'];
+  if (type === 'logistics') saveLogistics(); else saveBucket();
+  renderDates();
+}
+
+let _listDragId = null, _listDragType = null;
+function addListDragListeners() {
+  document.querySelectorAll('.list-item[draggable]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      _listDragId = el.dataset.id;
+      _listDragType = el.dataset.type;
+      setTimeout(() => el.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.list-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!_listDragId || el.dataset.id === _listDragId || el.dataset.type !== _listDragType) return;
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.list-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!_listDragId || el.dataset.id === _listDragId || el.dataset.type !== _listDragType) return;
+      const arr = _listDragType === 'logistics' ? logisticsList : bucketList;
+      const fromIdx = arr.findIndex(x => x.id === _listDragId);
+      const toIdx   = arr.findIndex(x => x.id === el.dataset.id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const [moved] = arr.splice(fromIdx, 1);
+      const newTo   = arr.findIndex(x => x.id === el.dataset.id);
+      arr.splice(newTo, 0, moved);
+      const savedType = _listDragType;
+      _listDragId = null; _listDragType = null;
+      if (savedType === 'logistics') saveLogistics(); else saveBucket();
+      renderDates();
+    });
+  });
 }
 
 // ─── PLAN ────────────────────────────────────────────────────────────────────
@@ -2428,8 +2618,17 @@ function renderBudget() {
       ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => ps.some(p => e.date.startsWith(p.year) && e.month === p.month)); })()
       : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
   const searchQ = (document.getElementById('b-search')?.value || '').toLowerCase();
+  const catFilterEl = document.getElementById('b-filter-cat');
+  const prevCatSel = catFilterEl?.value || '';
+  const availCats = [...new Set(monthTx.map(e => e.category))].sort();
+  if (catFilterEl) {
+    catFilterEl.innerHTML = '<option value="">All Categories</option>' +
+      availCats.map(c => `<option${c===prevCatSel?' selected':''}>${c}</option>`).join('');
+  }
+  const filterCat = catFilterEl?.value || '';
   const filtered = monthTx
     .filter(e => filterPerson ? e.person === filterPerson : true)
+    .filter(e => filterCat ? e.category === filterCat : true)
     .filter(e => searchQ ? (e.description.toLowerCase().includes(searchQ) || e.category.toLowerCase().includes(searchQ)) : true);
 
   // Snapshot strip
@@ -2513,7 +2712,7 @@ function renderBudget() {
           <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
           ${txs.map(e=>`<div class="budget-tx" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
             <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
-            <div class="budget-tx-info"><span class="budget-tx-desc">${escHtml(e.description)||'—'}</span><span class="budget-tx-cat">${e.category}</span></div>
+            <div class="budget-tx-info"><span class="budget-tx-desc">${e.category}</span>${e.description?`<span class="budget-tx-cat">${escHtml(e.description)}</span>`:''}</div>
             <span class="budget-tx-shared">${e.shared?'50/50':''}</span>
             <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
             <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
@@ -2551,8 +2750,12 @@ function addExpense() {
   const shared   = document.getElementById('b-shared').checked;
   if (!date || !category || !desc || isNaN(amount)) return;
   const month = monthName(new Date(date + 'T12:00:00'));
-  expenses.push({id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared});
-  saveExpenses();
+  const newItem = {id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared};
+  expenses.push(newItem);
+  // arrayUnion appends atomically — safe if both people add at the same time
+  db.collection('state').doc('expenses').update({
+    items: firebase.firestore.FieldValue.arrayUnion(newItem)
+  }).catch(_onSaveErr);
   document.getElementById('b-category').value = '';
   document.getElementById('b-desc').value = '';
   document.getElementById('b-amount').value = '';
@@ -2561,8 +2764,11 @@ function addExpense() {
 }
 
 function deleteExpense(id) {
+  const item = expenses.find(e => e.id === id);
   expenses = expenses.filter(e => e.id !== id);
-  saveExpenses();
+  if (item) db.collection('state').doc('expenses').update({
+    items: firebase.firestore.FieldValue.arrayRemove(item)
+  }).catch(_onSaveErr);
   renderBudget();
 }
 
@@ -2603,10 +2809,17 @@ function saveExpenseEdit(id) {
   const date    = document.getElementById('txe-date-'   + id)?.value;
   const shared  = document.getElementById('txe-shared-' + id)?.checked;
   if (!desc || isNaN(amt)) return;
+  const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
   e.month = monthName(new Date(date + 'T12:00:00'));
-  saveExpenses(); renderBudget();
+  // Transaction: swap old object for updated one atomically
+  const docRef = db.collection('state').doc('expenses');
+  db.runTransaction(t => t.get(docRef).then(snap => {
+    const items = (snap.data()?.items || []).map(x => x.id === id ? {...e} : x);
+    t.set(docRef, {items});
+  })).catch(_onSaveErr);
+  renderBudget();
 }
 
 // ─── RECURRING & BULK ────────────────────────────────────────────────────────
@@ -2642,14 +2855,14 @@ function renderRecurring() {
     return;
   }
   el.innerHTML = recurringItems.map(r => `
-    <div class="recurring-item">
+    <div class="recurring-item" id="rec-item-${r.id}" onclick="editRecurring('${r.id}')" style="cursor:pointer">
       <span class="rec-person-badge ${r.person}">${r.person==='Aidan'?'AF':'AM'}</span>
       <div class="rec-info">
-        <div class="rec-desc">${escHtml(r.description)}</div>
-        <div class="rec-meta">${r.category}${r.shared?' · 50/50':''}</div>
+        <div class="rec-desc">${r.category}${r.shared?' <span style="font-size:10px;color:var(--amber);font-weight:700">50/50</span>':''}</div>
+        ${r.description?`<div class="rec-meta">${escHtml(r.description)}</div>`:''}
       </div>
       <span class="rec-amt">${fmt(r.amount)}</span>
-      <button class="rec-del" onclick="deleteRecurring('${r.id}')">×</button>
+      <button class="rec-del" onclick="deleteRecurring('${r.id}');event.stopPropagation()">×</button>
     </div>`).join('');
 }
 
@@ -2676,6 +2889,46 @@ function deleteRecurring(id) {
   renderRecurring();
 }
 
+const REC_CATS = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
+function editRecurring(id) {
+  const r = recurringItems.find(x => x.id === id);
+  if (!r) return;
+  const el = document.getElementById('rec-item-' + id);
+  if (!el) return;
+  el.onclick = null;
+  el.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;align-items:center">
+      <select id="rece-person-${id}" class="bq-input" style="width:80px;padding:4px 6px;font-size:12px">
+        <option${r.person==='Amanda'?' selected':''}>Amanda</option>
+        <option${r.person==='Aidan'?' selected':''}>Aidan</option>
+      </select>
+      <select id="rece-cat-${id}" class="bq-input" style="flex:1;min-width:110px;padding:4px 6px;font-size:12px">
+        ${REC_CATS.map(c=>`<option${c===r.category?' selected':''}>${c}</option>`).join('')}
+      </select>
+      <input id="rece-amt-${id}" type="number" value="${r.amount}" class="bq-input" style="width:80px;padding:4px 6px;font-size:12px">
+      <input id="rece-desc-${id}" type="text" value="${escHtml(r.description||'')}" placeholder="Description (optional)" class="bq-input" style="flex:1;min-width:120px;padding:4px 6px;font-size:12px">
+      <label style="font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="rece-shared-${id}" ${r.shared?'checked':''}> 50/50
+      </label>
+      <button class="trip-edit-save" onclick="saveRecurringEdit('${id}')">Save</button>
+      <button class="trip-edit-cancel" onclick="renderRecurring()">Cancel</button>
+    </div>`;
+}
+
+function saveRecurringEdit(id) {
+  const r = recurringItems.find(x => x.id === id);
+  if (!r) return;
+  const amt = parseFloat(document.getElementById('rece-amt-' + id)?.value);
+  if (isNaN(amt)) return;
+  r.person      = document.getElementById('rece-person-' + id)?.value;
+  r.category    = document.getElementById('rece-cat-'    + id)?.value;
+  r.description = document.getElementById('rece-desc-'   + id)?.value.trim();
+  r.amount      = amt;
+  r.shared      = document.getElementById('rece-shared-' + id)?.checked;
+  saveRecurring();
+  renderRecurring();
+}
+
 function loadRecurring() {
   const today = new Date().toISOString().slice(0,10);
   const month = monthName(new Date());
@@ -2696,7 +2949,10 @@ function loadRecurring() {
     added++;
   }
   if (added) {
-    saveExpenses();
+    const newItems = expenses.slice(-added);
+    db.collection('state').doc('expenses').update({
+      items: firebase.firestore.FieldValue.arrayUnion(...newItems)
+    }).catch(_onSaveErr);
     renderBudget();
     showToast(`✅ Loaded ${added} recurring expense${added>1?'s':''}`);
   } else {
@@ -2714,19 +2970,22 @@ function bulkAddExpenses() {
   for (const line of lines) {
     const parts = line.split(',').map(p=>p.trim());
     if (parts.length < 2) { errors++; continue; }
-    const desc   = parts[0];
-    const amount = parseFloat(parts[1]);
-    if (!desc || isNaN(amount)) { errors++; continue; }
-    // fuzzy match category
-    const catRaw = parts[2] || '';
+    // format: category, amount, shared (y/n), description (optional)
+    const catRaw = parts[0];
     const cat    = [...CATS].find(c => c.toLowerCase().startsWith(catRaw.toLowerCase().slice(0,3))) || 'Misc';
-    const shared = (parts[3]||'').toLowerCase().trim() === 'y';
+    const amount = parseFloat(parts[1]);
+    if (!catRaw || isNaN(amount)) { errors++; continue; }
+    const shared = (parts[2]||'').toLowerCase().trim() === 'y';
+    const desc   = parts[3] || '';
     expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
       date, month, person, category:cat, description:desc, amount, shared});
     added++;
   }
   if (added) {
-    saveExpenses();
+    const newItems = expenses.slice(-added);
+    db.collection('state').doc('expenses').update({
+      items: firebase.firestore.FieldValue.arrayUnion(...newItems)
+    }).catch(_onSaveErr);
     renderBudget();
     document.getElementById('bulk-text').value = '';
   }
@@ -2757,6 +3016,25 @@ function doLogin() {
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+// ─── DRAG SCROLL ─────────────────────────────────────────────────────────────
+(function initDragScroll() {
+  const ZONE = 80, SPEED = 12;
+  let raf = null, lastY = 0;
+  const tick = () => {
+    const h = window.innerHeight;
+    if (lastY < ZONE)       window.scrollBy(0, -SPEED * (1 - lastY / ZONE));
+    else if (lastY > h - ZONE) window.scrollBy(0,  SPEED * (1 - (h - lastY) / ZONE));
+    else { raf = null; return; }
+    raf = requestAnimationFrame(tick);
+  };
+  document.addEventListener('dragover', e => {
+    lastY = e.clientY;
+    if (!raf && (lastY < ZONE || lastY > window.innerHeight - ZONE)) raf = requestAnimationFrame(tick);
+  });
+  document.addEventListener('dragend', () => { if (raf) { cancelAnimationFrame(raf); raf = null; } });
+  document.addEventListener('drop',    () => { if (raf) { cancelAnimationFrame(raf); raf = null; } });
+})();
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
