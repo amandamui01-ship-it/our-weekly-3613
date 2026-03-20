@@ -313,7 +313,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .budget-tx-list{display:flex;flex-direction:column}
 .budget-tx-group{margin-bottom:8px}
 .budget-tx-date-hdr{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px;border-bottom:1px solid var(--border-light);margin-bottom:2px}
-.budget-tx{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--border-light);font-size:13px}
+.budget-tx{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid var(--border-light);font-size:13px}
+.budget-tx-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.budget-tx-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .budget-tx:last-child{border-bottom:none}
 .budget-tx-person{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap}
 .budget-tx-person.Amanda{background:#fceae5;color:var(--coral)}
@@ -830,7 +832,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- Recurring + Bulk paste -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:400px;gap:16px;margin-bottom:16px" class="budget-tools-row">
+  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:460px;gap:16px;margin-bottom:16px" class="budget-tools-row">
 
     <!-- Recurring -->
     <div class="card" style="display:flex;flex-direction:column;min-height:0">
@@ -2733,11 +2735,17 @@ function renderBudget() {
         <div class="budget-tx-group">
           <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
           ${txs.map(e=>`<div class="budget-tx" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
-            <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
-            <div class="budget-tx-info"><span class="budget-tx-desc">${e.category}</span>${e.description?`<span class="budget-tx-cat">${escHtml(e.description)}</span>`:''}</div>
-            <span class="budget-tx-shared">${e.shared?'50/50':''}</span>
-            <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
-            <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
+            <div class="budget-tx-left">
+              <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
+              <div class="budget-tx-info">
+                <span class="budget-tx-desc">${e.category}</span>
+                ${(e.description||e.shared)?`<span class="budget-tx-cat">${[e.description?escHtml(e.description):null,e.shared?'50/50':null].filter(Boolean).join(' · ')}</span>`:''}
+              </div>
+            </div>
+            <div class="budget-tx-right">
+              <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
+              <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
+            </div>
           </div>`).join('')}
         </div>`).join('') + `</div>`;
   }
