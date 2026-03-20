@@ -186,15 +186,16 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── History ── */
 .history-entry{margin-bottom:12px}
 .history-header{display:flex;align-items:center;gap:12px;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .15s}
-.history-header:hover{border-color:var(--amber);background:var(--amber-bg)}
+.history-entry:hover .history-header{border-color:var(--amber);background:var(--amber-bg)}
 .history-header.open{border-radius:var(--radius) var(--radius) 0 0;border-bottom-color:transparent}
-.history-header.open:hover{border-bottom-color:transparent}
+.history-entry:hover .history-header.open{border-bottom-color:transparent}
+.history-entry:hover .history-body.open{border-color:var(--amber);background:var(--amber-bg)}
 .history-date-badge{background:var(--amber-bg);color:var(--amber-dark);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .history-preview{flex:1;font-size:13px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .history-theme{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--sage-bg);color:var(--sage);white-space:nowrap;flex-shrink:0}
 .history-chevron{color:var(--text-3);font-size:11px;transition:transform .2s;flex-shrink:0}
 .history-del{background:none;border:none;color:var(--text-3);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;opacity:0;transition:opacity .15s;flex-shrink:0}
-.history-header:hover .history-del{opacity:.5}
+.history-entry:hover .history-del{opacity:.5}
 .history-del:hover{opacity:1!important;color:var(--coral)}
 .history-header.open .history-chevron{transform:rotate(180deg)}
 .history-hearts{display:flex;gap:3px;flex-shrink:0}
