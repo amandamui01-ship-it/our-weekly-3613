@@ -1683,7 +1683,8 @@ function addCategoryDragListeners() {
       const toIdx   = todoCategories.findIndex(c => c.id === el.dataset.catId);
       if (fromIdx === -1 || toIdx === -1) return;
       const [moved] = todoCategories.splice(fromIdx, 1);
-      todoCategories.splice(toIdx, 0, moved);
+      const newTo   = todoCategories.findIndex(c => c.id === el.dataset.catId);
+      todoCategories.splice(newTo, 0, moved);
       _catDragId = null;
       saveTodoCategories(); renderTodos();
     });
@@ -2154,11 +2155,12 @@ function editListItem(id) {
   if (!item) return;
   const el = document.getElementById('list-item-' + id);
   if (!el) return;
+  const textSpan = el.querySelector('span > span');
+  if (!textSpan) return;
   const input = document.createElement('input');
   input.value = item.text;
-  input.style.cssText = 'flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
-  // Replace text node (first child) with input
-  el.childNodes[0].replaceWith(input);
+  input.style.cssText = 'flex:1;min-width:0;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
+  textSpan.replaceWith(input);
   input.focus(); input.select();
   const save = () => { const v = input.value.trim(); if (v && v !== item.text) { item.text = v; saveLogistics(); } renderDates(); };
   input.addEventListener('blur', save);
@@ -2171,10 +2173,12 @@ function editBucketItem(id) {
   if (!item) return;
   const el = document.getElementById('list-item-' + id);
   if (!el) return;
+  const textSpan = el.querySelector('span > span');
+  if (!textSpan) return;
   const input = document.createElement('input');
   input.value = item.text;
-  input.style.cssText = 'flex:1;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
-  el.childNodes[0].replaceWith(input);
+  input.style.cssText = 'flex:1;min-width:0;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
+  textSpan.replaceWith(input);
   input.focus(); input.select();
   const save = () => { const v = input.value.trim(); if (v && v !== item.text) { item.text = v; saveBucket(); } renderDates(); };
   input.addEventListener('blur', save);
@@ -2363,6 +2367,7 @@ function deleteCurrentPhoto() {
   photos.splice(photoIdx, 1);
   photoIdx = Math.max(0, photoIdx - 1);
   savePhotos();
+  renderPhotoWidget();
 }
 
 // ─── MOOD OF THE WEEK ─────────────────────────────────────────────────────────
@@ -2787,6 +2792,7 @@ function deleteExpense(id) {
     items: firebase.firestore.FieldValue.arrayRemove(item)
   }).catch(_onSaveErr);
   renderBudget();
+  renderRecurring();
 }
 
 const EXPENSE_CATS_LIST = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
