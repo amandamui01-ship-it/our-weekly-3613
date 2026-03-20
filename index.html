@@ -912,10 +912,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <div class="toast" id="toast"></div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
 
-<!-- In-page confirm dialog -->
-<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px">
+<!-- In-page confirm / prompt dialog -->
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center">
-    <div id="confirm-msg" style="font-size:15px;color:var(--text);line-height:1.5;margin-bottom:22px"></div>
+    <div id="confirm-msg" style="font-size:15px;color:var(--text);line-height:1.5;margin-bottom:16px"></div>
+    <input id="confirm-input" type="text" style="display:none;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;margin-bottom:16px;box-sizing:border-box" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')_confirmOk();if(event.key==='Escape')_confirmCancel()">
     <div style="display:flex;gap:10px;justify-content:center">
       <button onclick="_confirmCancel()" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
       <button id="confirm-ok" onclick="_confirmOk()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--coral);color:white;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Delete</button>
@@ -2596,9 +2597,23 @@ function showConfirm(msg, onOk, okLabel = 'Delete') {
   document.getElementById('confirm-msg').textContent = msg;
   document.getElementById('confirm-ok').textContent = okLabel;
   document.getElementById('confirm-ok').style.background = okLabel === 'Delete' ? 'var(--coral)' : 'var(--amber)';
+  const input = document.getElementById('confirm-input');
+  input.style.display = 'none';
   const ov = document.getElementById('confirm-overlay');
   ov.style.display = 'flex';
   _confirmCallback = onOk;
+}
+function showPrompt(msg, defaultVal, onOk, okLabel = 'Save') {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok').textContent = okLabel;
+  document.getElementById('confirm-ok').style.background = 'var(--amber)';
+  const input = document.getElementById('confirm-input');
+  input.value = defaultVal || '';
+  input.style.display = 'block';
+  const ov = document.getElementById('confirm-overlay');
+  ov.style.display = 'flex';
+  setTimeout(() => input.focus(), 50);
+  _confirmCallback = () => onOk(input.value);
 }
 function _confirmOk() {
   document.getElementById('confirm-overlay').style.display = 'none';
@@ -2899,13 +2914,13 @@ function setBudgetMonth(m) {
 
 function promptTarget(cat) {
   const cur = budgetTargets[cat] || '';
-  const val = prompt(`Monthly budget target for ${cat}:`, cur);
-  if (val === null) return;
-  const n = parseFloat(val);
-  if (!isNaN(n) && n > 0) budgetTargets[cat] = n;
-  else delete budgetTargets[cat];
-  saveBudgetTargets();
-  renderBudget();
+  showPrompt(`Monthly budget target for ${cat}:`, cur, (val) => {
+    const n = parseFloat(val);
+    if (!isNaN(n) && n > 0) budgetTargets[cat] = n;
+    else delete budgetTargets[cat];
+    saveBudgetTargets();
+    renderBudget();
+  });
 }
 
 function addExpense() {
