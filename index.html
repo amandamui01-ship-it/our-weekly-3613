@@ -910,6 +910,17 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <div class="toast" id="toast"></div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
 
+<!-- In-page confirm dialog -->
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center">
+    <div id="confirm-msg" style="font-size:15px;color:var(--text);line-height:1.5;margin-bottom:22px"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="_confirmCancel()" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+      <button id="confirm-ok" onclick="_confirmOk()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--coral);color:white;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -1598,12 +1609,13 @@ function deleteTodoSection(id) {
   const msg = count > 0
     ? `Delete "${cat?.label}"? This will also delete the ${count} item${count!==1?'s':''} inside.`
     : `Delete "${cat?.label}"?`;
-  if (!confirm(msg)) return;
-  todoCategories = todoCategories.filter(c => c.id !== id);
-  todos = todos.filter(t => t.cat !== id);
-  saveTodoCategories();
-  saveTodos();
-  renderTodos();
+  showConfirm(msg, () => {
+    todoCategories = todoCategories.filter(c => c.id !== id);
+    todos = todos.filter(t => t.cat !== id);
+    saveTodoCategories();
+    saveTodos();
+    renderTodos();
+  });
 }
 
 function moveTodoSection(id, dir) {
@@ -1927,10 +1939,11 @@ function renderPlan() {
 }
 
 function clearPlan() {
-  if (!confirm('Clear the whole plan and start fresh?')) return;
-  weekPlan = {};
-  savePlan();
-  renderPlan();
+  showConfirm('Clear the whole plan and start fresh?', () => {
+    weekPlan = {};
+    savePlan();
+    renderPlan();
+  }, 'Clear');
 }
 
 function toggleChip(dayKey, type) {
@@ -2083,17 +2096,18 @@ function exportToCalendar() {
     );
   });
   lines.push('END:VCALENDAR');
-  if (!confirm(`Export ${upcoming.length} events + ${upcoming.length} Monday reminders?\n\nTo avoid duplicates: in Outlook, filter your calendar by category "Our Weekly" and delete those events first, then open the new file.`)) return;
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'our-weekly-dates.ics'; a.click();
-  URL.revokeObjectURL(url);
-  if (skipped.length) {
-    showToast(`Exported ${upcoming.length} event${upcoming.length!==1?'s':''}. Skipped ${skipped.length} vague-date event${skipped.length!==1?'s':''} (${skipped.map(t=>t.label).join(', ')}).`);
-  } else {
-    showToast(`Exported ${upcoming.length} event${upcoming.length!==1?'s':''}.`);
-  }
+  showConfirm(`Export ${upcoming.length} events to calendar? To avoid duplicates, delete any existing "Our Weekly" events in Outlook first.`, () => {
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'our-weekly-dates.ics'; a.click();
+    URL.revokeObjectURL(url);
+    if (skipped.length) {
+      showToast(`Exported ${upcoming.length} event${upcoming.length!==1?'s':''}. Skipped ${skipped.length} vague-date event${skipped.length!==1?'s':''} (${skipped.map(t=>t.label).join(', ')}).`);
+    } else {
+      showToast(`Exported ${upcoming.length} event${upcoming.length!==1?'s':''}.`);
+    }
+  }, 'Export');
 }
 
 function parseSortDate(dateStr) {
@@ -2291,10 +2305,11 @@ function renderHistory() {
 }
 
 function deleteEntry(id) {
-  if (!confirm('Delete this entry? This cannot be undone.')) return;
-  newEntries = newEntries.filter(e => e.id !== id);
-  saveEntries();
-  renderHistory();
+  showConfirm('Delete this entry? This cannot be undone.', () => {
+    newEntries = newEntries.filter(e => e.id !== id);
+    saveEntries();
+    renderHistory();
+  });
 }
 
 function surpriseMe() {
@@ -2416,11 +2431,12 @@ function addPhotoFromUrl() {
 
 function deleteCurrentPhoto() {
   if (!photos.length) return;
-  if (!confirm('Remove this photo?')) return;
-  photos.splice(photoIdx, 1);
-  photoIdx = Math.max(0, photoIdx - 1);
-  savePhotos();
-  renderPhotoWidget();
+  showConfirm('Remove this photo?', () => {
+    photos.splice(photoIdx, 1);
+    photoIdx = Math.max(0, photoIdx - 1);
+    savePhotos();
+    renderPhotoWidget();
+  });
 }
 
 // ─── MOOD OF THE WEEK ─────────────────────────────────────────────────────────
@@ -2571,6 +2587,24 @@ function addSwipeToDelete() {
 function escHtml(str) {
   if (!str) return '';
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let _confirmCallback = null;
+function showConfirm(msg, onOk, okLabel = 'Delete') {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok').textContent = okLabel;
+  document.getElementById('confirm-ok').style.background = okLabel === 'Delete' ? 'var(--coral)' : 'var(--amber)';
+  const ov = document.getElementById('confirm-overlay');
+  ov.style.display = 'flex';
+  _confirmCallback = onOk;
+}
+function _confirmOk() {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+}
+function _confirmCancel() {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  _confirmCallback = null;
 }
 
 function showToast(msg) {
