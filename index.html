@@ -1475,9 +1475,9 @@ function saveEntry() {
     adjust:   get('r-adjust'),
     budget:   '',
     savings:  '',
-    logistics:get('r-logistics'),
-    appts:    get('r-appts'),
-    upcoming: get('r-upcoming'),
+    logistics:'',
+    appts:    '',
+    upcoming: '',
     theme:    get('r-theme'),
     amanda:   get('r-amanda'),
     aidan:    get('r-aidan'),
@@ -1496,8 +1496,8 @@ function saveEntry() {
   } else {
     finishSave(null);
   }
-  ['r-well','r-stress','r-adjust','r-logistics','r-appts','r-upcoming','r-theme','r-amanda','r-aidan','r-misc']
-    .forEach(id => document.getElementById(id).value = '');
+  ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const rp = document.getElementById('r-photo');
   if (rp) { rp.value = ''; }
   document.getElementById('r-photo-preview').style.display = 'none';
