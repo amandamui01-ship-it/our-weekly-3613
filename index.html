@@ -277,13 +277,18 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-chip.friends    {background:#eef4fc;color:#90acd0;border-color:#c5d8fc}
 .plan-slot-chip.friends:hover    {background:#1a3d6e;color:white;border-color:#1a3d6e}
 .plan-slot-chip.friends.on {background:#1a3d6e;color:white;border-color:#1a3d6e}
-.plan-slot-event{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;border:1.5px solid #f0d4a8;background:var(--amber-bg);color:var(--amber-dark);font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap;flex-shrink:0}
-.plan-slot-event-del{font-size:13px;line-height:1;cursor:pointer;opacity:0;transition:opacity .1s;color:var(--amber-dark)}
-.plan-slot-event:hover .plan-slot-event-del{opacity:.6}
+.plan-slot-event{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;border:1.5px solid transparent}
+.plan-slot-event-del{font-size:13px;line-height:1;cursor:pointer;opacity:0;transition:opacity .1s}
+.plan-slot-event:hover .plan-slot-event-del{opacity:.7}
 .plan-slot-event-del:hover{opacity:1!important}
-.plan-slot-add-input{font-size:10px;font-weight:600;padding:2px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text);outline:none;width:110px;font-family:inherit;transition:border-color .15s}
-.plan-slot-add-input:focus{border-color:var(--amber);border-style:solid;background:var(--amber-bg)}
-.plan-slot-add-input::placeholder{color:var(--text-3);font-weight:400}
+.plan-slot-event.ec0{background:#92590f;color:white;border-color:#92590f}
+.plan-slot-event.ec1{background:#2e5233;color:white;border-color:#2e5233}
+.plan-slot-event.ec2{background:#1a3d6e;color:white;border-color:#1a3d6e}
+.plan-slot-event.ec3{background:#6b3070;color:white;border-color:#6b3070}
+.plan-slot-event.ec4{background:#7a3020;color:white;border-color:#7a3020}
+.plan-slot-add-input{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text);outline:none;width:110px;font-family:inherit;transition:border-color .15s}
+.plan-slot-add-input:focus{border-color:var(--amber);border-style:solid}
+.plan-slot-add-input::placeholder{color:var(--text-3);font-weight:400;text-transform:none;letter-spacing:0}
 .plan-add-event-btn{display:none;align-items:center;justify-content:center;width:20px;height:20px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-3);font-size:13px;cursor:pointer;line-height:1;transition:all .15s;flex-shrink:0}
 .plan-add-event-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);border-style:solid}
 .plan-day:hover .plan-add-event-btn{display:inline-flex}
@@ -1307,7 +1312,7 @@ function initFirestore() {
 
   ref('weekplan').onSnapshot(snap => {
     weekPlan = snap.exists ? (snap.data().plan || {}) : {};
-    if (isActive('plan')) renderPlan();
+    if (isActive('plan') && !document.querySelector('.plan-slot-add-input[style*="inline"]')) renderPlan();
   });
 
   ref('recurring').onSnapshot(snap => {
@@ -2028,7 +2033,7 @@ function renderPlan() {
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
           ${(d.events || (d.notesList?.length ? d.notesList : d.notes ? [d.notes] : [])).map((evt, i) => `
-            <div class="plan-slot-event" id="evt-${key}-${i}">${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
+            <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}">${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
           <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event…" style="display:none"
             onkeydown="handleEventKey(event,'${key}')" onblur="commitEvent('${key}')">
           <button class="plan-add-event-btn" id="add-btn-${key}" onclick="showAddEvent('${key}')">+</button>
@@ -2082,8 +2087,6 @@ function toggleChip(dayKey, type) {
 }
 
 let _planDebounce = null;
-let _cancelingEvent = false;
-
 function showAddEvent(key) {
   const btn = document.getElementById('add-btn-' + key);
   const input = document.getElementById('add-input-' + key);
@@ -2096,17 +2099,17 @@ function showAddEvent(key) {
 
 function handleEventKey(e, key) {
   if (e.key === 'Enter') { e.preventDefault(); commitEvent(key); }
-  if (e.key === 'Escape') { e.preventDefault(); _cancelingEvent = true; cancelAddEvent(key); }
+  if (e.key === 'Escape') { e.preventDefault(); cancelAddEvent(key); }
 }
 
 function commitEvent(key) {
-  if (_cancelingEvent) { _cancelingEvent = false; return; }
   const input = document.getElementById('add-input-' + key);
-  const btn = document.getElementById('add-btn-' + key);
-  if (!input) return;
+  // Guard: if already hidden, blur fired after we already committed — ignore
+  if (!input || input.style.display === 'none') return;
   const val = input.value.trim();
+  // Hide first so the blur this triggers finds display:none and returns
   input.style.display = 'none';
-  if (btn) btn.style.display = '';
+  document.getElementById('add-btn-' + key).style.display = '';
   if (!val) return;
   if (!weekPlan[key]) weekPlan[key] = {};
   if (!weekPlan[key].events) weekPlan[key].events = [];
@@ -2137,7 +2140,7 @@ function renderDayEvents(key) {
   const addInput = document.getElementById('add-input-' + key);
   events.forEach((evt, i) => {
     const chip = document.createElement('div');
-    chip.className = 'plan-slot-event';
+    chip.className = `plan-slot-event ec${i%5}`;
     chip.id = 'evt-' + key + '-' + i;
     chip.innerHTML = `${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
     slot.insertBefore(chip, addInput);
