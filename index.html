@@ -824,18 +824,18 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="plan-week" id="plan-week"></div>
   </div>
 
-  <!-- Meal Plan -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Meal Plan</div>
-    <div class="plan-meals" id="plan-meals"></div>
-  </div>
-
   <!-- Notes -->
-  <div class="card">
+  <div class="card" style="margin-bottom:16px">
     <div class="card-title">Notes & Reminders</div>
     <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
       style="width:100%;min-height:90px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px;font-family:inherit;background:var(--surface);resize:vertical;outline:none;transition:border-color .15s;color:var(--text)"
       onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+  </div>
+
+  <!-- Meal Plan -->
+  <div class="card">
+    <div class="card-title">Meal Plan</div>
+    <div class="plan-meals" id="plan-meals"></div>
   </div>
 </div>
 
