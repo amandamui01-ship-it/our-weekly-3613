@@ -277,20 +277,16 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-chip.friends    {background:#eef4fc;color:#90acd0;border-color:#c5d8fc}
 .plan-slot-chip.friends:hover    {background:#1a3d6e;color:white;border-color:#1a3d6e}
 .plan-slot-chip.friends.on {background:#1a3d6e;color:white;border-color:#1a3d6e}
-.plan-slot-notes{display:inline-flex;align-items:flex-start;gap:5px;padding:3px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;cursor:text;transition:border-color .15s,background .15s,border-radius .15s;max-width:100%}
-.plan-slot-notes:has(.plan-slot-notes-text:not(:empty)){border-radius:10px;border-style:solid;background:#92590f;border-color:#92590f;color:white}
-.plan-slot-notes:hover:not(:focus-within):not(:has(.plan-slot-notes-text:not(:empty))){border-style:solid;border-color:#92590f;background:#92590f;color:white}
-.plan-slot-notes:focus-within{border-style:solid;border-color:#92590f;background:#92590f;color:white}
-.plan-slot-notes-text{outline:none;min-width:1px;word-break:break-word;white-space:pre-wrap;font-family:inherit;flex:1}
-.plan-slot-notes-text:empty::before{content:'Notes';color:var(--text-3);pointer-events:none}
-.plan-slot-notes:hover .plan-slot-notes-text:empty::before,
-.plan-slot-notes:focus-within .plan-slot-notes-text:empty::before{color:rgba(255,255,255,.6)}
-.plan-slot-notes-extra:has(.plan-slot-notes-text:not(:empty)){background:#1a5c4a;border-color:#1a5c4a}
-.plan-slot-notes-extra:hover:not(:focus-within):not(:has(.plan-slot-notes-text:not(:empty))){border-color:#1a5c4a;background:#1a5c4a}
-.plan-slot-notes-extra:focus-within{border-color:#1a5c4a;background:#1a5c4a}
-.plan-add-note-btn{display:none;align-items:center;justify-content:center;width:22px;height:22px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-3);font-size:14px;cursor:pointer;line-height:1;transition:all .15s;flex-shrink:0}
-.plan-add-note-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);border-style:solid}
-.plan-day:hover .plan-notes-container:has(.plan-slot-notes-text:not(:empty)) .plan-add-note-btn{display:inline-flex}
+.plan-slot-event{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;border:1.5px solid #f0d4a8;background:var(--amber-bg);color:var(--amber-dark);font-size:10px;font-weight:700;letter-spacing:.04em;white-space:nowrap;flex-shrink:0}
+.plan-slot-event-del{font-size:13px;line-height:1;cursor:pointer;opacity:0;transition:opacity .1s;color:var(--amber-dark)}
+.plan-slot-event:hover .plan-slot-event-del{opacity:.6}
+.plan-slot-event-del:hover{opacity:1!important}
+.plan-slot-add-input{font-size:10px;font-weight:600;padding:2px 10px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text);outline:none;width:110px;font-family:inherit;transition:border-color .15s}
+.plan-slot-add-input:focus{border-color:var(--amber);border-style:solid;background:var(--amber-bg)}
+.plan-slot-add-input::placeholder{color:var(--text-3);font-weight:400}
+.plan-add-event-btn{display:none;align-items:center;justify-content:center;width:20px;height:20px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-3);font-size:13px;cursor:pointer;line-height:1;transition:all .15s;flex-shrink:0}
+.plan-add-event-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);border-style:solid}
+.plan-day:hover .plan-add-event-btn{display:inline-flex}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .plan-meal-row{display:flex;flex-direction:column;gap:4px;background:var(--surface-warm);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
@@ -512,7 +508,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .plan-meal-day .day-short{display:inline}
   .plan-slot{flex-wrap:wrap;gap:5px;padding:8px 10px}
   .plan-slot-chip{font-size:9px;padding:2px 6px}
-  .plan-slot-notes{max-width:100%}
+  .plan-slot-event{white-space:normal}
   /* Dates: add-trip form single column */
   .add-trip-form{grid-template-columns:1fr}
   /* Budget spending by category: name + amount on row 1, bar on row 2 */
@@ -607,13 +603,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
   <!-- Countdown widgets row -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
-    <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
+    <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
       <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8;margin-top:0">
+    <div class="card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8;margin-top:0">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Anniversary</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">October 1st</div>
       <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
@@ -2031,17 +2027,11 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <div class="plan-notes-container" id="notes-${key}" style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-            ${[...(d.notesList || (d.notes ? [d.notes] : [])), ''].map((note, i) => `
-              <div class="plan-slot-notes${i > 0 ? ' plan-slot-notes-extra' : ''}" onclick="this.querySelector('.plan-slot-notes-text').focus()">
-                <span>📝</span><div class="plan-slot-notes-text" contenteditable="true"
-                  oninput="onNoteInput('${key}',this)"
-                  onblur="onNoteBlur('${key}')"
-                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
-                >${escHtml(note)}</div>
-              </div>`).join('')}
-            <button class="plan-add-note-btn" onclick="addNote('${key}')" title="Add another note">+</button>
-          </div>
+          ${(d.events || (d.notesList?.length ? d.notesList : d.notes ? [d.notes] : [])).map((evt, i) => `
+            <div class="plan-slot-event" id="evt-${key}-${i}">${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
+          <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event…" style="display:none"
+            onkeydown="handleEventKey(event,'${key}')" onblur="commitEvent('${key}')">
+          <button class="plan-add-event-btn" id="add-btn-${key}" onclick="showAddEvent('${key}')">+</button>
         </div>
       </div>
     </div>`;
@@ -2092,42 +2082,66 @@ function toggleChip(dayKey, type) {
 }
 
 let _planDebounce = null;
+let _cancelingEvent = false;
 
-function onNoteInput(key) {
-  clearTimeout(_planDebounce);
-  _planDebounce = setTimeout(() => saveNotesList(key), 600);
+function showAddEvent(key) {
+  const btn = document.getElementById('add-btn-' + key);
+  const input = document.getElementById('add-input-' + key);
+  if (!input) return;
+  btn.style.display = 'none';
+  input.style.display = 'inline-block';
+  input.value = '';
+  input.focus();
 }
 
-function addNote(key) {
-  const container = document.getElementById('notes-' + key);
-  if (!container) return;
-  const btn = container.querySelector('.plan-add-note-btn');
-  const newChip = document.createElement('div');
-  newChip.className = 'plan-slot-notes plan-slot-notes-extra';
-  newChip.setAttribute('onclick', "this.querySelector('.plan-slot-notes-text').focus()");
-  newChip.innerHTML = `<span>📝</span><div class="plan-slot-notes-text" contenteditable="true" oninput="onNoteInput('${key}')" onblur="onNoteBlur('${key}')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></div>`;
-  container.insertBefore(newChip, btn);
-  newChip.querySelector('.plan-slot-notes-text').focus();
+function handleEventKey(e, key) {
+  if (e.key === 'Enter') { e.preventDefault(); commitEvent(key); }
+  if (e.key === 'Escape') { e.preventDefault(); _cancelingEvent = true; cancelAddEvent(key); }
 }
 
-function onNoteBlur(key) {
-  const container = document.getElementById('notes-' + key);
-  if (!container) return;
-  const chips = Array.from(container.querySelectorAll('.plan-slot-notes'));
-  const empty = chips.filter(c => !c.querySelector('.plan-slot-notes-text').innerText.trim());
-  empty.slice(0, -1).forEach(c => c.remove());
-  saveNotesList(key);
-}
-
-function saveNotesList(key) {
-  const container = document.getElementById('notes-' + key);
-  if (!container) return;
-  const notes = Array.from(container.querySelectorAll('.plan-slot-notes-text'))
-    .map(el => el.innerText.trim()).filter(Boolean);
+function commitEvent(key) {
+  if (_cancelingEvent) { _cancelingEvent = false; return; }
+  const input = document.getElementById('add-input-' + key);
+  const btn = document.getElementById('add-btn-' + key);
+  if (!input) return;
+  const val = input.value.trim();
+  input.style.display = 'none';
+  if (btn) btn.style.display = '';
+  if (!val) return;
   if (!weekPlan[key]) weekPlan[key] = {};
-  weekPlan[key].notesList = notes;
-  weekPlan[key].notes = notes[0] || '';
+  if (!weekPlan[key].events) weekPlan[key].events = [];
+  weekPlan[key].events.push(val);
   savePlan();
+  renderDayEvents(key);
+}
+
+function cancelAddEvent(key) {
+  const input = document.getElementById('add-input-' + key);
+  const btn = document.getElementById('add-btn-' + key);
+  if (input) { input.value = ''; input.style.display = 'none'; }
+  if (btn) btn.style.display = '';
+}
+
+function removeEvent(key, idx) {
+  if (!weekPlan[key]?.events) return;
+  weekPlan[key].events.splice(idx, 1);
+  savePlan();
+  renderDayEvents(key);
+}
+
+function renderDayEvents(key) {
+  const slot = document.getElementById('add-input-' + key)?.closest('.plan-slot');
+  if (!slot) return;
+  slot.querySelectorAll('.plan-slot-event').forEach(e => e.remove());
+  const events = weekPlan[key]?.events || [];
+  const addInput = document.getElementById('add-input-' + key);
+  events.forEach((evt, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'plan-slot-event';
+    chip.id = 'evt-' + key + '-' + i;
+    chip.innerHTML = `${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
+    slot.insertBefore(chip, addInput);
+  });
 }
 
 function updateMeal(dayKey, mealType, val) {
@@ -2293,9 +2307,7 @@ function addTrip() {
   const sortDate       = parseSortDate(dates);
   const labelWithEmoji = `${label} ${tripEmoji(label)}`;
   trips.push({ id:'trip-'+Date.now(), dates, label:labelWithEmoji, sortDate });
-  logisticsList.push({ id:'log-'+Date.now(), text:`Figure out PTO for ${labelWithEmoji}` });
   saveTrips();
-  saveLogistics();
   burst();
   renderDates();
 }
