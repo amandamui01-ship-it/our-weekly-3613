@@ -285,6 +285,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-notes-text:empty::before{content:'Notes';color:var(--text-3);pointer-events:none}
 .plan-slot-notes:hover .plan-slot-notes-text:empty::before,
 .plan-slot-notes:focus-within .plan-slot-notes-text:empty::before{color:rgba(255,255,255,.6)}
+.plan-slot-notes-extra:has(.plan-slot-notes-text:not(:empty)){background:#1a5c4a;border-color:#1a5c4a}
+.plan-slot-notes-extra:hover:not(:focus-within):not(:has(.plan-slot-notes-text:not(:empty))){border-color:#1a5c4a;background:#1a5c4a}
+.plan-slot-notes-extra:focus-within{border-color:#1a5c4a;background:#1a5c4a}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .plan-meal-row{display:flex;flex-direction:column;gap:4px;background:var(--surface-warm);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
@@ -2025,11 +2028,15 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <div class="plan-slot-notes" onclick="this.querySelector('.plan-slot-notes-text').focus()">
-            <span>📝</span><div class="plan-slot-notes-text" contenteditable="true"
-              oninput="updateDayNotes('${key}', this.innerText.trim())"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
-            >${escHtml(d.notes||'')}</div>
+          <div class="plan-notes-container" id="notes-${key}" style="display:contents">
+            ${[...(d.notesList || (d.notes ? [d.notes] : [])), ''].map(note => `
+              <div class="plan-slot-notes" onclick="this.querySelector('.plan-slot-notes-text').focus()">
+                <span>📝</span><div class="plan-slot-notes-text" contenteditable="true"
+                  oninput="onNoteInput('${key}',this)"
+                  onblur="onNoteBlur('${key}')"
+                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                >${escHtml(note)}</div>
+              </div>`).join('')}
           </div>
         </div>
       </div>
@@ -2081,11 +2088,38 @@ function toggleChip(dayKey, type) {
 }
 
 let _planDebounce = null;
-function updateDayNotes(dayKey, val) {
-  if (!weekPlan[dayKey]) weekPlan[dayKey] = {};
-  weekPlan[dayKey].notes = val;
+
+function onNoteInput(key, el) {
+  const container = document.getElementById('notes-' + key);
+  const chips = container.querySelectorAll('.plan-slot-notes-text');
+  const lastChip = chips[chips.length - 1];
+  if (el === lastChip && el.innerText.trim()) {
+    const newWrap = document.createElement('div');
+    newWrap.innerHTML = `<div class="plan-slot-notes plan-slot-notes-extra" onclick="this.querySelector('.plan-slot-notes-text').focus()"><span>📝</span><div class="plan-slot-notes-text" contenteditable="true" oninput="onNoteInput('${key}',this)" onblur="onNoteBlur('${key}')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></div></div>`;
+    container.appendChild(newWrap.firstElementChild);
+  }
   clearTimeout(_planDebounce);
-  _planDebounce = setTimeout(savePlan, 600);
+  _planDebounce = setTimeout(() => saveNotesList(key), 600);
+}
+
+function onNoteBlur(key) {
+  const container = document.getElementById('notes-' + key);
+  if (!container) return;
+  const chips = Array.from(container.querySelectorAll('.plan-slot-notes'));
+  const empty = chips.filter(c => !c.querySelector('.plan-slot-notes-text').innerText.trim());
+  empty.slice(0, -1).forEach(c => c.remove());
+  saveNotesList(key);
+}
+
+function saveNotesList(key) {
+  const container = document.getElementById('notes-' + key);
+  if (!container) return;
+  const notes = Array.from(container.querySelectorAll('.plan-slot-notes-text'))
+    .map(el => el.innerText.trim()).filter(Boolean);
+  if (!weekPlan[key]) weekPlan[key] = {};
+  weekPlan[key].notesList = notes;
+  weekPlan[key].notes = notes[0] || '';
+  savePlan();
 }
 
 function updateMeal(dayKey, mealType, val) {
