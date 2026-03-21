@@ -2145,8 +2145,9 @@ function editEvent(key, idx) {
     if (del) del.style.visibility = '';
     // Read text node only (childNodes[1], between emoji and × button)
     const val = (chip.childNodes[1]?.textContent || '').trim();
-    if (save && val && weekPlan[key]?.events) {
-      weekPlan[key].events[idx] = val;
+    if (save && weekPlan[key]?.events) {
+      if (val) { weekPlan[key].events[idx] = val; }
+      else { weekPlan[key].events.splice(idx, 1); }
       savePlan();
     }
     renderDayEvents(key);
