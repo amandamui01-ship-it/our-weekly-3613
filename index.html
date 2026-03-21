@@ -327,6 +327,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .bq-btn{flex-shrink:0}
 .bulk-cat-chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface-warm);color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
 .bulk-cat-chip:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
+.bulk-cat-chip-hot{border-color:var(--amber);color:var(--amber-dark);background:var(--amber-bg)}
 
 .budget-top-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}
 .budget-summary-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -514,11 +515,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   /* Japan countdown: smaller numbers */
   .japan-num{font-size:24px}
   .japan-unit{min-width:50px}
-  /* Home countdown cards: shrink number + label on small screens */
-  .home-countdown-row .card{padding:14px 10px}
-  .home-countdown-row [style*="font-size:38px"]{font-size:28px!important}
-  .home-countdown-row [style*="font-size:12px"]{font-size:11px!important}
-  .home-countdown-row [style*="font-size:9px"]{font-size:8px!important}
+  /* Home countdown cards: stack vertically on small screens */
+  .home-countdown-row{grid-template-columns:1fr!important}
   /* Weekly schedule: chips wrap to first line, input on its own line below */
   .plan-day{grid-template-columns:32px 1fr}
   .plan-day-label{font-size:10px;padding:8px 4px;letter-spacing:0}
@@ -3663,16 +3661,8 @@ function renderBulkCatChips() {
   const sorted = [...CATS].sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
   const top = sorted.slice(0, 5);
   const rest = sorted.slice(5);
-  const chip = c => `<button class="bulk-cat-chip" onclick="insertBulkCat('${c}')">${c}</button>`;
-  el.innerHTML = `
-    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);white-space:nowrap;flex-shrink:0">Most Used</span>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">${top.map(chip).join('')}</div>
-    </div>
-    <div style="display:flex;align-items:baseline;gap:10px">
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);white-space:nowrap;flex-shrink:0">Other</span>
-      <div style="display:flex;flex-wrap:wrap;gap:5px">${rest.map(chip).join('')}</div>
-    </div>`;
+  const chip = (c, hot) => `<button class="bulk-cat-chip${hot?' bulk-cat-chip-hot':''}" onclick="insertBulkCat('${c}')">${c}</button>`;
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:5px">${top.map(c=>chip(c,true)).join('')}<span style="width:1px;background:var(--border);margin:2px 3px;align-self:stretch;display:inline-block"></span>${rest.map(c=>chip(c,false)).join('')}</div>`;
 }
 
 function insertBulkCat(cat) {
