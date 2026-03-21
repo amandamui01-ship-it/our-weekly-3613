@@ -1367,7 +1367,7 @@ function renderHome() {
   const isWeekend = now.getDay() === 0 || now.getDay() === 6;
   const reviewBtn = document.getElementById('home-review-btn');
   if (reviewBtn) reviewBtn.innerHTML = isWeekend
-    ? '☕ It\'s Review Day!'
+    ? '☕ It\'s Review Day!<br><span style="font-size:11px;font-weight:400;opacity:.8">grab a coffee and let\'s do this</span>'
     : '✏️ Start This Week\'s Review →';
 
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
