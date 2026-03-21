@@ -444,7 +444,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 #r-photo-preview img{width:100%;height:auto;display:block;border-radius:10px}
 
 /* ── History photo ── */
-.history-photo{max-width:100%;max-height:300px;width:auto;height:auto;display:block;border-radius:10px;margin:0 auto 14px}
+.history-body-inner{display:flex;gap:18px;align-items:flex-start}
+.history-photo{width:38%;flex-shrink:0;border-radius:10px;display:block;object-fit:cover;max-height:320px}
+.history-sections{flex:1;min-width:0}
+@media(max-width:580px){.history-body-inner{flex-direction:column}.history-photo{width:100%}}
 
 
 /* ── Todo Priority & Drag ── */
@@ -2334,13 +2337,17 @@ function renderHistory() {
           <div class="history-chevron">▼</div>
         </div>
         <div class="history-body" id="hb-${e.id}">
-          ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
-          ${sections.map(s => `
-            <div class="history-section">
-              <div class="history-section-lbl">${s.lbl}</div>
-              <div class="history-section-text">${escHtml(s.val)}</div>
-            </div>`).join('')}
-          ${!sections.length ? '<div style="color:var(--text-3);font-size:13px">No notes for this entry.</div>' : ''}
+          <div class="history-body-inner">
+            ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
+            <div class="history-sections">
+              ${sections.map(s => `
+                <div class="history-section">
+                  <div class="history-section-lbl">${s.lbl}</div>
+                  <div class="history-section-text">${escHtml(s.val)}</div>
+                </div>`).join('')}
+              ${!sections.length ? '<div style="color:var(--text-3);font-size:13px">No notes for this entry.</div>' : ''}
+            </div>
+          </div>
         </div>
       </div>`;
   }).join('') || '<div class="empty-state">No entries yet. Start your first weekly review! ✨</div>';
