@@ -3295,9 +3295,12 @@ function editExpense(id) {
   if (!e) return;
   const el = document.getElementById('tx-' + id);
   if (!el) return;
+  // Remove click handler so clicking inputs inside doesn't re-fire editExpense
+  el.onclick = null;
+  el.style.cursor = '';
   el.style.cssText = 'grid-column:1/-1;display:block;padding:8px 4px;background:var(--surface-warm);border-radius:8px';
   el.innerHTML = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center" onclick="event.stopPropagation()">
       <select id="txe-person-${id}" class="bq-input" style="width:80px;font-size:12px;padding:4px 6px">
         <option${e.person==='Amanda'?' selected':''}>Amanda</option>
         <option${e.person==='Aidan'?' selected':''}>Aidan</option>
@@ -3306,13 +3309,14 @@ function editExpense(id) {
         ${EXPENSE_CATS_LIST.map(c=>`<option${c===e.category?' selected':''}>${c}</option>`).join('')}
       </select>
       <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
-      <input id="txe-amt-${id}" type="number" value="${e.amount}" class="bq-input" style="width:80px;font-size:12px;padding:4px 8px">
+      <input id="txe-amt-${id}" type="number" step="0.01" value="${e.amount}" class="bq-input" style="width:90px;font-size:12px;padding:4px 8px">
       <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="font-size:12px;padding:4px 8px">
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> 50/50</label>
       <button class="trip-edit-save" onclick="saveExpenseEdit('${id}');event.stopPropagation()">Save</button>
       <button class="trip-edit-cancel" onclick="renderBudget();event.stopPropagation()">Cancel</button>
     </div>`;
-  document.getElementById('txe-desc-' + id).focus();
+  document.getElementById('txe-amt-' + id).focus();
+  document.getElementById('txe-amt-' + id).select();
 }
 
 function saveExpenseEdit(id) {
