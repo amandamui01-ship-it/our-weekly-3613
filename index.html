@@ -265,7 +265,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-day-label .day-short{display:none}
 .plan-meal-day .day-short{display:none}
 .plan-day-slots{display:flex;flex-direction:column;gap:0}
-.plan-slot{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border-light);transition:background .1s}
+.plan-slot{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border-light);transition:background .1s}
 .plan-slot:last-child{border-bottom:none}
 .plan-slot-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid transparent;flex-shrink:0}
 .plan-slot-chip.gym    {background:#eaf2eb;color:#8ab89a;border-color:#c3ddc7}
@@ -288,6 +288,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-slot-notes-extra:has(.plan-slot-notes-text:not(:empty)){background:#1a5c4a;border-color:#1a5c4a}
 .plan-slot-notes-extra:hover:not(:focus-within):not(:has(.plan-slot-notes-text:not(:empty))){border-color:#1a5c4a;background:#1a5c4a}
 .plan-slot-notes-extra:focus-within{border-color:#1a5c4a;background:#1a5c4a}
+.plan-add-note-btn{display:none;align-items:center;justify-content:center;width:22px;height:22px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-3);font-size:14px;cursor:pointer;line-height:1;transition:all .15s;flex-shrink:0}
+.plan-add-note-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);border-style:solid}
+.plan-day:hover .plan-notes-container:has(.plan-slot-notes-text:not(:empty)) .plan-add-note-btn{display:inline-flex}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .plan-meal-row{display:flex;flex-direction:column;gap:4px;background:var(--surface-warm);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
@@ -509,7 +512,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .plan-meal-day .day-short{display:inline}
   .plan-slot{flex-wrap:wrap;gap:5px;padding:8px 10px}
   .plan-slot-chip{font-size:9px;padding:2px 6px}
-  .plan-slot-notes{flex-basis:100%;margin-top:2px;max-width:100%}
+  .plan-slot-notes{max-width:100%}
   /* Dates: add-trip form single column */
   .add-trip-form{grid-template-columns:1fr}
   /* Budget spending by category: name + amount on row 1, bar on row 2 */
@@ -2028,15 +2031,16 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          <div class="plan-notes-container" id="notes-${key}" style="display:contents">
-            ${[...(d.notesList || (d.notes ? [d.notes] : [])), ''].map(note => `
-              <div class="plan-slot-notes" onclick="this.querySelector('.plan-slot-notes-text').focus()">
+          <div class="plan-notes-container" id="notes-${key}" style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+            ${[...(d.notesList || (d.notes ? [d.notes] : [])), ''].map((note, i) => `
+              <div class="plan-slot-notes${i > 0 ? ' plan-slot-notes-extra' : ''}" onclick="this.querySelector('.plan-slot-notes-text').focus()">
                 <span>📝</span><div class="plan-slot-notes-text" contenteditable="true"
                   oninput="onNoteInput('${key}',this)"
                   onblur="onNoteBlur('${key}')"
                   onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
                 >${escHtml(note)}</div>
               </div>`).join('')}
+            <button class="plan-add-note-btn" onclick="addNote('${key}')" title="Add another note">+</button>
           </div>
         </div>
       </div>
@@ -2089,17 +2093,21 @@ function toggleChip(dayKey, type) {
 
 let _planDebounce = null;
 
-function onNoteInput(key, el) {
-  const container = document.getElementById('notes-' + key);
-  const chips = container.querySelectorAll('.plan-slot-notes-text');
-  const lastChip = chips[chips.length - 1];
-  if (el === lastChip && el.innerText.trim()) {
-    const newWrap = document.createElement('div');
-    newWrap.innerHTML = `<div class="plan-slot-notes plan-slot-notes-extra" onclick="this.querySelector('.plan-slot-notes-text').focus()"><span>📝</span><div class="plan-slot-notes-text" contenteditable="true" oninput="onNoteInput('${key}',this)" onblur="onNoteBlur('${key}')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></div></div>`;
-    container.appendChild(newWrap.firstElementChild);
-  }
+function onNoteInput(key) {
   clearTimeout(_planDebounce);
   _planDebounce = setTimeout(() => saveNotesList(key), 600);
+}
+
+function addNote(key) {
+  const container = document.getElementById('notes-' + key);
+  if (!container) return;
+  const btn = container.querySelector('.plan-add-note-btn');
+  const newChip = document.createElement('div');
+  newChip.className = 'plan-slot-notes plan-slot-notes-extra';
+  newChip.setAttribute('onclick', "this.querySelector('.plan-slot-notes-text').focus()");
+  newChip.innerHTML = `<span>📝</span><div class="plan-slot-notes-text" contenteditable="true" oninput="onNoteInput('${key}')" onblur="onNoteBlur('${key}')" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"></div>`;
+  container.insertBefore(newChip, btn);
+  newChip.querySelector('.plan-slot-notes-text').focus();
 }
 
 function onNoteBlur(key) {
