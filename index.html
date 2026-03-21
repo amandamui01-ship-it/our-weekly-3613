@@ -2015,7 +2015,7 @@ function renderPlan() {
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
           ${(d.events || (d.notesList?.length ? d.notesList : d.notes ? [d.notes] : [])).map((evt, i) => `
-            <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}">${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
+            <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})">${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
           <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event…" style="display:none"
             onkeydown="handleEventKey(event,'${key}')" onblur="commitEvent('${key}')">
           <button class="plan-add-event-btn" id="add-btn-${key}" onclick="showAddEvent('${key}')">+</button>
@@ -2107,6 +2107,36 @@ function cancelAddEvent(key) {
   if (btn) btn.style.display = '';
 }
 
+function editEvent(key, idx) {
+  const chip = document.getElementById('evt-' + key + '-' + idx);
+  if (!chip || chip.querySelector('input')) return;
+  const colorClass = [...chip.classList].find(c => c.startsWith('ec'));
+  const currentVal = weekPlan[key]?.events?.[idx] || '';
+  const input = document.createElement('input');
+  input.className = 'plan-slot-add-input';
+  input.value = currentVal;
+  input.style.display = 'inline-block';
+  input.style.width = Math.max(80, currentVal.length * 8) + 'px';
+  input.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); commitEditEvent(key, idx, input, colorClass); }
+    if (e.key === 'Escape') { e.preventDefault(); renderDayEvents(key); }
+  };
+  input.onblur = () => commitEditEvent(key, idx, input, colorClass);
+  chip.replaceWith(input);
+  input.focus();
+  input.select();
+}
+
+function commitEditEvent(key, idx, input, colorClass) {
+  if (!input.isConnected) return;
+  const val = input.value.trim();
+  if (val && weekPlan[key]?.events) {
+    weekPlan[key].events[idx] = val;
+    savePlan();
+  }
+  renderDayEvents(key);
+}
+
 function removeEvent(key, idx) {
   if (!weekPlan[key]?.events) return;
   weekPlan[key].events.splice(idx, 1);
@@ -2124,6 +2154,7 @@ function renderDayEvents(key) {
     const chip = document.createElement('div');
     chip.className = `plan-slot-event ec${i%5}`;
     chip.id = 'evt-' + key + '-' + i;
+    chip.setAttribute('onclick', `editEvent('${key}',${i})`);
     chip.innerHTML = `${escHtml(evt)}<span class="plan-slot-event-del" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
     slot.insertBefore(chip, addInput);
   });
