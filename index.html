@@ -24,8 +24,10 @@
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* ── Login overlay ── */
-#login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
-#login-overlay.hidden{display:none}
+#login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:0;animation:showLoginOverlay 0s 0.5s forwards}
+#login-overlay.hidden{display:none;animation:none}
+#login-overlay.visible{animation:none;opacity:1}
+@keyframes showLoginOverlay{to{opacity:1}}
 #login-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:40px 36px;width:100%;max-width:380px;box-shadow:var(--shadow-lg)}
 #login-logo{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:800;color:var(--amber);text-align:center;margin-bottom:6px}
 #login-sub{font-size:13px;color:var(--text-3);text-align:center;margin-bottom:28px}
@@ -448,6 +450,21 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-photo{width:38%;flex-shrink:0;border-radius:10px;display:block;object-fit:cover;max-height:320px}
 .history-sections{flex:1;min-width:0}
 @media(max-width:580px){.history-body-inner{flex-direction:column}.history-photo{width:100%}}
+/* ── History edit button ── */
+.history-edit-btn-row{margin-top:14px;display:flex;justify-content:flex-end}
+.history-edit-btn{background:none;border:1px solid var(--border);color:var(--text-2);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
+.history-edit-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
+/* ── History inline edit form ── */
+.history-edit-form{display:flex;flex-direction:column;gap:12px}
+.history-edit-field{display:flex;flex-direction:column;gap:5px}
+.history-edit-ta{width:100%;min-height:60px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);resize:vertical;outline:none;transition:border-color .15s;box-sizing:border-box}
+.history-edit-ta:focus{border-color:var(--amber)}
+.history-edit-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;box-sizing:border-box}
+.history-edit-input:focus{border-color:var(--amber)}
+.history-edit-heart{font-size:20px;cursor:pointer;filter:grayscale(1) opacity(.25);transition:filter .1s;user-select:none}
+.history-edit-heart.on{filter:none}
+.history-edit-done-btn{background:var(--amber);color:white;border:none;border-radius:9px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.history-edit-done-btn:hover{opacity:.88}
 
 
 /* ── Todo Priority & Drag ── */
@@ -526,8 +543,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- ── Nav ── -->
 <nav id="nav">
   <div id="logo" onclick="showPage('home')" style="cursor:pointer">our weekly ♥</div>
-  <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">✏️ </span>This Week</div>
-  <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">🗓️ </span>Next Week</div>
+  <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">✏️ </span>Review</div>
+  <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">🗓️ </span>This Week</div>
   <div class="nav-tab" onclick="showPage('todos')"><span class="nav-emoji">✅ </span>To-Dos</div>
   <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>2026 Dates</div>
   <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
@@ -543,8 +560,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </button>
   <div id="nav-menu">
     <div class="menu-item" onclick="showPage('home')">🏠 Home</div>
-    <div class="menu-item" onclick="showPage('review')">✏️ This Week</div>
-    <div class="menu-item" onclick="showPage('plan')">🗓️ Next Week</div>
+    <div class="menu-item" onclick="showPage('review')">✏️ Review</div>
+    <div class="menu-item" onclick="showPage('plan')">🗓️ This Week</div>
     <div class="menu-item" onclick="showPage('todos')">✅ To-Dos</div>
     <div class="menu-item" onclick="showPage('dates')">✈️ 2026 Dates</div>
     <div class="menu-item" onclick="showPage('budget')">💰 Budget</div>
@@ -582,13 +599,23 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="card" id="next-trip-card" style="text-align:center;padding:24px 20px;margin-bottom:16px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:6px">Next Adventure 🗺️</div>
-    <div style="font-size:13px;color:var(--text-2);margin-bottom:10px" id="next-trip-name">—</div>
-    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:8px">days away</div>
+  <!-- Countdown widgets row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+    <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
+    </div>
+    <div class="card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Anniversary</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">October 1st</div>
+      <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
+    </div>
   </div>
 
+  <!-- Japan countdown -->
   <div class="card japan-card" style="margin-bottom:16px">
     <div class="japan-card-label">✈️ Japan Countdown</div>
     <div class="japan-card-sub">Oct 24, 2026 — Tokyo awaits 🌸 楽しみにしてる</div>
@@ -603,12 +630,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️</div>
-    <div id="home-trips"></div>
-  </div>
-
-  <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+  <!-- Bottom widgets row: Coffee + Mood -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
     <div class="coffee-card" style="margin:0">
       <span class="coffee-icon">☕</span>
       <div class="coffee-title-label">this week's coffee pick</div>
@@ -622,24 +645,24 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     </div>
   </div>
 
-  <div class="card" style="text-align:center;padding:24px 20px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Our Anniversary</div>
-    <div style="font-size:13px;color:var(--text-2);margin-bottom:14px">October 1st</div>
-    <div style="font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:8px">days away</div>
+  <!-- Coming Up -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️</div>
+    <div id="home-trips"></div>
   </div>
 
 </div>
 
 <!-- ── THIS WEEK'S REVIEW ── -->
 <div class="page" id="page-review">
-  <div class="page-title">This Week's Review</div>
+  <div class="page-title">Weekly Review</div>
   <div class="page-sub" id="review-date-sub"></div>
 
   <div class="step-progress">
     <div class="step-dot active" id="dot-0"></div>
     <div class="step-dot" id="dot-1"></div>
-    <span class="step-label" id="step-label-text">Step 1 of 2</span>
+    <div class="step-dot" id="dot-2"></div>
+    <span class="step-label" id="step-label-text">Step 1 of 3</span>
   </div>
 
   <div class="card">
@@ -702,6 +725,18 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
           <div class="theme-chip" onclick="pickTheme(this)">🌿 Slow Week</div>
           <div class="theme-chip" onclick="pickTheme(this)">✈️ Adventure</div>
           <div class="theme-chip" onclick="pickTheme(this)">🌱 Fresh Start</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🏃 Active & Moving</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎬 Stay-in Vibes</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌟 Big Goal Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💆 Self-Care Season</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🍽️ Foodie Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🧩 Quality Time</div>
+          <div class="theme-chip" onclick="pickTheme(this)">📚 Learning Mode</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎨 Creative Energy</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌻 Gratitude Focus</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💪 Grind Mode</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🫶 Us First</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🧹 Reset & Declutter</div>
         </div>
         <input type="text" id="r-theme" placeholder="Or type your own theme...">
       </div>
@@ -715,7 +750,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       </div>
       <div class="step-nav">
         <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
-        <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save & Plan This Week →</button>
       </div>
     </div>
 
@@ -767,10 +802,17 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div id="history-list"></div>
 </div>
 
-<!-- ── NEXT WEEK PLAN ── -->
+<!-- ── THIS WEEK PLAN ── -->
 <div class="page" id="page-plan">
-  <div class="page-title">Next Week</div>
+  <div class="page-title">This Week</div>
   <div class="page-sub" id="plan-week-label">Plan ahead so the week actually happens. 🗓️</div>
+  <div id="plan-step3-banner" style="display:none;background:var(--amber-bg);border:1px solid #f0d4a8;border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:none;align-items:center;gap:12px">
+    <div style="flex:1">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark)">Step 3 of 3 — Plan This Week</div>
+      <div style="font-size:13px;color:var(--text-2);margin-top:2px">You're almost done! Fill in your schedule and meals for the week.</div>
+    </div>
+    <button onclick="dismissStep3Banner()" style="background:var(--amber);color:white;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">✓ Done</button>
+  </div>
   <div id="plan-theme-banner" style="display:none;text-align:center;margin:-4px 0 20px"></div>
   <div style="text-align:center;margin-bottom:24px">
     <button class="btn btn-secondary" onclick="clearPlan()">🗑️ Clear & Start Fresh</button>
@@ -1444,14 +1486,26 @@ function nextStep(n) {
   document.getElementById('step-' + currentStep).classList.remove('active');
   currentStep = n;
   document.getElementById('step-' + n).classList.add('active');
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     const dot = document.getElementById('dot-' + i);
+    if (!dot) continue;
     dot.classList.remove('active','done');
     if (i < n)  dot.classList.add('done');
     if (i === n) dot.classList.add('active');
   }
-  document.getElementById('step-label-text').textContent = `Step ${n+1} of 2`;
+  document.getElementById('step-label-text').textContent = `Step ${n+1} of 3`;
   window.scrollTo(0, 0);
+}
+
+function showStep3Banner() {
+  const b = document.getElementById('plan-step3-banner');
+  if (b) { b.style.display = 'flex'; }
+}
+
+function dismissStep3Banner() {
+  const b = document.getElementById('plan-step3-banner');
+  if (b) { b.style.display = 'none'; }
+  burstReview();
 }
 
 function pickTheme(el) {
@@ -1505,8 +1559,8 @@ function saveEntry() {
   document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
   nextStep(0);
   showToast('Entry saved! 💕');
-  burstReview();
   showPage('plan');
+  setTimeout(showStep3Banner, 200);
 }
 
 // ─── TO-DOS ──────────────────────────────────────────────────────────────────
@@ -2297,11 +2351,37 @@ function getAllEntries() {
   return [...newEntries, ...SEED_ENTRIES].sort((a,b) => b.date.localeCompare(a.date));
 }
 
+function buildHistoryBodyHtml(e) {
+  const isNew = !e.id.startsWith('seed-');
+  const sections = [
+    e.well     && {lbl:'What went well',    val:e.well},
+    e.stress   && {lbl:'What was stressful',val:e.stress},
+    e.adjust   && {lbl:'Adjustments',       val:e.adjust},
+    e.theme    && {lbl:'Theme',             val:e.theme},
+    e.amanda   && {lbl:'Amanda ♥ Aidan',   val:e.amanda},
+    e.aidan    && {lbl:'Aidan ♥ Amanda',   val:e.aidan},
+    e.misc     && {lbl:'Notes',             val:e.misc},
+  ].filter(Boolean);
+  return `
+    <div class="history-body-inner">
+      ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
+      <div class="history-sections">
+        ${sections.map(s => `
+          <div class="history-section">
+            <div class="history-section-lbl">${s.lbl}</div>
+            <div class="history-section-text">${escHtml(s.val)}</div>
+          </div>`).join('')}
+        ${!sections.length ? '<div style="color:var(--text-3);font-size:13px">No notes for this entry.</div>' : ''}
+      </div>
+    </div>
+    ${isNew ? `<div class="history-edit-btn-row"><button class="history-edit-btn" onclick="editHistoryEntry('${e.id}');event.stopPropagation()">✏️ Edit</button></div>` : ''}`;
+}
+
 function renderHistory() {
   const query = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
   let entries = getAllEntries();
   if (query) {
-    entries = entries.filter(e => [e.well,e.stress,e.adjust,e.budget,e.savings,e.logistics,e.appts,e.upcoming,e.theme,e.amanda,e.aidan,e.misc,e.date].join(' ').toLowerCase().includes(query));
+    entries = entries.filter(e => [e.well,e.stress,e.adjust,e.theme,e.amanda,e.aidan,e.misc,e.date].join(' ').toLowerCase().includes(query));
   }
   const meta = document.getElementById('history-search-meta');
   if (meta) meta.textContent = query ? `${entries.length} entr${entries.length===1?'y':'ies'} matching "${query}"` : '';
@@ -2311,20 +2391,6 @@ function renderHistory() {
     const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
     const heartsHtml = e.hearts > 0
       ? Array.from({length:5}, (_,i) => `<span class="history-heart${i < e.hearts?' on':''}">❤️</span>`).join('') : '';
-    const sections = [
-      e.well     && {lbl:'What went well',    val:e.well},
-      e.stress   && {lbl:'What was stressful',val:e.stress},
-      e.adjust   && {lbl:'Adjustments',       val:e.adjust},
-      e.budget   && {lbl:'Budget',            val:e.budget},
-      e.savings  && {lbl:'Savings',           val:e.savings},
-      e.logistics && {lbl:'Logistics',        val:e.logistics},
-      e.appts    && {lbl:'Appointments',      val:e.appts},
-      e.upcoming && {lbl:'Upcoming week',     val:e.upcoming},
-      e.theme    && {lbl:'Theme',             val:e.theme},
-      e.amanda   && {lbl:'Amanda ♥ Aidan',   val:e.amanda},
-      e.aidan    && {lbl:'Aidan ♥ Amanda',   val:e.aidan},
-      e.misc     && {lbl:'Notes',             val:e.misc},
-    ].filter(Boolean);
 
     return `
       <div class="history-entry">
@@ -2337,17 +2403,7 @@ function renderHistory() {
           <div class="history-chevron">▼</div>
         </div>
         <div class="history-body" id="hb-${e.id}">
-          <div class="history-body-inner">
-            ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
-            <div class="history-sections">
-              ${sections.map(s => `
-                <div class="history-section">
-                  <div class="history-section-lbl">${s.lbl}</div>
-                  <div class="history-section-text">${escHtml(s.val)}</div>
-                </div>`).join('')}
-              ${!sections.length ? '<div style="color:var(--text-3);font-size:13px">No notes for this entry.</div>' : ''}
-            </div>
-          </div>
+          ${buildHistoryBodyHtml(e)}
         </div>
       </div>`;
   }).join('') || '<div class="empty-state">No entries yet. Start your first weekly review! ✨</div>';
@@ -2381,6 +2437,100 @@ function surpriseMe() {
 function toggleHistory(id) {
   document.getElementById('hh-' + id).classList.toggle('open');
   document.getElementById('hb-' + id).classList.toggle('open');
+}
+
+function editHistoryEntry(id) {
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  const body = document.getElementById('hb-' + id);
+  body.style.transition = 'opacity 0.15s';
+  body.style.opacity = '0';
+  const fields = [
+    {key:'well',   lbl:'What went well',     multi:true},
+    {key:'stress', lbl:'What was stressful', multi:true},
+    {key:'adjust', lbl:'Adjustments',        multi:true},
+    {key:'theme',  lbl:'Theme',              multi:false},
+    {key:'amanda', lbl:'Amanda ♥ Aidan',     multi:false},
+    {key:'aidan',  lbl:'Aidan ♥ Amanda',     multi:false},
+    {key:'misc',   lbl:'Notes',              multi:true},
+  ];
+  const heartsHtml = Array.from({length:5}, (_,i) =>
+    `<span class="history-edit-heart${i < (entry.hearts||0) ? ' on':''}" onclick="setEditHeart('${id}',${i+1})">❤️</span>`
+  ).join('');
+  setTimeout(() => {
+    body.innerHTML = `
+      <div class="history-edit-form" id="hef-${id}">
+        <div class="history-edit-field">
+          <div class="history-section-lbl">How was this week?</div>
+          <div style="display:flex;gap:6px;margin-top:2px">${heartsHtml}</div>
+        </div>
+        ${fields.map(f => `
+          <div class="history-edit-field">
+            <div class="history-section-lbl">${f.lbl}</div>
+            ${f.multi
+              ? `<textarea class="history-edit-ta" rows="2"
+                  onblur="saveHistoryField('${id}','${f.key}',this.value)"
+                  onkeydown="if(event.key==='Escape')this.blur()"
+                >${escHtml(entry[f.key]||'')}</textarea>`
+              : `<input class="history-edit-input" type="text" value="${escHtml(entry[f.key]||'')}"
+                  onblur="saveHistoryField('${id}','${f.key}',this.value)"
+                  onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')this.blur()"
+                />`
+            }
+          </div>`).join('')}
+        <div style="display:flex;justify-content:flex-end;margin-top:6px">
+          <button class="history-edit-done-btn" onclick="doneEditingHistory('${id}')">✓ Done</button>
+        </div>
+      </div>`;
+    body.style.opacity = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => { body.style.opacity = '1'; }));
+  }, 150);
+}
+
+function saveHistoryField(id, field, val) {
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  entry[field] = val.trim();
+  saveEntries();
+}
+
+function setEditHeart(id, val) {
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  entry.hearts = val;
+  saveEntries();
+  document.querySelectorAll(`#hef-${id} .history-edit-heart`).forEach((h, i) => {
+    h.classList.toggle('on', i < val);
+  });
+}
+
+function doneEditingHistory(id) {
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  const body = document.getElementById('hb-' + id);
+  body.style.transition = 'opacity 0.15s';
+  body.style.opacity = '0';
+  setTimeout(() => {
+    body.innerHTML = buildHistoryBodyHtml(entry);
+    body.style.opacity = '0';
+    requestAnimationFrame(() => requestAnimationFrame(() => { body.style.opacity = '1'; }));
+    // Also refresh the header preview + hearts
+    const all = getAllEntries();
+    const e = all.find(x => x.id === id);
+    if (e) {
+      const header = document.getElementById('hh-' + id);
+      if (header) {
+        const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
+        const previewEl = header.querySelector('.history-preview');
+        if (previewEl) previewEl.textContent = preview || '—';
+        const heartsEl = header.querySelector('.history-hearts');
+        if (heartsEl) heartsEl.innerHTML = e.hearts > 0
+          ? Array.from({length:5}, (_,i) => `<span class="history-heart${i < e.hearts?' on':''}">❤️</span>`).join('') : '';
+        const themeEl = header.querySelector('.history-theme');
+        if (themeEl && e.theme) themeEl.textContent = e.theme.replace(/^[\p{Emoji}\s]+/u,'').split('(')[0].trim();
+      }
+    }
+  }, 150);
 }
 
 // ─── DARK MODE ────────────────────────────────────────────────────────────────
@@ -3298,7 +3448,9 @@ auth.onAuthStateChanged(user => {
       `Week of ${MONTHS[now2.getMonth()]} ${now2.getDate()}, ${now2.getFullYear()}`;
     if (now2.getDay() === 0) setTimeout(() => burst(), 900);
   } else {
-    document.getElementById('login-overlay').classList.remove('hidden');
+    const ov = document.getElementById('login-overlay');
+    ov.classList.remove('hidden');
+    ov.classList.add('visible');
   }
 });
 </script>
