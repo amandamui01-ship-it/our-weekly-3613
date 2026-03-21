@@ -325,7 +325,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .bq-split{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--amber-dark);white-space:nowrap;cursor:pointer;flex-shrink:0}
 .bq-split input{accent-color:var(--amber);width:14px;height:14px}
 .bq-btn{flex-shrink:0}
-.bulk-cat-chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface-warm);color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
+.bulk-cat-chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface-warm);color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
 .bulk-cat-chip:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
 
 .budget-top-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}
@@ -513,6 +513,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   /* Japan countdown: smaller numbers */
   .japan-num{font-size:24px}
   .japan-unit{min-width:50px}
+  /* Home countdown cards: shrink number + label on small screens */
+  .home-countdown-row .card{padding:14px 10px}
+  .home-countdown-row [style*="font-size:38px"]{font-size:28px!important}
+  .home-countdown-row [style*="font-size:12px"]{font-size:11px!important}
+  .home-countdown-row [style*="font-size:9px"]{font-size:8px!important}
   /* Weekly schedule: chips wrap to first line, input on its own line below */
   .plan-day{grid-template-columns:32px 1fr}
   .plan-day-label{font-size:10px;padding:8px 4px;letter-spacing:0}
@@ -623,7 +628,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- Countdown widgets row -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
+  <div class="home-countdown-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
     <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
