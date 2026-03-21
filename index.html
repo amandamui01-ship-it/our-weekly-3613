@@ -891,21 +891,24 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <!-- Bulk paste -->
   <div class="card" style="margin-bottom:16px">
     <div class="card-title" style="margin-bottom:10px">📋 Bulk Paste</div>
-    <div style="display:flex;align-items:center;gap:0;margin-bottom:8px">
-      <div id="bulk-cat-chips" style="flex:1;min-width:0"></div>
-      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 10px;flex-shrink:0"></div>
-      <select id="bulk-person" class="bq-sel" style="width:90px;font-size:12px;flex-shrink:0">
-        <option value="Amanda">Amanda</option>
-        <option value="Aidan">Aidan</option>
-      </select>
-    </div>
-    <div style="font-size:11px;color:var(--text-3);margin-bottom:7px"><code style="background:var(--bg);padding:1px 5px;border-radius:4px;font-size:10px">[date,] Category, amount, y/n, description</code></div>
-    <textarea id="bulk-text" placeholder="Groceries, 84.15, y, Costco run&#10;3/20, Dining, 30.00, n, Dinner out&#10;Subscriptions, 13.70, n, Spotify"
-      style="width:100%;height:130px;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--bg);color:var(--text);line-height:1.7"
-      onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
-      <button class="btn btn-primary" style="padding:7px 18px;font-size:13px" onclick="bulkAddExpenses()">Import Lines</button>
-      <div id="bulk-result" style="font-size:12px;font-weight:600;color:var(--sage)"></div>
+    <div style="display:flex;gap:16px;align-items:flex-start">
+      <!-- Left: chips + hint + textarea -->
+      <div style="flex:1;min-width:0">
+        <div id="bulk-cat-chips" style="margin-bottom:8px"></div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:7px"><code style="background:var(--bg);padding:1px 5px;border-radius:4px;font-size:10px">[date,] Category, amount, y/n, description</code></div>
+        <textarea id="bulk-text" placeholder="Groceries, 84.15, y, Costco run&#10;3/20, Dining, 30.00, n, Dinner out&#10;Subscriptions, 13.70, n, Spotify"
+          style="width:100%;height:130px;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--bg);color:var(--text);line-height:1.7"
+          onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+      <!-- Right: person picker + import button -->
+      <div style="display:flex;flex-direction:column;gap:8px;padding-top:2px;flex-shrink:0">
+        <select id="bulk-person" class="bq-sel" style="width:110px;font-size:12px">
+          <option value="Amanda">Amanda</option>
+          <option value="Aidan">Aidan</option>
+        </select>
+        <button class="btn btn-primary" style="width:110px;justify-content:center;font-size:13px" onclick="bulkAddExpenses()">Import Lines</button>
+        <div id="bulk-result" style="font-size:11px;font-weight:600;color:var(--sage);text-align:center"></div>
+      </div>
     </div>
   </div>
 
