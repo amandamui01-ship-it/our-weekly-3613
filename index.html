@@ -578,7 +578,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="welcome-banner">
     <div class="welcome-date" id="home-date-label"></div>
     <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
-    <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="showPage('review')">
+    <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
       ✏️ Start This Week's Review →
     </button>
   </div>
@@ -607,7 +607,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
     </div>
-    <div class="card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
+    <div class="card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8;margin-top:0">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Anniversary</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">October 1st</div>
       <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
@@ -639,7 +639,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="coffee-area" id="coffee-area">tap spin to discover</div>
       <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
     </div>
-    <div class="card" style="margin:0">
+    <div class="card" style="margin:0;margin-top:0">
       <div class="card-title" style="margin-bottom:12px">Mood 💭</div>
       <div class="mood-grid" id="mood-widget"></div>
     </div>
@@ -1402,6 +1402,11 @@ const DAY_GREETINGS = [
   '🌿 Midweek Wednesday,', '💫 Almost Friday,', '🎉 Happy Friday,', '🛋️ Cozy Saturday,'
 ];
 
+function homeNavBtn() {
+  const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
+  showPage(isWeekend ? 'review' : 'plan');
+}
+
 function renderHome() {
   const now = new Date();
   document.getElementById('home-date-label').textContent =
@@ -1413,7 +1418,7 @@ function renderHome() {
   const reviewBtn = document.getElementById('home-review-btn');
   if (reviewBtn) reviewBtn.innerHTML = isWeekend
     ? '<div style="line-height:1.2">☕ It\'s Review Day!<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">Grab a coffee and let\'s do this.</div></div>'
-    : '✏️ Start This Week\'s Review →';
+    : '🗓️ See This Week →';
 
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
 
