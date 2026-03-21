@@ -2118,16 +2118,16 @@ function editEvent(key, idx) {
   input.style.display = 'inline-block';
   input.style.width = Math.max(80, currentVal.length * 8) + 'px';
   input.onkeydown = e => {
-    if (e.key === 'Enter') { e.preventDefault(); commitEditEvent(key, idx, input, colorClass); }
-    if (e.key === 'Escape') { e.preventDefault(); renderDayEvents(key); }
+    if (e.key === 'Enter') { e.preventDefault(); input.onblur = null; commitEditEvent(key, idx, input); }
+    if (e.key === 'Escape') { e.preventDefault(); input.onblur = null; renderDayEvents(key); }
   };
-  input.onblur = () => commitEditEvent(key, idx, input, colorClass);
+  input.onblur = () => commitEditEvent(key, idx, input);
   chip.replaceWith(input);
   input.focus();
   input.select();
 }
 
-function commitEditEvent(key, idx, input, colorClass) {
+function commitEditEvent(key, idx, input) {
   if (!input.isConnected) return;
   const val = input.value.trim();
   if (val && weekPlan[key]?.events) {
