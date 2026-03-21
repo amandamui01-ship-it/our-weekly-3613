@@ -1318,7 +1318,9 @@ function initFirestore() {
 
   ref('weekplan').onSnapshot(snap => {
     weekPlan = snap.exists ? (snap.data().plan || {}) : {};
-    if (isActive('plan') && !document.querySelector('.plan-slot-add-input[style*="inline"]')) renderPlan();
+    if (isActive('plan')
+      && !document.querySelector('.plan-slot-add-input[style*="inline"]')
+      && !document.querySelector('.plan-slot-event[contenteditable="true"]')) renderPlan();
   });
 
   ref('recurring').onSnapshot(snap => {
@@ -2108,7 +2110,12 @@ function commitEvent(key) {
   document.getElementById('add-btn-' + key).style.display = '';
   if (!val) return;
   if (!weekPlan[key]) weekPlan[key] = {};
-  if (!weekPlan[key].events) weekPlan[key].events = [];
+  if (!weekPlan[key].events) {
+    // Migrate old notesList/notes format so we don't lose existing events
+    const old = weekPlan[key].notesList?.length ? weekPlan[key].notesList
+              : weekPlan[key].notes ? [weekPlan[key].notes] : [];
+    weekPlan[key].events = [...old];
+  }
   weekPlan[key].events.push(val);
   savePlan();
   renderDayEvents(key);
@@ -2143,8 +2150,10 @@ function editEvent(key, idx) {
     chip.contentEditable = 'false';
     chip.style.cursor = '';
     if (del) del.style.visibility = '';
-    // Read text node only (childNodes[1], between emoji and × button)
-    const val = (chip.childNodes[1]?.textContent || '').trim();
+    // Clone chip, strip spans, read remaining text (robust against browser DOM rewriting)
+    const clone = chip.cloneNode(true);
+    clone.querySelectorAll('span').forEach(s => s.remove());
+    const val = clone.textContent.trim();
     if (save && weekPlan[key]?.events) {
       if (val) { weekPlan[key].events[idx] = val; }
       else { weekPlan[key].events.splice(idx, 1); }
