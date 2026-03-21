@@ -2109,32 +2109,39 @@ function cancelAddEvent(key) {
 
 function editEvent(key, idx) {
   const chip = document.getElementById('evt-' + key + '-' + idx);
-  if (!chip || chip.querySelector('input')) return;
-  const colorClass = [...chip.classList].find(c => c.startsWith('ec'));
-  const currentVal = weekPlan[key]?.events?.[idx] || '';
-  const input = document.createElement('input');
-  input.className = 'plan-slot-add-input';
-  input.value = currentVal;
-  input.style.display = 'inline-block';
-  input.style.width = Math.max(80, currentVal.length * 8) + 'px';
-  input.onkeydown = e => {
-    if (e.key === 'Enter') { e.preventDefault(); input.onblur = null; commitEditEvent(key, idx, input); }
-    if (e.key === 'Escape') { e.preventDefault(); input.onblur = null; renderDayEvents(key); }
+  if (!chip || chip.isContentEditable) return;
+  const del = chip.querySelector('.plan-slot-event-del');
+  if (del) del.style.visibility = 'hidden';
+  chip.contentEditable = 'true';
+  chip.style.cursor = 'text';
+  chip.onclick = null;
+  // Select all text after the click event finishes
+  setTimeout(() => {
+    chip.focus();
+    const range = document.createRange();
+    const textNode = chip.firstChild;
+    if (textNode) { range.selectNodeContents(textNode); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); }
+  }, 0);
+  const finish = (save) => {
+    if (!chip.isConnected) return;
+    chip.onkeydown = null;
+    chip.onblur = null;
+    chip.contentEditable = 'false';
+    chip.style.cursor = '';
+    if (del) del.style.visibility = '';
+    // Read text node only (not the × button)
+    const val = (chip.firstChild?.textContent || '').trim();
+    if (save && val && weekPlan[key]?.events) {
+      weekPlan[key].events[idx] = val;
+      savePlan();
+    }
+    renderDayEvents(key);
   };
-  input.onblur = () => commitEditEvent(key, idx, input);
-  chip.replaceWith(input);
-  input.focus();
-  input.select();
-}
-
-function commitEditEvent(key, idx, input) {
-  if (!input.isConnected) return;
-  const val = input.value.trim();
-  if (val && weekPlan[key]?.events) {
-    weekPlan[key].events[idx] = val;
-    savePlan();
-  }
-  renderDayEvents(key);
+  chip.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); chip.onblur = null; finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); chip.onblur = null; finish(false); }
+  };
+  chip.onblur = () => finish(true);
 }
 
 function removeEvent(key, idx) {
