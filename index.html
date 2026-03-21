@@ -356,7 +356,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .bqa-row2 .bq-amt{width:110px}
 .bqa-row2 .bq-date{flex:1;min-width:130px}
 
-.budget-cat-row{display:grid;grid-template-columns:110px 1fr 80px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light)}
+.budget-cat-row{display:grid;grid-template-columns:110px 1fr 80px;gap:10px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--border-light);border-radius:6px;transition:background .12s,margin .12s}
+.budget-cat-row:hover{background:var(--amber-bg)}
 .budget-cat-row:last-child{border-bottom:none}
 .budget-cat-name{font-size:12px;font-weight:600;color:var(--text-2)}
 .budget-cat-bars{display:flex;flex-direction:column;gap:3px}
@@ -3229,8 +3230,8 @@ function renderBudget() {
     const target = budgetTargets[cat] || 0;
     const barPct = target > 0 ? Math.min(100, Math.round(total/target*100)) : Math.round(total/maxCat*100);
     const barColor = target > 0 && total > target ? 'var(--coral)' : color;
-    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : `<span class="bcat-set-target" onclick="promptTarget('${cat}')" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
-    return `<div class="budget-cat-row">
+    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : `<span class="bcat-set-target" onclick="promptTarget('${cat}');event.stopPropagation()" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
+    return `<div class="budget-cat-row" onclick="filterByCat('${cat}')" style="cursor:pointer" title="Filter transactions by ${cat}">
       <div class="budget-cat-name">${emoji} ${cat}</div>
       <div class="budget-cat-bars">
         <div class="budget-cat-bar-wrap"><div class="budget-cat-bar" style="width:${barPct}%;background:${barColor}"></div></div>
@@ -3283,6 +3284,14 @@ function renderBudget() {
   // Default date input
   const dateEl = document.getElementById('b-date');
   if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+}
+
+function filterByCat(cat) {
+  const el = document.getElementById('b-filter-cat');
+  if (!el) return;
+  el.value = el.value === cat ? '' : cat; // toggle off if already selected
+  renderBudget();
+  document.getElementById('budget-transactions')?.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function setBudgetMonth(m) {
