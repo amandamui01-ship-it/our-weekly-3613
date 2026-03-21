@@ -96,14 +96,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .welcome-date{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.55;margin-bottom:8px}
 .welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:800;line-height:1.25;margin-bottom:22px}
 .welcome-greeting span{color:#f5c27a}
-.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;text-align:center}
+.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;text-align:center}
 .home-stat[onclick]:hover{border-color:var(--amber);box-shadow:var(--shadow-lg)}
-.home-stat-val{font-size:26px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:4px}
-.home-stat-lbl{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+.home-stat-val{font-size:20px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:3px}
+.home-stat-lbl{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 
 /* ── Coffee Roulette ── */
-.coffee-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 24px;margin-bottom:20px;text-align:center;box-shadow:var(--shadow)}
+.coffee-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;margin-bottom:20px;text-align:center;box-shadow:var(--shadow)}
 .coffee-icon{font-size:38px;margin-bottom:8px;display:block}
 .coffee-title-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px}
 .coffee-name{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:800;color:var(--amber-dark);min-height:36px;transition:opacity .08s;margin-bottom:5px}
@@ -244,13 +244,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 @keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
 
 /* ── Japan Countdown ── */
-.japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:30px 24px;margin-bottom:20px;position:relative;overflow:hidden}
+.japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:18px 18px;margin-bottom:14px;position:relative;overflow:hidden}
 .japan-card::before{content:'🗾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
 .japan-card-label{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:800;color:rgba(255,255,255,.85);margin-bottom:4px;letter-spacing:0}
-.japan-card-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px}
+.japan-card-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px}
 .japan-countdown{display:flex;align-items:center;justify-content:center;gap:6px}
 .japan-unit{display:flex;flex-direction:column;align-items:center;min-width:68px}
-.japan-num{font-family:'Playfair Display',Georgia,serif;font-size:46px;font-weight:800;color:white;line-height:1;letter-spacing:-.02em}
+.japan-num{font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:800;color:white;line-height:1;letter-spacing:-.02em}
 .japan-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-top:5px}
 .japan-sep{font-size:36px;font-weight:300;color:rgba(255,255,255,.2);margin-bottom:14px;line-height:1}
 
@@ -584,7 +584,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
 
-  <div class="home-stats" style="margin-bottom:16px">
+  <div class="home-stats" style="margin-bottom:14px">
     <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
       <div class="home-stat-val" id="stat-todos">—</div>
       <div class="home-stat-lbl">Open To-Dos ↗</div>
@@ -631,7 +631,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- Bottom widgets row: Coffee + Mood -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
     <div class="coffee-card" style="margin:0">
       <span class="coffee-icon">☕</span>
       <div class="coffee-title-label">this week's coffee pick</div>
@@ -1429,13 +1429,13 @@ function renderHome() {
     document.getElementById('stat-last-entry').textContent = '—';
   }
 
-  const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
+  const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 3);
   document.getElementById('home-trips').innerHTML = _upcoming.map(t => `
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f4ede3">
-      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:100px;flex-shrink:0">${t.dates}</div>
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates}</div>
       <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
     </div>
-  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:10px">See all dates ↗</div>`;
+  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates ↗</div>`;
   // Streak
   const streak = getStreak();
   const streakEl = document.getElementById('stat-streak');
@@ -1956,6 +1956,23 @@ const MEAL_DAYS = [
 ];
 
 
+function getReviewWeekLabel() {
+  const today = new Date();
+  const dow = today.getDay();
+  const mon = new Date(today);
+  if (dow === 0) {        // Sunday — review this week (Mon was 6 days ago)
+    mon.setDate(today.getDate() - 6);
+  } else if (dow === 6) { // Saturday — review this week (Mon was 5 days ago)
+    mon.setDate(today.getDate() - 5);
+  } else {                // Mon–Fri — review last week
+    mon.setDate(today.getDate() - (dow - 1) - 7);
+  }
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  return fmt(mon) + ' – ' + fmt(sun);
+}
+
 function formatPlanLabel() {
   const today = new Date();
   const dow = today.getDay();
@@ -1970,8 +1987,7 @@ function formatPlanLabel() {
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
-  const prefix = isSatOrSun ? 'Planning for next week: ' : 'Week of ';
-  return prefix + fmt(mon) + ' – ' + fmt(sun);
+  return fmt(mon) + ' – ' + fmt(sun);
 }
 
 function renderPlan() {
@@ -2439,6 +2455,15 @@ function toggleHistory(id) {
   document.getElementById('hb-' + id).classList.toggle('open');
 }
 
+let _editingHistoryId = null;
+function _historyClickOutside(e) {
+  if (!_editingHistoryId) return;
+  const form = document.getElementById('hef-' + _editingHistoryId);
+  if (form && !form.contains(e.target)) {
+    doneEditingHistory(_editingHistoryId);
+  }
+}
+
 function editHistoryEntry(id) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
@@ -2474,7 +2499,7 @@ function editHistoryEntry(id) {
                 >${escHtml(entry[f.key]||'')}</textarea>`
               : `<input class="history-edit-input" type="text" value="${escHtml(entry[f.key]||'')}"
                   onblur="saveHistoryField('${id}','${f.key}',this.value)"
-                  onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape')this.blur()"
+                  onkeydown="if(event.key==='Enter'){saveHistoryField('${id}','${f.key}',this.value);doneEditingHistory('${id}');}if(event.key==='Escape')this.blur()"
                 />`
             }
           </div>`).join('')}
@@ -2484,6 +2509,8 @@ function editHistoryEntry(id) {
       </div>`;
     body.style.opacity = '0';
     requestAnimationFrame(() => requestAnimationFrame(() => { body.style.opacity = '1'; }));
+    _editingHistoryId = id;
+    setTimeout(() => document.addEventListener('click', _historyClickOutside), 0);
   }, 150);
 }
 
@@ -2505,6 +2532,8 @@ function setEditHeart(id, val) {
 }
 
 function doneEditingHistory(id) {
+  document.removeEventListener('click', _historyClickOutside);
+  _editingHistoryId = null;
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   const body = document.getElementById('hb-' + id);
@@ -3444,8 +3473,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('login-overlay').classList.add('hidden');
     initFirestore();
     const now2 = new Date();
-    document.getElementById('review-date-sub').textContent =
-      `Week of ${MONTHS[now2.getMonth()]} ${now2.getDate()}, ${now2.getFullYear()}`;
+    document.getElementById('review-date-sub').textContent = getReviewWeekLabel();
     if (now2.getDay() === 0) setTimeout(() => burst(), 900);
   } else {
     const ov = document.getElementById('login-overlay');
