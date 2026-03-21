@@ -3291,7 +3291,7 @@ function filterByCat(cat) {
   if (!el) return;
   el.value = el.value === cat ? '' : cat; // toggle off if already selected
   renderBudget();
-  document.getElementById('budget-transactions')?.scrollIntoView({behavior:'smooth', block:'start'});
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function setBudgetMonth(m) {
@@ -3641,6 +3641,7 @@ function bulkAddExpenses() {
       items: firebase.firestore.FieldValue.arrayUnion(...newItems)
     }).catch(_onSaveErr);
     renderBudget();
+    renderBulkCatChips();
     document.getElementById('bulk-text').value = '';
   }
   const resultEl = document.getElementById('bulk-result');
@@ -3654,7 +3655,20 @@ function renderBulkCatChips() {
   const el = document.getElementById('bulk-cat-chips');
   if (!el) return;
   const CATS = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
-  el.innerHTML = CATS.map(c => `<button class="bulk-cat-chip" onclick="insertBulkCat('${c}')">${c}</button>`).join('');
+  // Count usage from actual expenses
+  const counts = {};
+  for (const e of expenses) counts[e.category] = (counts[e.category] || 0) + 1;
+  const sorted = [...CATS].sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
+  const top = sorted.slice(0, 5);
+  const rest = sorted.slice(5);
+  const chip = c => `<button class="bulk-cat-chip" onclick="insertBulkCat('${c}')">${c}</button>`;
+  el.innerHTML = `
+    <div style="width:100%">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:5px">Most Used</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${top.map(chip).join('')}</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:5px">Other</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${rest.map(chip).join('')}</div>
+    </div>`;
 }
 
 function insertBulkCat(cat) {
