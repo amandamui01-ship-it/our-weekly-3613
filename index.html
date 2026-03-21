@@ -907,7 +907,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <!-- Transaction list -->
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div class="card-title" style="margin-bottom:0">Transactions</div>
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <div class="card-title" style="margin-bottom:0">Transactions</div>
+        <div id="tx-search-total" style="font-size:12px;font-weight:700;color:var(--amber)"></div>
+      </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:140px">
         <select id="b-filter-cat" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
@@ -3155,6 +3158,18 @@ function renderBudget() {
     .filter(e => filterPerson === 'shared' ? e.shared : filterPerson ? e.person === filterPerson : true)
     .filter(e => filterCat ? e.category === filterCat : true)
     .filter(e => searchQ ? (e.description.toLowerCase().includes(searchQ) || e.category.toLowerCase().includes(searchQ)) : true);
+
+  // Search/filter total
+  const totalEl = document.getElementById('tx-search-total');
+  if (totalEl) {
+    const isFiltered = searchQ || filterCat || filterPerson;
+    if (isFiltered && filtered.length) {
+      const total = filtered.reduce((s, e) => s + e.amount, 0);
+      totalEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} · $${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    } else {
+      totalEl.textContent = '';
+    }
+  }
 
   // Snapshot strip
   const income    = monthTx.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
