@@ -325,7 +325,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .bq-split{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--amber-dark);white-space:nowrap;cursor:pointer;flex-shrink:0}
 .bq-split input{accent-color:var(--amber);width:14px;height:14px}
 .bq-btn{flex-shrink:0}
-.bulk-cat-chip{font-size:12px;font-weight:600;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface-warm);color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
+.bulk-cat-chip{font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface-warm);color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
 .bulk-cat-chip:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
 .bulk-cat-chip-hot{border-color:var(--amber);color:var(--amber-dark);background:var(--amber-bg)}
 
@@ -3663,7 +3663,7 @@ function renderBulkCatChips() {
   const top = sorted.slice(0, 5);
   const rest = sorted.slice(5);
   const chip = (c, hot) => `<button class="bulk-cat-chip${hot?' bulk-cat-chip-hot':''}" onclick="insertBulkCat('${c}')">${c}</button>`;
-  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:7px">${top.map(c=>chip(c,true)).join('')}${rest.map(c=>chip(c,false)).join('')}</div>`;
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:5px">${top.map(c=>chip(c,true)).join('')}${rest.map(c=>chip(c,false)).join('')}</div>`;
 }
 
 function insertBulkCat(cat) {
