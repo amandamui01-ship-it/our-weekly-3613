@@ -636,9 +636,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="step-progress">
     <div class="step-dot active" id="dot-0"></div>
     <div class="step-dot" id="dot-1"></div>
-    <div class="step-dot" id="dot-2"></div>
-    <div class="step-dot" id="dot-3"></div>
-    <span class="step-label" id="step-label-text">Step 1 of 4</span>
+    <span class="step-label" id="step-label-text">Step 1 of 2</span>
   </div>
 
   <div class="card">
@@ -646,7 +644,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <!-- Step 1: Overview -->
     <div class="step-page active" id="step-0">
       <div class="step-title">🌅 Weekly Overview</div>
-      <div class="step-sub">Take 10–15 minutes to reflect on how the week went as a team.</div>
+      <div class="step-sub">Take a few minutes to reflect on how the week went as a team.</div>
       <div class="field">
         <label>What went well this week?</label>
         <textarea id="r-well" placeholder="Wins, good moments, things to celebrate..."></textarea>
@@ -660,58 +658,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <textarea id="r-adjust" placeholder="What would you do differently?"></textarea>
       </div>
       <div class="step-nav">
-        <button class="btn btn-primary" onclick="nextStep(1)">Next → Logistics 🏠</button>
+        <button class="btn btn-primary" onclick="nextStep(1)">Next → Us ❤️</button>
       </div>
     </div>
 
-    <!-- Step 2: Logistics -->
+    <!-- Step 2: Us + Theme -->
     <div class="step-page" id="step-1">
-      <div class="step-title">🏠 Logistics & Household</div>
-      <div class="step-sub">Keep the house (and life) running smoothly.</div>
-      <div class="field">
-        <label>Household notes — groceries, cleaning, errands</label>
-        <textarea id="r-logistics" placeholder="What needs to happen around the house?"></textarea>
-      </div>
-      <div class="field">
-        <label>Appointments to schedule</label>
-        <textarea id="r-appts" placeholder="Haircuts, vet, car stuff, doctor..."></textarea>
-      </div>
-      <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
-        <button class="btn btn-primary" onclick="nextStep(2)">Next → Calendar 📅</button>
-      </div>
-    </div>
-
-    <!-- Step 3: Calendar -->
-    <div class="step-page" id="step-2">
-      <div class="step-title">📅 Upcoming Week</div>
-      <div class="step-sub">What's on deck? Scan the calendar and set a vibe.</div>
-      <div class="field">
-        <label>What's on the calendar this week?</label>
-        <textarea id="r-upcoming" placeholder="Events, appointments, commitments..."></textarea>
-      </div>
-      <div class="field">
-        <label>This week's theme or focus</label>
-        <div class="theme-chips">
-          <div class="theme-chip" onclick="pickTheme(this)">🔋 Recharging</div>
-          <div class="theme-chip" onclick="pickTheme(this)">💸 Financial Reset</div>
-          <div class="theme-chip" onclick="pickTheme(this)">🏠 House Reset</div>
-          <div class="theme-chip" onclick="pickTheme(this)">🎉 Holiday Cheer</div>
-          <div class="theme-chip" onclick="pickTheme(this)">❤️ Reconnection</div>
-          <div class="theme-chip" onclick="pickTheme(this)">🌿 Slow Week</div>
-          <div class="theme-chip" onclick="pickTheme(this)">✈️ Adventure</div>
-          <div class="theme-chip" onclick="pickTheme(this)">🌱 Fresh Start</div>
-        </div>
-        <input type="text" id="r-theme" placeholder="Or type your own theme...">
-      </div>
-      <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
-        <button class="btn btn-primary" onclick="nextStep(3)">Next → Us ❤️</button>
-      </div>
-    </div>
-
-    <!-- Step 4: Us -->
-    <div class="step-page" id="step-3">
       <div class="step-title">❤️ Us Check-in</div>
       <div class="step-sub">The most important part. How are we doing?</div>
       <div class="field">
@@ -737,6 +689,20 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <textarea id="r-misc" placeholder="Wild cards, funny moments, things to look back on..."></textarea>
       </div>
       <div class="field">
+        <label>Next week's theme or focus</label>
+        <div class="theme-chips">
+          <div class="theme-chip" onclick="pickTheme(this)">🔋 Recharging</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💸 Financial Reset</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🏠 House Reset</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎉 Holiday Cheer</div>
+          <div class="theme-chip" onclick="pickTheme(this)">❤️ Reconnection</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌿 Slow Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">✈️ Adventure</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌱 Fresh Start</div>
+        </div>
+        <input type="text" id="r-theme" placeholder="Or type your own theme...">
+      </div>
+      <div class="field">
         <label>This week's memory photo <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
         <label class="photo-upload-label" style="margin-top:4px">
           📷 Choose Photo
@@ -745,7 +711,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <div id="r-photo-preview"></div>
       </div>
       <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
+        <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
         <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
       </div>
     </div>
@@ -1401,7 +1367,7 @@ function renderHome() {
   const isWeekend = now.getDay() === 0 || now.getDay() === 6;
   const reviewBtn = document.getElementById('home-review-btn');
   if (reviewBtn) reviewBtn.innerHTML = isWeekend
-    ? '📋 It\'s Review Day! Grab a coffee & let\'s do this ☕'
+    ? '☕ It\'s Review Day!'
     : '✏️ Start This Week\'s Review →';
 
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
@@ -1475,13 +1441,13 @@ function nextStep(n) {
   document.getElementById('step-' + currentStep).classList.remove('active');
   currentStep = n;
   document.getElementById('step-' + n).classList.add('active');
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 2; i++) {
     const dot = document.getElementById('dot-' + i);
     dot.classList.remove('active','done');
     if (i < n)  dot.classList.add('done');
     if (i === n) dot.classList.add('active');
   }
-  document.getElementById('step-label-text').textContent = `Step ${n+1} of 4`;
+  document.getElementById('step-label-text').textContent = `Step ${n+1} of 2`;
   window.scrollTo(0, 0);
 }
 
