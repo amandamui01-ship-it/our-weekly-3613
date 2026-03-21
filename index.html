@@ -600,7 +600,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- Countdown widgets row -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
     <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border-color:#f0d4a8">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
@@ -1429,7 +1429,7 @@ function renderHome() {
     document.getElementById('stat-last-entry').textContent = '—';
   }
 
-  const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 3);
+  const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
   document.getElementById('home-trips').innerHTML = _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates}</div>
