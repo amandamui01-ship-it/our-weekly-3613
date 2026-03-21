@@ -325,6 +325,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .bq-split{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--amber-dark);white-space:nowrap;cursor:pointer;flex-shrink:0}
 .bq-split input{accent-color:var(--amber);width:14px;height:14px}
 .bq-btn{flex-shrink:0}
+.bulk-cat-chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface-warm);color:var(--text-2);cursor:pointer;transition:all .12s;white-space:nowrap;font-family:inherit}
+.bulk-cat-chip:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
 
 .budget-top-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start}
 .budget-summary-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -876,29 +878,34 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="budget-trend" id="budget-trend"></div>
   </div>
 
-  <!-- Quick-add form -->
+  <!-- Quick-add form (collapsible) -->
   <div class="card budget-quickadd-card" style="margin-bottom:16px">
-    <div class="card-title" style="margin-bottom:12px">+ Add Expense</div>
-    <div class="bqa-row1">
-      <select id="b-person" class="bq-sel bq-person">
-        <option value="Amanda">Amanda</option>
-        <option value="Aidan">Aidan</option>
-      </select>
-      <select id="b-category" class="bq-sel bq-cat">
-        <option value="">Category</option>
-        <option>Dining</option><option>Entertainment</option><option>Groceries</option>
-        <option>Housing</option><option>Income</option><option>Insurance</option>
-        <option>Investments</option><option>Misc</option><option>Pet</option>
-        <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
-        <option>Transportation</option><option>Travel</option><option>Utilities</option>
-      </select>
-      <input class="bq-input bq-desc" id="b-desc" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleQuickAdd()">
+      <div class="card-title" style="margin-bottom:0">+ Add Single Expense</div>
+      <span id="quickadd-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▼</span>
     </div>
-    <div class="bqa-row2">
-      <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00" min="0" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
-      <input type="date" class="bq-input bq-date" id="b-date">
-      <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50 split</label>
-      <button class="btn btn-primary bq-btn" onclick="addExpense()">+ Add</button>
+    <div id="quickadd-body" style="display:none;margin-top:12px">
+      <div class="bqa-row1">
+        <select id="b-person" class="bq-sel bq-person">
+          <option value="Amanda">Amanda</option>
+          <option value="Aidan">Aidan</option>
+        </select>
+        <select id="b-category" class="bq-sel bq-cat">
+          <option value="">Category</option>
+          <option>Dining</option><option>Entertainment</option><option>Groceries</option>
+          <option>Housing</option><option>Income</option><option>Insurance</option>
+          <option>Investments</option><option>Misc</option><option>Pet</option>
+          <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
+          <option>Transportation</option><option>Travel</option><option>Utilities</option>
+        </select>
+        <input class="bq-input bq-desc" id="b-desc" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
+      </div>
+      <div class="bqa-row2">
+        <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00" min="0" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
+        <input type="date" class="bq-input bq-date" id="b-date">
+        <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50 split</label>
+        <button class="btn btn-primary bq-btn" onclick="addExpense()">+ Add</button>
+      </div>
     </div>
   </div>
 
@@ -909,7 +916,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   </div>
 
   <!-- Recurring + Bulk paste -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:460px;gap:16px;margin-bottom:16px" class="budget-tools-row">
+  <div style="display:grid;grid-template-columns:1fr 2fr;grid-template-rows:460px;gap:16px;margin-bottom:16px" class="budget-tools-row">
 
     <!-- Recurring -->
     <div class="card" style="display:flex;flex-direction:column;min-height:0">
@@ -937,11 +944,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
             <option value="Amanda">Amanda</option>
             <option value="Aidan">Aidan</option>
           </select>
-          <input type="date" id="bulk-date" class="bq-input" style="width:130px;font-size:12px">
+          <input type="date" id="bulk-date" class="bq-input" style="width:130px;font-size:12px" title="Default date if no date on line">
         </div>
       </div>
-      <div style="font-size:11px;color:var(--text-3);margin-bottom:8px"><code style="background:var(--bg);padding:2px 6px;border-radius:4px">Category, amount, shared(y/n), description</code></div>
-      <textarea id="bulk-text" placeholder="Groceries, 84.15, y, Costco run&#10;Subscriptions, 13.70, n, Spotify&#10;Dining, 30.00, n"
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:6px"><code style="background:var(--bg);padding:2px 6px;border-radius:4px">[date,] Category, amount, shared(y/n), description</code></div>
+      <div id="bulk-cat-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px"></div>
+      <textarea id="bulk-text" placeholder="Groceries, 84.15, y, Costco run&#10;3/20, Dining, 30.00, n, Dinner out&#10;2026-03-18, Subscriptions, 13.70, n, Spotify"
         style="flex:1 1 0;height:0;min-height:80px;width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:12px;font-family:monospace;resize:none;outline:none;background:var(--surface);color:var(--text)"
         onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
       <div style="padding-top:10px;border-top:1px solid var(--border-light);margin-top:10px">
@@ -1396,7 +1404,7 @@ function showPage(name) {
     if (name === 'home')    renderHome();
     if (name === 'dates')   renderDates();
     if (name === 'plan')    renderPlan();
-    if (name === 'budget')  { renderBudget(); renderRecurring(); }
+    if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); }
   };
   const current = document.querySelector('.page.active');
   if (current && current.id !== 'page-' + name) {
@@ -3267,6 +3275,14 @@ function promptTarget(cat) {
   });
 }
 
+function toggleQuickAdd() {
+  const body = document.getElementById('quickadd-body');
+  const chev = document.getElementById('quickadd-chevron');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+}
+
 function addExpense() {
   const person   = document.getElementById('b-person').value;
   const date     = document.getElementById('b-date').value;
@@ -3531,23 +3547,45 @@ function loadRecurring() {
   }
 }
 
+function _parseBulkDate(str) {
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  // M/D/YYYY or M/D/YY
+  const mdy = str.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if (mdy) {
+    const yr = mdy[3] ? (mdy[3].length === 2 ? '20' + mdy[3] : mdy[3]) : new Date().getFullYear();
+    return `${yr}-${String(mdy[1]).padStart(2,'0')}-${String(mdy[2]).padStart(2,'0')}`;
+  }
+  // M-D
+  const md = str.match(/^(\d{1,2})-(\d{1,2})$/);
+  if (md) {
+    const yr = new Date().getFullYear();
+    return `${yr}-${String(md[1]).padStart(2,'0')}-${String(md[2]).padStart(2,'0')}`;
+  }
+  return null;
+}
+
 function bulkAddExpenses() {
-  const person = document.getElementById('bulk-person').value;
-  const date   = document.getElementById('bulk-date').value || new Date().toISOString().slice(0,10);
-  const month  = monthName(new Date(date+'T12:00:00'));
-  const lines  = document.getElementById('bulk-text').value.trim().split('\n').filter(l=>l.trim());
-  const CATS   = new Set(['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities']);
+  const person    = document.getElementById('bulk-person').value;
+  const fallback  = document.getElementById('bulk-date').value || new Date().toISOString().slice(0,10);
+  const lines     = document.getElementById('bulk-text').value.trim().split('\n').filter(l=>l.trim());
+  const CATS      = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
   let added = 0, errors = 0;
   for (const line of lines) {
     const parts = line.split(',').map(p=>p.trim());
     if (parts.length < 2) { errors++; continue; }
-    // format: category, amount, shared (y/n), description (optional)
-    const catRaw = parts[0];
-    const cat    = [...CATS].find(c => c.toLowerCase().startsWith(catRaw.toLowerCase().slice(0,3))) || 'Misc';
-    const amount = parseFloat(parts[1]);
+    // Detect optional leading date
+    let date = fallback, offset = 0;
+    const maybeDate = _parseBulkDate(parts[0]);
+    if (maybeDate) { date = maybeDate; offset = 1; }
+    // format: [date,] category, amount, shared(y/n), description
+    const catRaw = parts[offset];
+    const cat    = CATS.find(c => c.toLowerCase().startsWith((catRaw||'').toLowerCase().slice(0,3))) || 'Misc';
+    const amount = parseFloat(parts[offset + 1]);
     if (!catRaw || isNaN(amount)) { errors++; continue; }
-    const shared = (parts[2]||'').toLowerCase().trim() === 'y';
-    const desc   = parts[3] || '';
+    const shared = (parts[offset + 2]||'').toLowerCase() === 'y';
+    const desc   = parts[offset + 3] || '';
+    const month  = monthName(new Date(date+'T12:00:00'));
     expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
       date, month, person, category:cat, description:desc, amount, shared});
     added++;
@@ -3561,10 +3599,28 @@ function bulkAddExpenses() {
     document.getElementById('bulk-text').value = '';
   }
   const resultEl = document.getElementById('bulk-result');
-  resultEl.style.color = errors ? 'var(--coral)' : 'var(--sage)';
+  resultEl.style.color = errors && !added ? 'var(--coral)' : 'var(--sage)';
   resultEl.textContent = added
     ? `✓ Added ${added} expense${added>1?'s':''}${errors?' ('+errors+' skipped)':''}`
     : `Could not parse any lines${errors?' ('+errors+' errors)':''}`;
+}
+
+function renderBulkCatChips() {
+  const el = document.getElementById('bulk-cat-chips');
+  if (!el) return;
+  const CATS = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
+  el.innerHTML = CATS.map(c => `<button class="bulk-cat-chip" onclick="insertBulkCat('${c}')">${c}</button>`).join('');
+}
+
+function insertBulkCat(cat) {
+  const ta = document.getElementById('bulk-text');
+  if (!ta) return;
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const val = ta.value;
+  // Insert at cursor; if cursor is at start of a line, just insert category name
+  ta.value = val.slice(0, start) + cat + val.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + cat.length;
+  ta.focus();
 }
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
