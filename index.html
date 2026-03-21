@@ -3095,6 +3095,7 @@ const monthName = d => MONTHS_LIST[d.getMonth()];
 let _budgetMonth = monthName(new Date());
 
 function renderBudget() {
+  _cleanExpEdit(); // cancel any open inline edit before re-rendering
   const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const yearSel = document.getElementById('b-filter-year');
   const filterYear = yearSel ? yearSel.value : new Date().getFullYear().toString();
@@ -3359,12 +3360,12 @@ function saveExpenseEdit(id) {
   const e = expenses.find(x => x.id === id);
   if (!e) return;
   const person  = document.getElementById('txe-person-' + id)?.value;
-  const desc    = document.getElementById('txe-desc-'   + id)?.value.trim();
+  const desc    = document.getElementById('txe-desc-'   + id)?.value?.trim();
   const cat     = document.getElementById('txe-cat-'    + id)?.value;
-  const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value);
+  const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value ?? '');
   const date    = document.getElementById('txe-date-'   + id)?.value;
-  const shared  = document.getElementById('txe-shared-' + id)?.checked;
-  if (!desc || isNaN(amt)) return;
+  const shared  = document.getElementById('txe-shared-' + id)?.checked ?? false;
+  if (!desc || isNaN(amt)) return; // form gone or invalid — silently bail
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
