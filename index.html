@@ -3290,12 +3290,25 @@ function deleteExpense(id) {
 
 const EXPENSE_CATS_LIST = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
 
+let _expEditId = null;
+let _expEditListener = null;
+function _cleanExpEdit() {
+  if (_expEditListener) { document.removeEventListener('click', _expEditListener); _expEditListener = null; }
+  _expEditId = null;
+}
+function commitExpenseEdit(id) {
+  if (_expEditId !== id) return;
+  _cleanExpEdit();
+  saveExpenseEdit(id);
+}
+
 function editExpense(id) {
   const e = expenses.find(x => x.id === id);
   if (!e) return;
   const el = document.getElementById('tx-' + id);
   if (!el) return;
-  // Remove click handler so clicking inputs inside doesn't re-fire editExpense
+  _cleanExpEdit();
+  _expEditId = id;
   el.onclick = null;
   el.style.cursor = '';
   el.style.cssText = 'grid-column:1/-1;display:block;padding:8px 4px;background:var(--surface-warm);border-radius:8px';
@@ -3312,14 +3325,27 @@ function editExpense(id) {
       <input id="txe-amt-${id}" type="number" step="0.01" value="${e.amount}" class="bq-input" style="width:90px;font-size:12px;padding:4px 8px">
       <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="font-size:12px;padding:4px 8px">
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> 50/50</label>
-      <button class="trip-edit-save" onclick="saveExpenseEdit('${id}');event.stopPropagation()">Save</button>
-      <button class="trip-edit-cancel" onclick="renderBudget();event.stopPropagation()">Cancel</button>
+      <button class="trip-edit-save" onclick="commitExpenseEdit('${id}');event.stopPropagation()">Save</button>
+      <button class="trip-edit-cancel" onclick="_cleanExpEdit();renderBudget();event.stopPropagation()">Cancel</button>
     </div>`;
+  // Enter = save, Escape = cancel on all inputs
+  el.querySelectorAll('input, select').forEach(inp => {
+    inp.onkeydown = ev => {
+      if (ev.key === 'Enter')  { ev.preventDefault(); commitExpenseEdit(id); }
+      if (ev.key === 'Escape') { ev.preventDefault(); _cleanExpEdit(); renderBudget(); }
+    };
+  });
+  // Click outside = save
+  _expEditListener = ev => {
+    if (!el.contains(ev.target)) commitExpenseEdit(id);
+  };
+  setTimeout(() => document.addEventListener('click', _expEditListener), 0);
   document.getElementById('txe-amt-' + id).focus();
   document.getElementById('txe-amt-' + id).select();
 }
 
 function saveExpenseEdit(id) {
+  _cleanExpEdit();
   const e = expenses.find(x => x.id === id);
   if (!e) return;
   const person  = document.getElementById('txe-person-' + id)?.value;
