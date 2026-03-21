@@ -446,13 +446,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── History photo ── */
 .history-photo{max-width:100%;max-height:300px;width:auto;height:auto;display:block;border-radius:10px;margin:0 auto 14px}
 
-/* ── Review Day Banner ── */
-.review-day-banner{background:linear-gradient(135deg,var(--sage-bg) 0%,var(--amber-bg) 100%);border:1px solid #c8dcc8;border-radius:16px;padding:18px 28px;margin-bottom:20px;text-align:center;display:none}
-.review-day-banner.show{display:block}
-.review-day-title{font-family:'Playfair Display',Georgia,serif;font-size:19px;font-weight:800;color:var(--sage);margin-bottom:4px}
-.review-day-sub{font-size:13px;color:var(--text-2);margin-bottom:14px}
-.review-day-btn{background:var(--sage);color:white;border:none;border-radius:10px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.review-day-btn:hover{background:#4a6650}
 
 /* ── Todo Priority & Drag ── */
 .todo-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
@@ -565,16 +558,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="welcome-banner">
     <div class="welcome-date" id="home-date-label"></div>
     <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
-    <button class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="showPage('review')">
-      🛋️ it's review weekend, babe ♥
+    <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="showPage('review')">
+      ✏️ Start This Week's Review →
     </button>
   </div>
 
-  <div id="review-day-banner" class="review-day-banner">
-    <div class="review-day-title">📋 It's Review Day!</div>
-    <div class="review-day-sub">Time to reflect on the week together — grab a coffee and let's do this. ☕</div>
-    <button class="review-day-btn" onclick="showPage('review')">Start This Week's Review →</button>
-  </div>
 
   <div class="home-stats" style="margin-bottom:16px">
     <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
@@ -1410,8 +1398,11 @@ function renderHome() {
   document.getElementById('welcome-greeting').innerHTML =
     `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda & Aidan!</span>`;
 
-  const reviewBanner = document.getElementById('review-day-banner');
-  if (reviewBanner) reviewBanner.classList.toggle('show', now.getDay() === 0 || now.getDay() === 6);
+  const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+  const reviewBtn = document.getElementById('home-review-btn');
+  if (reviewBtn) reviewBtn.innerHTML = isWeekend
+    ? '📋 It\'s Review Day! Grab a coffee & let\'s do this ☕'
+    : '✏️ Start This Week\'s Review →';
 
   document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
 
