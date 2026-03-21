@@ -3229,13 +3229,10 @@ function renderBudget() {
   if (!sorted.length) {
     document.getElementById('budget-transactions').innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No transactions.</div>';
   } else {
-    const byDate = {};
-    for (const e of sorted) { (byDate[e.date] = byDate[e.date]||[]).push(e); }
-    document.getElementById('budget-transactions').innerHTML = `<div class="budget-tx-list">` +
-      Object.entries(byDate).map(([date, txs]) => `
-        <div class="budget-tx-group">
-          <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
-          ${txs.map(e=>`<div class="budget-tx${e.shared?' shared-tx':''}" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
+    const PREVIEW = 10;
+    const showAll = sorted.length <= PREVIEW || document.getElementById('tx-show-all-btn')?.dataset.expanded === '1';
+    const visible = showAll ? sorted : sorted.slice(0, PREVIEW);
+    const txRow = e => `<div class="budget-tx${e.shared?' shared-tx':''}" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
             <div class="budget-tx-left">
               <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
               <div class="budget-tx-info">
@@ -3248,8 +3245,19 @@ function renderBudget() {
               <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
               <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+    const byDate = {};
+    for (const e of visible) { (byDate[e.date] = byDate[e.date]||[]).push(e); }
+    const listHtml = `<div class="budget-tx-list">` +
+      Object.entries(byDate).map(([date, txs]) => `
+        <div class="budget-tx-group">
+          <div class="budget-tx-date-hdr">${new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>
+          ${txs.map(txRow).join('')}
         </div>`).join('') + `</div>`;
+    const moreHtml = !showAll
+      ? `<button id="tx-show-all-btn" onclick="this.dataset.expanded='1';renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions ↓</button>`
+      : sorted.length > PREVIEW ? `<button onclick="document.getElementById('tx-show-all-btn')?.removeAttribute('data-expanded');renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less ↑</button>` : '';
+    document.getElementById('budget-transactions').innerHTML = listHtml + moreHtml;
   }
 
   // Default date input
