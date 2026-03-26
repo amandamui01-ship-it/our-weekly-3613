@@ -3597,12 +3597,18 @@ function _evalAmount(str) {
   if (!str) return NaN;
   // Strip $ and thousands-separator commas (e.g. $1,234.56)
   const cleaned = str.replace(/\$/g, '').replace(/,(?=\d)/g, '').trim();
-  // Only allow digits, spaces, decimal points, and basic math operators
-  if (!/^[\d\s\+\-\*\/\.()]+$/.test(cleaned)) return NaN;
-  try {
-    const result = Function('"use strict"; return (' + cleaned + ')')();
-    return isFinite(result) ? +result.toFixed(2) : NaN;
-  } catch(e) { return NaN; }
+  if (!cleaned) return NaN;
+  // Split on + and - to support simple math like "15.63 + 20.26"
+  const tokens = cleaned.split(/\s*([\+\-])\s*/).filter(s => s !== '');
+  let result = 0, op = '+';
+  for (const tok of tokens) {
+    if (tok === '+' || tok === '-') { op = tok; continue; }
+    const n = parseFloat(tok);
+    if (isNaN(n)) return NaN;
+    result = op === '+' ? result + n : result - n;
+    op = '+';
+  }
+  return isFinite(result) ? Math.round(result * 100) / 100 : NaN;
 }
 
 function _parseBulkDate(str) {
