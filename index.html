@@ -909,6 +909,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <textarea id="bulk-text" placeholder="Groceries, 84.15, y, Costco run&#10;3/20, Dining, 30.00, n, Dinner out&#10;Subscriptions, 13.70, n, Spotify"
       style="width:100%;height:140px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--bg);color:var(--text);line-height:1.7"
       onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+    <div id="bulk-errors" style="display:none;margin-top:10px;background:#fff5f3;border:1px solid var(--coral);border-radius:9px;padding:12px 14px;font-size:12px"></div>
   </div>
 
   <!-- Transaction list -->
@@ -3634,10 +3635,11 @@ function bulkAddExpenses() {
   const fallback  = new Date().toISOString().slice(0,10);
   const lines     = document.getElementById('bulk-text').value.trim().split('\n').filter(l=>l.trim());
   const CATS      = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
-  let added = 0, errors = 0;
+  let added = 0;
+  const errorLines = [];
   for (const line of lines) {
     const parts = line.split(',').map(p=>p.trim());
-    if (parts.length < 2) { errors++; continue; }
+    if (parts.length < 2) { errorLines.push({line, reason:'too few fields — need at least: Category, amount'}); continue; }
     // Detect optional leading date
     let date = fallback, offset = 0;
     const maybeDate = _parseBulkDate(parts[0]);
@@ -3646,7 +3648,8 @@ function bulkAddExpenses() {
     const catRaw = parts[offset];
     const cat    = CATS.find(c => c.toLowerCase().startsWith((catRaw||'').toLowerCase().slice(0,3))) || 'Misc';
     const amount = _evalAmount(parts[offset + 1]);
-    if (!catRaw || isNaN(amount)) { errors++; continue; }
+    if (!catRaw) { errorLines.push({line, reason:'missing category'}); continue; }
+    if (isNaN(amount)) { errorLines.push({line, reason:`couldn't parse amount "${parts[offset+1]||''}"`}); continue; }
     const shared = (parts[offset + 2]||'').toLowerCase() === 'y';
     const desc   = parts[offset + 3] || '';
     const month  = monthName(new Date(date+'T12:00:00'));
@@ -3661,13 +3664,27 @@ function bulkAddExpenses() {
     }).catch(_onSaveErr);
     renderBudget();
     renderBulkCatChips();
-    document.getElementById('bulk-text').value = '';
+    if (!errorLines.length) document.getElementById('bulk-text').value = '';
   }
   const resultEl = document.getElementById('bulk-result');
-  resultEl.style.color = errors && !added ? 'var(--coral)' : 'var(--sage)';
+  resultEl.style.color = errorLines.length && !added ? 'var(--coral)' : 'var(--sage)';
   resultEl.textContent = added
-    ? `✓ Added ${added} expense${added>1?'s':''}${errors?' ('+errors+' skipped)':''}`
-    : `Could not parse any lines${errors?' ('+errors+' errors)':''}`;
+    ? `✓ Added ${added}${errorLines.length?' ('+errorLines.length+' skipped)':''}`
+    : `Could not parse any lines`;
+  const errEl = document.getElementById('bulk-errors');
+  if (errorLines.length) {
+    errEl.style.display = 'block';
+    errEl.innerHTML = `<div style="font-weight:600;color:var(--coral);margin-bottom:8px">⚠️ ${errorLines.length} line${errorLines.length>1?'s':''} couldn't be imported:</div>`
+      + errorLines.map(({line, reason}) =>
+          `<div style="margin-bottom:6px;padding:6px 10px;background:rgba(217,106,82,.07);border-radius:6px;border-left:3px solid var(--coral)">
+            <div style="font-family:monospace;color:var(--text);margin-bottom:2px">${line.replace(/</g,'&lt;')}</div>
+            <div style="color:var(--coral);font-size:11px">${reason}</div>
+          </div>`
+        ).join('');
+  } else {
+    errEl.style.display = 'none';
+    errEl.innerHTML = '';
+  }
 }
 
 function renderBulkCatChips() {
