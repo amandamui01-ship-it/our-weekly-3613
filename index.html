@@ -3593,6 +3593,18 @@ function loadRecurring() {
   }
 }
 
+function _evalAmount(str) {
+  if (!str) return NaN;
+  // Strip $ and thousands-separator commas (e.g. $1,234.56)
+  const cleaned = str.replace(/\$/g, '').replace(/,(?=\d)/g, '').trim();
+  // Only allow digits, spaces, decimal points, and basic math operators
+  if (!/^[\d\s\+\-\*\/\.()]+$/.test(cleaned)) return NaN;
+  try {
+    const result = Function('"use strict"; return (' + cleaned + ')')();
+    return isFinite(result) ? +result.toFixed(2) : NaN;
+  } catch(e) { return NaN; }
+}
+
 function _parseBulkDate(str) {
   // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
@@ -3627,7 +3639,7 @@ function bulkAddExpenses() {
     // format: [date,] category, amount, shared(y/n), description
     const catRaw = parts[offset];
     const cat    = CATS.find(c => c.toLowerCase().startsWith((catRaw||'').toLowerCase().slice(0,3))) || 'Misc';
-    const amount = parseFloat(parts[offset + 1]);
+    const amount = _evalAmount(parts[offset + 1]);
     if (!catRaw || isNaN(amount)) { errors++; continue; }
     const shared = (parts[offset + 2]||'').toLowerCase() === 'y';
     const desc   = parts[offset + 3] || '';
