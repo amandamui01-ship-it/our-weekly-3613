@@ -1,4 +1,4 @@
-const CACHE = 'ow-v1';
+const CACHE = 'ow-v2';
 const SHELL = ['/our-weekly-3613/', '/our-weekly-3613/index.html'];
 
 self.addEventListener('install', e => {
