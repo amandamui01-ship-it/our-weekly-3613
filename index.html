@@ -2984,8 +2984,9 @@ function escHtml(str) {
 }
 
 let _confirmCallback = null;
-function showConfirm(msg, onOk, okLabel = 'Delete') {
-  document.getElementById('confirm-msg').textContent = msg;
+function showConfirm(msg, onOk, okLabel = 'Delete', isHtml = false) {
+  const msgEl = document.getElementById('confirm-msg');
+  if (isHtml) msgEl.innerHTML = msg; else msgEl.textContent = msg;
   document.getElementById('confirm-ok').textContent = okLabel;
   document.getElementById('confirm-ok').style.background = okLabel === 'Delete' ? 'var(--coral)' : 'var(--amber)';
   const input = document.getElementById('confirm-input');
@@ -3721,10 +3722,16 @@ function _parseBulkDate(str) {
 }
 
 function bulkAddExpenses() {
-  const person   = document.getElementById('bulk-person').value;
-  const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
+  const person = document.getElementById('bulk-person').value;
+  const lines  = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
   if (!lines.length) return;
-  if (!confirm(`Import ${lines.length} line${lines.length !== 1 ? 's' : ''} for ${person}?`)) return;
+  const nameColor = person === 'Amanda' ? 'var(--coral)' : 'var(--blue)';
+  const msg = `Import ${lines.length} line${lines.length !== 1 ? 's' : ''} for<br><span style="color:${nameColor};font-weight:800;font-size:20px;letter-spacing:-.3px">${person}</span>?`;
+  showConfirm(msg, _executeBulkImport, 'Import', true);
+}
+
+function _executeBulkImport() {
+  const person   = document.getElementById('bulk-person').value;
   const fallback = new Date().toISOString().slice(0, 10);
   let added = 0;
   const errorLines = [], miscWarns = [];
