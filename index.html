@@ -3732,6 +3732,7 @@ function bulkAddExpenses() {
 
 function _executeBulkImport() {
   const person   = document.getElementById('bulk-person').value;
+  const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
   const fallback = new Date().toISOString().slice(0, 10);
   let added = 0;
   const errorLines = [], miscWarns = [];
