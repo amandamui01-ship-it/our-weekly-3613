@@ -3256,8 +3256,9 @@ function renderBudget() {
   const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxCat = catSorted[0]?.[1] || 1;
   document.getElementById('budget-cats').innerHTML = catSorted.length ? catSorted.map(([cat, total]) => {
-    const aidanAmt  = monthTx.filter(e=>e.person==='Aidan'&&e.category===cat).reduce((s,e)=>s+e.amount,0);
-    const amandaAmt = monthTx.filter(e=>e.person==='Amanda'&&e.category===cat).reduce((s,e)=>s+e.amount,0);
+    const catTx = monthTx.filter(e => e.category === cat);
+    const aidanAmt  = catTx.reduce((s,e) => s + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0), 0);
+    const amandaAmt = catTx.reduce((s,e) => s + (e.shared ? e.amount/2 : e.person==='Amanda' ? e.amount : 0), 0);
     const color = CAT_COLORS[cat] || 'var(--amber)';
     const emoji = CAT_EMOJIS[cat] || '📦';
     const target = budgetTargets[cat] || 0;
