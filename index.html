@@ -908,7 +908,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div style="font-size:11px;color:var(--text-3);margin-bottom:8px"><code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:10px">[date,] Category, description, amount, y/n</code></div>
     <textarea id="bulk-text" placeholder="Groceries, Costco run, 84.15, y&#10;3/20, Dining, Dinner out, 30.00, n&#10;Subscriptions, Spotify, 13.70, n"
       style="width:100%;height:140px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--bg);color:var(--text);line-height:1.7"
-      onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"
+      oninput="renderBulkPreview()"></textarea>
+    <div id="bulk-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:9px;overflow:hidden"></div>
     <div id="bulk-errors" style="display:none;margin-top:10px;background:#fff5f3;border:1px solid var(--coral);border-radius:9px;padding:12px 14px;font-size:12px"></div>
   </div>
 
@@ -3612,6 +3614,62 @@ function _evalAmount(str) {
   return isFinite(result) ? Math.round(result * 100) / 100 : NaN;
 }
 
+const _BULK_CATS = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
+
+function _parseBulkLine(line, fallback) {
+  const parts = line.split(',').map(p => p.trim());
+  if (parts.length < 2) return {error: 'too few fields — need at least: Category, amount, y/n'};
+  let date = fallback, offset = 0;
+  const maybeDate = _parseBulkDate(parts[0]);
+  if (maybeDate) { date = maybeDate; offset = 1; }
+  const catRaw = parts[offset];
+  if (!catRaw) return {error: 'missing category'};
+  const catMatch = _BULK_CATS.find(c => c.toLowerCase().startsWith(catRaw.toLowerCase().slice(0, 3)));
+  const category = catMatch || 'Misc';
+  const warnMisc = !catMatch;
+  const hasDesc = isNaN(_evalAmount(parts[offset + 1]));
+  const description = hasDesc ? (parts[offset + 1] || '') : '';
+  const amtIdx = offset + (hasDesc ? 2 : 1);
+  const amount = _evalAmount(parts[amtIdx]);
+  if (isNaN(amount)) return {error: `couldn't parse amount "${parts[amtIdx] || ''}"`};
+  const shared = (parts[amtIdx + 1] || '').toLowerCase() === 'y';
+  return {date, category, catRaw, warnMisc, description, amount, shared};
+}
+
+function renderBulkPreview() {
+  const el = document.getElementById('bulk-preview');
+  if (!el) return;
+  const text = document.getElementById('bulk-text').value.trim();
+  if (!text) { el.style.display = 'none'; return; }
+  const fallback = new Date().toISOString().slice(0, 10);
+  const lines = text.split('\n').filter(l => l.trim());
+  const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
+  const rowsHtml = lines.map(line => {
+    const r = _parseBulkLine(line, fallback);
+    if (r.error) return `<tr style="background:var(--coral-bg)"><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
+    const bg = r.warnMisc ? 'var(--amber-bg)' : '';
+    const catCell = r.warnMisc ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" unrecognized)</span>` : r.category;
+    return `<tr style="background:${bg};border-top:1px solid var(--border-light)">
+      <td style="padding:6px 12px;color:var(--text-3);white-space:nowrap">${fmtDate(r.date)}</td>
+      <td style="padding:6px 12px">${catCell}</td>
+      <td style="padding:6px 12px;color:var(--text-2)">${r.description || '<span style="color:var(--text-3)">—</span>'}</td>
+      <td style="padding:6px 12px;font-weight:600;white-space:nowrap">$${r.amount.toFixed(2)}</td>
+      <td style="padding:6px 12px;color:var(--text-3)">${r.shared ? 'shared' : 'solo'}</td>
+    </tr>`;
+  }).join('');
+  el.style.display = 'block';
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:var(--bg);border-bottom:1px solid var(--border)">
+      <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Date</th>
+      <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Category</th>
+      <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Description</th>
+      <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Amount</th>
+      <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Shared</th>
+    </tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>`;
+}
+
 function _parseBulkDate(str) {
   // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
@@ -3631,33 +3689,18 @@ function _parseBulkDate(str) {
 }
 
 function bulkAddExpenses() {
-  const person    = document.getElementById('bulk-person').value;
-  const fallback  = new Date().toISOString().slice(0,10);
-  const lines     = document.getElementById('bulk-text').value.trim().split('\n').filter(l=>l.trim());
-  const CATS      = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
+  const person   = document.getElementById('bulk-person').value;
+  const fallback = new Date().toISOString().slice(0, 10);
+  const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
   let added = 0;
-  const errorLines = [];
+  const errorLines = [], miscWarns = [];
   for (const line of lines) {
-    const parts = line.split(',').map(p=>p.trim());
-    if (parts.length < 2) { errorLines.push({line, reason:'too few fields — need at least: Category, amount, y/n'}); continue; }
-    // Detect optional leading date
-    let date = fallback, offset = 0;
-    const maybeDate = _parseBulkDate(parts[0]);
-    if (maybeDate) { date = maybeDate; offset = 1; }
-    // format: [date,] category, [description,] amount, y/n
-    // description is optional — detected by whether parts[offset+1] parses as a number
-    const catRaw = parts[offset];
-    const cat    = CATS.find(c => c.toLowerCase().startsWith((catRaw||'').toLowerCase().slice(0,3))) || 'Misc';
-    const hasDesc = isNaN(_evalAmount(parts[offset + 1]));
-    const desc   = hasDesc ? (parts[offset + 1] || '') : '';
-    const amtIdx = offset + (hasDesc ? 2 : 1);
-    const amount = _evalAmount(parts[amtIdx]);
-    if (!catRaw) { errorLines.push({line, reason:'missing category'}); continue; }
-    if (isNaN(amount)) { errorLines.push({line, reason:`couldn't parse amount "${parts[amtIdx]||''}"`}); continue; }
-    const shared = (parts[amtIdx + 1]||'').toLowerCase() === 'y';
-    const month  = monthName(new Date(date+'T12:00:00'));
-    expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
-      date, month, person, category:cat, description:desc, amount, shared});
+    const r = _parseBulkLine(line, fallback);
+    if (r.error) { errorLines.push({line, reason: r.error}); continue; }
+    if (r.warnMisc) miscWarns.push(r.catRaw);
+    const month = monthName(new Date(r.date + 'T12:00:00'));
+    expenses.push({id: 'exp-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+      date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared});
     added++;
   }
   if (added) {
@@ -3669,21 +3712,28 @@ function bulkAddExpenses() {
     renderBulkCatChips();
   }
   document.getElementById('bulk-text').value = errorLines.map(e => e.line).join('\n');
+  renderBulkPreview();
   const resultEl = document.getElementById('bulk-result');
-  resultEl.style.color = errorLines.length && !added ? 'var(--coral)' : 'var(--sage)';
+  const hasProblems = errorLines.length || miscWarns.length;
+  resultEl.style.color = !added && errorLines.length ? 'var(--coral)' : miscWarns.length ? 'var(--amber)' : 'var(--sage)';
   resultEl.textContent = added
-    ? `✓ Added ${added}${errorLines.length?' ('+errorLines.length+' skipped)':''}`
+    ? `✓ Added ${added}${errorLines.length ? ' (' + errorLines.length + ' skipped)' : ''}${miscWarns.length ? ' · ' + miscWarns.length + ' → Misc' : ''}`
     : `Could not parse any lines`;
   const errEl = document.getElementById('bulk-errors');
-  if (errorLines.length) {
+  const allProblems = [
+    ...errorLines.map(({line, reason}) => ({line, reason, type:'error'})),
+    ...miscWarns.map(raw => ({line: null, reason: `"${raw}" didn't match any category — saved as Misc`, type:'warn'}))
+  ];
+  if (allProblems.length) {
     errEl.style.display = 'block';
-    errEl.innerHTML = `<div style="font-weight:600;color:var(--coral);margin-bottom:8px">⚠️ ${errorLines.length} line${errorLines.length>1?'s':''} couldn't be imported:</div>`
-      + errorLines.map(({line, reason}) =>
-          `<div style="margin-bottom:6px;padding:6px 10px;background:rgba(217,106,82,.07);border-radius:6px;border-left:3px solid var(--coral)">
-            <div style="font-family:monospace;color:var(--text);margin-bottom:2px">${line.replace(/</g,'&lt;')}</div>
-            <div style="color:var(--coral);font-size:11px">${reason}</div>
-          </div>`
-        ).join('');
+    errEl.innerHTML = allProblems.map(({line, reason, type}) => {
+      const color = type === 'error' ? 'var(--coral)' : 'var(--amber)';
+      const bg = type === 'error' ? 'rgba(217,106,82,.07)' : 'rgba(191,124,54,.07)';
+      return `<div style="margin-bottom:6px;padding:6px 10px;background:${bg};border-radius:6px;border-left:3px solid ${color}">
+        ${line ? `<div style="font-family:monospace;color:var(--text);margin-bottom:2px">${line.replace(/</g,'&lt;')}</div>` : ''}
+        <div style="color:${color};font-size:11px">${reason}</div>
+      </div>`;
+    }).join('');
   } else {
     errEl.style.display = 'none';
     errEl.innerHTML = '';
