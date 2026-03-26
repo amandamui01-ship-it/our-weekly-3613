@@ -3664,8 +3664,8 @@ function bulkAddExpenses() {
     }).catch(_onSaveErr);
     renderBudget();
     renderBulkCatChips();
-    if (!errorLines.length) document.getElementById('bulk-text').value = '';
   }
+  document.getElementById('bulk-text').value = errorLines.map(e => e.line).join('\n');
   const resultEl = document.getElementById('bulk-result');
   resultEl.style.color = errorLines.length && !added ? 'var(--coral)' : 'var(--sage)';
   resultEl.textContent = added
