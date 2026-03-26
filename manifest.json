@@ -1,0 +1,13 @@
+{
+  "name": "our weekly ♥",
+  "short_name": "our weekly",
+  "description": "Amanda & Aidan's weekly app",
+  "start_url": "/our-weekly-3613/",
+  "scope": "/our-weekly-3613/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#bf7c36",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

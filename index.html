@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>our weekly ♥</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="our weekly">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#bf7c36">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -427,6 +433,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 [data-theme="dark"] .japan-card{background:linear-gradient(135deg,#1a1228 0%,#0e1820 100%)}
 [data-theme="dark"] #login-overlay{background:var(--bg)}
 [data-theme="dark"] .coffee-card{background:linear-gradient(135deg,#2e2010 0%,#1e1808 100%)}
+[data-theme="dark"] .plan-slot-chip.gym    {background:#1c2e1e;color:#6a9870;border-color:#2a4a2e}
+[data-theme="dark"] .plan-slot-chip.date   {background:#2e1a18;color:#c07060;border-color:#4a2820}
+[data-theme="dark"] .plan-slot-chip.friends{background:#181e30;color:#7090c8;border-color:#28305a}
+[data-theme="dark"] .budget-quickadd-card{border-color:#3a2a14!important}
+[data-theme="dark"] #bulk-errors{background:rgba(217,106,82,.12)!important;border-color:#6a3020!important}
+[data-theme="dark"] #bulk-preview{border-color:var(--border)}
+[data-theme="dark"] #bulk-preview thead tr{background:var(--surface)!important}
+[data-theme="dark"] code{background:var(--surface)!important;color:var(--text-2)}
 .theme-icon{font-size:15px;line-height:1;color:var(--text-2);font-family:sans-serif}
 .dark-toggle{position:relative;width:40px;height:24px;background:var(--border);border-radius:12px;border:none;cursor:pointer;transition:background .3s;flex-shrink:0;align-self:center;vertical-align:middle}
 .dark-toggle.active{background:var(--sage)}
@@ -1777,22 +1791,22 @@ function addTodoDragListeners() {
       document.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
     });
     el.addEventListener('dragover', e => {
+      if (!_todoDragId || el.dataset.id === _todoDragId) return;
       e.preventDefault();
-      if (!_todoDragId || el.dataset.id === _todoDragId || el.dataset.cat !== todos.find(x=>x.id===_todoDragId)?.cat) return;
       e.dataTransfer.dropEffect = 'move';
       document.querySelectorAll('.todo-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+      document.querySelectorAll('.todo-category.cat-drag-over').forEach(x => x.classList.remove('cat-drag-over'));
       el.classList.add('drag-over');
     });
     el.addEventListener('drop', e => {
       e.preventDefault();
       if (!_todoDragId || el.dataset.id === _todoDragId) return;
-      const dragCat = todos.find(x => x.id === _todoDragId)?.cat;
-      if (el.dataset.cat !== dragCat) return;
       const fromIdx = todos.findIndex(t => t.id === _todoDragId);
       const toIdx   = todos.findIndex(t => t.id === el.dataset.id);
       if (fromIdx === -1 || toIdx === -1) return;
       const [moved] = todos.splice(fromIdx, 1);
-      const newTo   = todos.findIndex(t => t.id === el.dataset.id);
+      moved.cat = el.dataset.cat;
+      const newTo = todos.findIndex(t => t.id === el.dataset.id);
       todos.splice(newTo, 0, moved);
       _todoDragId = null;
       saveTodos(); renderTodos();
@@ -1814,6 +1828,14 @@ function addCategoryDragListeners() {
       document.querySelectorAll('.todo-category.cat-drag-over').forEach(x => x.classList.remove('cat-drag-over'));
     });
     el.addEventListener('dragover', e => {
+      if (_todoDragId) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        document.querySelectorAll('.todo-item.drag-over').forEach(x => x.classList.remove('drag-over'));
+        document.querySelectorAll('.todo-category.cat-drag-over').forEach(x => x.classList.remove('cat-drag-over'));
+        el.classList.add('cat-drag-over');
+        return;
+      }
       if (!_catDragId || el.dataset.catId === _catDragId) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
@@ -1822,6 +1844,13 @@ function addCategoryDragListeners() {
     });
     el.addEventListener('drop', e => {
       e.preventDefault();
+      if (_todoDragId) {
+        const todo = todos.find(t => t.id === _todoDragId);
+        if (todo) { todo.cat = el.dataset.catId; }
+        _todoDragId = null;
+        saveTodos(); renderTodos();
+        return;
+      }
       if (!_catDragId || el.dataset.catId === _catDragId) return;
       const fromIdx = todoCategories.findIndex(c => c.id === _catDragId);
       const toIdx   = todoCategories.findIndex(c => c.id === el.dataset.catId);
@@ -3825,6 +3854,11 @@ auth.onAuthStateChanged(user => {
     ov.classList.remove('hidden', 'fading');
   }
 });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/our-weekly-3613/sw.js');
+}
 </script>
 </body>
 </html>
