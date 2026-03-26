@@ -3141,6 +3141,7 @@ function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({
 
 const monthName = d => MONTHS_LIST[d.getMonth()];
 let _budgetMonth = monthName(new Date());
+let _txShowAll = false;
 
 function renderBudget() {
   _cleanExpEdit(); // cancel any open inline edit before re-rendering
@@ -3285,7 +3286,7 @@ function renderBudget() {
     document.getElementById('budget-transactions').innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No transactions.</div>';
   } else {
     const PREVIEW = 10;
-    const showAll = sorted.length <= PREVIEW || document.getElementById('tx-show-all-btn')?.dataset.expanded === '1';
+    const showAll = sorted.length <= PREVIEW || _txShowAll;
     const visible = showAll ? sorted : sorted.slice(0, PREVIEW);
     const txRow = e => `<div class="budget-tx${e.shared?' shared-tx':''}" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
             <div class="budget-tx-left">
@@ -3310,8 +3311,8 @@ function renderBudget() {
           ${txs.map(txRow).join('')}
         </div>`).join('') + `</div>`;
     const moreHtml = !showAll
-      ? `<button id="tx-show-all-btn" onclick="this.dataset.expanded='1';renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions ↓</button>`
-      : sorted.length > PREVIEW ? `<button onclick="document.getElementById('tx-show-all-btn')?.removeAttribute('data-expanded');renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less ↑</button>` : '';
+      ? `<button onclick="_txShowAll=true;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions ↓</button>`
+      : sorted.length > PREVIEW ? `<button onclick="_txShowAll=false;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less ↑</button>` : '';
     document.getElementById('budget-transactions').innerHTML = listHtml + moreHtml;
   }
 
@@ -3330,6 +3331,7 @@ function filterByCat(cat) {
 
 function setBudgetMonth(m) {
   _budgetMonth = m;
+  _txShowAll = false;
   renderBudget();
 }
 
@@ -3720,8 +3722,10 @@ function _parseBulkDate(str) {
 
 function bulkAddExpenses() {
   const person   = document.getElementById('bulk-person').value;
-  const fallback = new Date().toISOString().slice(0, 10);
   const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
+  if (!lines.length) return;
+  if (!confirm(`Import ${lines.length} line${lines.length !== 1 ? 's' : ''} for ${person}?`)) return;
+  const fallback = new Date().toISOString().slice(0, 10);
   let added = 0;
   const errorLines = [], miscWarns = [];
   for (const line of lines) {
