@@ -256,7 +256,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .budget-cat-row:nth-child(6){animation-delay:.15s}.budget-cat-row:nth-child(7){animation-delay:.18s}
 
 /* ── Plan: today highlight ── */
-.plan-day-today .plan-day-label::after{content:'today';display:block;font-size:8px;font-weight:700;color:var(--amber);letter-spacing:.06em;margin-top:3px;text-transform:lowercase}
+.plan-day-today .plan-day-label{background:var(--amber);color:white}
 
 /* ── Trip countdown badge ── */
 .trip-countdown{font-size:10px;font-weight:700;color:var(--text-3);margin-top:5px;letter-spacing:.02em}
@@ -293,7 +293,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-week{display:grid;gap:8px}
 .plan-day{display:grid;grid-template-columns:110px 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .plan-day-label{background:var(--amber-bg);color:var(--amber-dark);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:10px 8px;text-transform:uppercase;letter-spacing:.05em;text-align:center;line-height:1.3}
-.plan-day-past{opacity:.38}
+.plan-day-past{opacity:.25}
 .plan-day-label .day-short{display:none}
 .plan-meal-day .day-short{display:none}
 .plan-day-slots{display:flex;flex-direction:column;gap:0}
