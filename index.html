@@ -76,7 +76,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .page.active{display:block;animation:fadeIn .25s cubic-bezier(.2,.8,.4,1)}
 
 /* ── Cards ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow);transition:box-shadow .2s}
 .card+.card{margin-top:16px}
 .card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px;text-align:center}
 
@@ -96,7 +96,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .field{margin-bottom:18px}
 .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-bottom:6px}
 .field textarea,.field input[type=text],.field input[type=password],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
-.field textarea{min-height:90px}
+.field textarea{min-height:60px;resize:none;overflow:hidden}
 .field textarea:focus,.field input[type=text]:focus,.field input[type=password]:focus,.field input[type=number]:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
 
 /* ── HOME ── */
@@ -236,12 +236,35 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-hearts{display:flex;gap:3px;flex-shrink:0}
 .history-heart{font-size:14px;filter:grayscale(1) opacity(.2)}
 .history-heart.on{filter:none}
-.history-body{display:none;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:20px 22px;transition:background .15s,border-color .15s}
-.history-body.open{display:block}
+.history-body{display:block;overflow:hidden;max-height:0;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 22px;transition:max-height .28s ease,padding .28s ease,background .15s,border-color .15s}
+.history-body.open{max-height:3000px;padding:20px 22px}
 .history-section{margin-bottom:14px}
 .history-section:last-child{margin-bottom:0}
 .history-section-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:5px}
 .history-section-text{font-size:13px;color:var(--text-2);line-height:1.75;white-space:pre-wrap}
+
+/* ── List stagger animation ── */
+@keyframes listFadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.history-entry{animation:listFadeIn .18s ease both}
+.history-entry:nth-child(2){animation-delay:.04s}.history-entry:nth-child(3){animation-delay:.08s}
+.history-entry:nth-child(4){animation-delay:.12s}.history-entry:nth-child(5){animation-delay:.16s}
+.history-entry:nth-child(6){animation-delay:.20s}.history-entry:nth-child(7){animation-delay:.24s}
+.history-entry:nth-child(8){animation-delay:.28s}
+.budget-cat-row{animation:listFadeIn .18s ease both}
+.budget-cat-row:nth-child(2){animation-delay:.03s}.budget-cat-row:nth-child(3){animation-delay:.06s}
+.budget-cat-row:nth-child(4){animation-delay:.09s}.budget-cat-row:nth-child(5){animation-delay:.12s}
+.budget-cat-row:nth-child(6){animation-delay:.15s}.budget-cat-row:nth-child(7){animation-delay:.18s}
+
+/* ── Plan: today highlight ── */
+.plan-day-today{box-shadow:0 0 0 2px var(--amber);border-radius:10px}
+.plan-day-today .plan-day-label{background:var(--amber);color:white}
+
+/* ── Trip countdown badge ── */
+.trip-countdown{font-size:10px;font-weight:700;color:var(--text-3);margin-top:5px;letter-spacing:.02em}
+.trip-countdown.soon{color:var(--amber-dark)}
+.trip-countdown.very-soon{color:var(--coral)}
+.trip-card:not(.past){transition:transform .15s,box-shadow .15s}
+.trip-card:not(.past):hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 
 /* ── Toast ── */
 .toast{position:fixed;bottom:28px;right:28px;background:#2d2417;color:white;padding:13px 22px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25)}
@@ -901,6 +924,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="budget-trend" id="budget-trend"></div>
   </div>
 
+  <!-- Over-budget banner -->
+  <div id="budget-overbudget-banner" style="margin-bottom:12px"></div>
+
   <!-- Spending by category -->
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">Spending by Category</div>
@@ -1435,6 +1461,7 @@ function showPage(name) {
     if (name === 'dates')   renderDates();
     if (name === 'plan')    renderPlan();
     if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); }
+    if (name === 'review')  loadReviewDraft();
   };
   const current = document.querySelector('.page.active');
   if (current && current.id !== 'page-' + name) {
@@ -1600,6 +1627,7 @@ function saveEntry() {
   }
   ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  localStorage.removeItem('ow-review-draft');
   const rp = document.getElementById('r-photo');
   if (rp) { rp.value = ''; }
   document.getElementById('r-photo-preview').style.display = 'none';
@@ -1895,12 +1923,23 @@ function renderDates() {
     }
   }
 
-  const tripCardHtml = (t, done) => `
-    <div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}" data-id="${t.id}" onclick="editTripInline('${t.id}')" style="cursor:pointer">
+  const tripCardHtml = (t, done) => {
+    let badge = '';
+    if (!done && t.sortDate) {
+      const ms = new Date(t.sortDate + 'T00:00:00') - today;
+      const days = Math.ceil(ms / 864e5);
+      if (days === 0) badge = `<div class="trip-countdown very-soon">today! 🎉</div>`;
+      else if (days === 1) badge = `<div class="trip-countdown very-soon">tomorrow!</div>`;
+      else if (days <= 14) badge = `<div class="trip-countdown soon">in ${days} days</div>`;
+      else badge = `<div class="trip-countdown">in ${days} days</div>`;
+    }
+    return `<div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}" data-id="${t.id}" onclick="editTripInline('${t.id}')" style="cursor:pointer">
       <button class="trip-del" onclick="deleteTrip('${t.id}');event.stopPropagation()">×</button>
       <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
+      ${badge}
     </div>`;
+  };
 
   document.getElementById('trip-grid').innerHTML = upcoming.map(t => tripCardHtml(t, false)).join('') + `
     <div class="add-trip-form">
@@ -2001,6 +2040,23 @@ function addListDragListeners() {
       renderDates();
     });
   });
+}
+
+// ─── REVIEW DRAFT ────────────────────────────────────────────────────────────
+const _REVIEW_DRAFT_IDS = ['r-well','r-stress','r-adjust','r-misc'];
+function loadReviewDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem('ow-review-draft') || '{}');
+    _REVIEW_DRAFT_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && draft[id] && !el.value) { el.value = draft[id]; _growNotes(el); }
+    });
+  } catch(e) {}
+}
+function _saveReviewDraft() {
+  const draft = {};
+  _REVIEW_DRAFT_IDS.forEach(id => { const el = document.getElementById(id); if (el) draft[id] = el.value; });
+  localStorage.setItem('ow-review-draft', JSON.stringify(draft));
 }
 
 // ─── PLAN ────────────────────────────────────────────────────────────────────
@@ -2106,8 +2162,9 @@ function renderPlan() {
     const dateOn    = d.date    ? 'on' : '';
     const friendsOn = d.friends ? 'on' : '';
     const dayDate = new Date(_planMon); dayDate.setDate(_planMon.getDate() + _dayOff[key]);
-    const isPast = dayDate < _planToday;
-    return `<div class="plan-day${isPast?' plan-day-past':''}" id="plan-day-${key}">
+    const isPast  = dayDate < _planToday;
+    const isToday = dayDate.getTime() === _planToday.getTime();
+    return `<div class="plan-day${isPast?' plan-day-past':isToday?' plan-day-today':''}" id="plan-day-${key}">
       <div class="plan-day-label"><span class="day-full">${full}</span><span class="day-short">${label}</span></div>
       <div class="plan-day-slots"${isPast?' style="display:none"':''}>
         <div class="plan-slot">
@@ -2289,8 +2346,12 @@ function updateMeal(dayKey, mealType, val) {
   _planDebounce = setTimeout(savePlan, 600);
 }
 
-// override plan-notes oninput to also store in weekPlan
+// override plan-notes oninput to also store in weekPlan; auto-grow review textareas + draft save
 document.addEventListener('input', e => {
+  if (_REVIEW_DRAFT_IDS.includes(e.target.id)) {
+    _growNotes(e.target);
+    _saveReviewDraft();
+  }
   if (e.target.id === 'plan-notes') {
     weekPlan._notes = e.target.value;
     _growNotes(e.target);
@@ -3299,6 +3360,13 @@ function renderBudget() {
   }
   const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxCat = catSorted[0]?.[1] || 1;
+  const bannerEl = document.getElementById('budget-overbudget-banner');
+  if (bannerEl) {
+    const over = catSorted.filter(([c,t]) => budgetTargets[c]>0 && t>budgetTargets[c]);
+    bannerEl.innerHTML = over.length
+      ? `<div style="padding:10px 16px;background:var(--coral-bg);border:1px solid var(--coral);border-radius:10px;font-size:12px;color:var(--coral);font-weight:600">⚠️ Over budget: ${over.map(([c,t])=>`${CAT_EMOJIS[c]||'📦'} ${c} <span style="font-weight:400">(+${fmt(t-budgetTargets[c])})</span>`).join(' &nbsp;·&nbsp; ')}</div>`
+      : '';
+  }
   document.getElementById('budget-cats').innerHTML = catSorted.length ? catSorted.map(([cat, total]) => {
     const catTx = monthTx.filter(e => e.category === cat);
     const aidanAmt  = catTx.reduce((s,e) => s + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0), 0);
@@ -3869,6 +3937,27 @@ function doLogin() {
 document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+// ─── SWIPE NAV (mobile) ──────────────────────────────────────────────────────
+(function initSwipeNav() {
+  const PAGES = ['home','review','plan','todos','dates','budget','history'];
+  let sx = null, sy = null;
+  document.addEventListener('touchstart', e => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener('touchend', e => {
+    if (sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    sx = sy = null;
+    if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 55) return;
+    const cur = document.querySelector('.page.active')?.id?.replace('page-','');
+    const idx = PAGES.indexOf(cur);
+    if (dx < 0 && idx < PAGES.length - 1) showPage(PAGES[idx + 1]);
+    if (dx > 0 && idx > 0) showPage(PAGES[idx - 1]);
+  }, {passive:true});
+})();
 
 // ─── DRAG SCROLL ─────────────────────────────────────────────────────────────
 (function initDragScroll() {
