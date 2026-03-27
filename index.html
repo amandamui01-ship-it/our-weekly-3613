@@ -98,8 +98,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .field textarea,.field input[type=text],.field input[type=password],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
 .field textarea{min-height:60px;resize:none;overflow:hidden}
 .field textarea:focus,.field input[type=text]:focus,.field input[type=password]:focus,.field input[type=number]:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
-/* ── Mobile: prevent iOS auto-zoom on input focus (requires 16px) ── */
-@media(max-width:768px){
+/* ── Prevent iOS auto-zoom on input focus (Safari zooms when font-size < 16px) ── */
+@supports (-webkit-touch-callout: none){
   input,textarea,select{font-size:16px!important}
 }
 
@@ -1755,7 +1755,7 @@ function editTodoSection(id) {
   const input = document.createElement('input');
   input.className = 'todo-edit-input';
   input.value = cat.label;
-  input.style.cssText = 'flex:1;font-weight:700;font-size:13px';
+  input.style.cssText = 'flex:1;font-weight:700';
   el.replaceWith(input);
   input.focus(); input.select();
   const save = () => {
