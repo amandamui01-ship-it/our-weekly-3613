@@ -71,7 +71,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 
 /* ── Pages ── */
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .page{display:none;padding:32px 40px 60px;max-width:920px;margin:0 auto}
 .page.active{display:block;animation:fadeIn .25s cubic-bezier(.2,.8,.4,1)}
 
@@ -244,7 +244,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-section-text{font-size:13px;color:var(--text-2);line-height:1.75;white-space:pre-wrap}
 
 /* ── List stagger animation ── */
-@keyframes listFadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes listFadeIn{from{opacity:0}to{opacity:1}}
 .history-entry{animation:listFadeIn .18s ease both}
 .history-entry:nth-child(2){animation-delay:.04s}.history-entry:nth-child(3){animation-delay:.08s}
 .history-entry:nth-child(4){animation-delay:.12s}.history-entry:nth-child(5){animation-delay:.16s}
@@ -835,7 +835,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
-      <button class="btn btn-sm" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap">📅 Export to Calendar</button>
+      <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px">📅 Export to Calendar</button>
     </div>
     <div class="trip-grid" id="trip-grid"></div>
   </div>
@@ -856,9 +856,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="page-title">Our Story</div>
   <div class="page-sub">Every week, written down. ✨</div>
   <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap">
-    <input type="text" id="history-search" placeholder="🔍 Search entries..." oninput="renderHistory()"
-      style="flex:1;min-width:180px;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;outline:none;font-family:inherit;background:var(--surface);transition:border-color .15s"
-      onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
+    <input type="text" id="history-search" placeholder="🔍 Search entries..." oninput="renderHistory()" class="bq-input" style="flex:1;min-width:180px;transition:border-color .15s" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
     <button class="btn btn-primary" onclick="surpriseMe()">🎲 Surprise Me!</button>
   </div>
   <div id="history-search-meta" style="font-size:12px;color:var(--text-3);margin-bottom:12px;min-height:18px"></div>
@@ -903,6 +901,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 <!-- ── BUDGET ── -->
 <div class="page" id="page-budget">
   <div class="page-title">Budget</div>
+  <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
 
   <!-- Period picker -->
   <div class="budget-period-row">
@@ -967,11 +966,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <div id="tx-search-total" style="font-size:12px;font-weight:700;color:var(--amber)"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:140px">
-        <select id="b-filter-cat" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+        <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" class="bq-input" style="width:140px">
+        <select id="b-filter-cat" onchange="renderBudget()" class="bq-sel">
           <option value="">All Categories</option>
         </select>
-        <select id="b-filter-person" onchange="renderBudget()" style="font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:var(--surface);color:var(--text)">
+        <select id="b-filter-person" onchange="renderBudget()" class="bq-sel">
           <option value="">Both</option><option>Amanda</option><option>Aidan</option>
           <option value="shared">50/50 only</option>
         </select>
