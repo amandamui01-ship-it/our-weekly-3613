@@ -243,17 +243,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-section-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:5px}
 .history-section-text{font-size:13px;color:var(--text-2);line-height:1.75;white-space:pre-wrap}
 
-/* ── List stagger animation ── */
-@keyframes listFadeIn{from{opacity:0}to{opacity:1}}
-.history-entry{animation:listFadeIn .18s ease both}
-.history-entry:nth-child(2){animation-delay:.04s}.history-entry:nth-child(3){animation-delay:.08s}
-.history-entry:nth-child(4){animation-delay:.12s}.history-entry:nth-child(5){animation-delay:.16s}
-.history-entry:nth-child(6){animation-delay:.20s}.history-entry:nth-child(7){animation-delay:.24s}
-.history-entry:nth-child(8){animation-delay:.28s}
-.budget-cat-row{animation:listFadeIn .18s ease both}
-.budget-cat-row:nth-child(2){animation-delay:.03s}.budget-cat-row:nth-child(3){animation-delay:.06s}
-.budget-cat-row:nth-child(4){animation-delay:.09s}.budget-cat-row:nth-child(5){animation-delay:.12s}
-.budget-cat-row:nth-child(6){animation-delay:.15s}.budget-cat-row:nth-child(7){animation-delay:.18s}
 
 /* ── Plan: today highlight ── */
 .plan-day-today .plan-day-label{background:var(--amber);color:white}
@@ -1446,7 +1435,8 @@ function showPage(name) {
   const doSwitch = () => {
     document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.opacity = ''; p.style.transition = ''; });
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    // Render content before making page visible so fadeIn starts with full content
+    // Scroll and render before making page visible so fadeIn starts clean at the top
+    window.scrollTo(0, 0);
     if (name === 'todos')   renderTodos();
     if (name === 'history') renderHistory();
     if (name === 'home')    renderHome();
@@ -1460,7 +1450,6 @@ function showPage(name) {
     const menuMap = {home:0, review:1, plan:2, todos:3, dates:4, budget:5, history:6};
     document.querySelectorAll('#nav-menu .menu-item').forEach(i => i.classList.remove('active'));
     if (menuMap[name] !== undefined) document.querySelectorAll('#nav-menu .menu-item')[menuMap[name]]?.classList.add('active');
-    window.scrollTo(0, 0);
     closeNavMenu();
   };
   const current = document.querySelector('.page.active');
