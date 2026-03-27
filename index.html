@@ -61,11 +61,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 #nav-menu .menu-item.menu-util{color:var(--text-3);font-size:13px}
 #nav-menu .menu-item.menu-util:hover{color:var(--text-2)}
 @media(max-width:540px){
-  #hamburger{display:flex;flex-direction:column;justify-content:center}
+  #hamburger{display:none!important}
   .nav-tab{display:none}
   #nav{overflow:visible;position:relative}
   .nav-dark-controls{display:none!important}
   #signout-btn{display:none!important}
+  #bottom-nav{display:flex!important}
+  .page{padding-bottom:84px!important}
+  .toast{bottom:72px}
 }
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
@@ -77,6 +80,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Cards ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow);transition:box-shadow .2s}
+@media(hover:hover){.card{transition:box-shadow .2s,transform .2s}.card:hover{box-shadow:var(--shadow-lg)}.card:not(.todo-category):hover{transform:translateY(-2px)}}
 .card+.card{margin-top:16px}
 .card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px;text-align:center}
 
@@ -109,7 +113,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .welcome-date{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.55;margin-bottom:8px}
 .welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:800;line-height:1.25;margin-bottom:22px}
 .welcome-greeting span{color:#f5c27a}
-.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.home-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;text-align:center}
 .home-stat[onclick]:hover{border-color:var(--amber);box-shadow:var(--shadow-lg)}
 .home-stat-val{font-size:20px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:3px}
@@ -262,8 +266,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .trip-card:not(.past):hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 
 /* ── Toast ── */
-.toast{position:fixed;bottom:28px;right:28px;background:#2d2417;color:white;padding:13px 22px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-.toast.show{opacity:1;transform:translateY(0)}
+.toast{position:fixed;bottom:28px;right:28px;background:#2d2417;color:white;padding:13px 22px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:14px}
+.toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
+.toast-undo{background:none;border:1px solid rgba(255,255,255,.45);color:white;padding:4px 11px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.toast-undo:hover{background:rgba(255,255,255,.18)}
 
 /* ── Confetti ── */
 .confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
@@ -424,10 +430,23 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .rec-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:14px;padding:0 2px}
 .rec-del:hover{color:var(--coral)}
 
+/* ── Bottom Nav (mobile) ── */
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom,0px)}
+.bnav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:8px 4px 6px;font-size:20px;cursor:pointer;color:var(--text-3);gap:1px;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.bnav-item span{font-size:10px;font-weight:600;letter-spacing:-.2px}
+.bnav-item.active,.bnav-item.active span{color:var(--amber)}
+[data-theme="dark"] #bottom-nav{border-top-color:var(--border)}
+
+/* ── FAB ── */
+.fab{position:fixed;bottom:28px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--amber);color:white;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(191,124,54,.45);align-items:center;justify-content:center;z-index:190;transition:transform .15s,box-shadow .15s;line-height:1;font-weight:300}
+.fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(191,124,54,.55)}
+.fab:active{transform:scale(0.93)}
+@media(max-width:540px){.fab{bottom:72px;right:14px}}
+
 /* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
-  .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:repeat(2,1fr)!important}
+  .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:repeat(2,1fr)!important;grid-template-rows:auto auto!important}
   .home-2col{grid-template-columns:1fr!important}
   .budget-top-row{grid-template-columns:1fr}
   .budget-snapshot{grid-template-columns:1fr 1fr}
@@ -605,7 +624,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">✏️ </span>Review</div>
   <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">🗓️ </span>This Week</div>
   <div class="nav-tab" onclick="showPage('todos')"><span class="nav-emoji">✅ </span>To-Dos</div>
-  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>2026 Dates</div>
+  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>Dates</div>
   <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
   <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">📖 </span>History</div>
   <div class="nav-dark-controls" style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
@@ -623,7 +642,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="menu-item" onclick="showPage('review')">✏️ Review</div>
     <div class="menu-item" onclick="showPage('plan')">🗓️ This Week</div>
     <div class="menu-item" onclick="showPage('todos')">✅ To-Dos</div>
-    <div class="menu-item" onclick="showPage('dates')">✈️ 2026 Dates</div>
+    <div class="menu-item" onclick="showPage('dates')">✈️ Dates</div>
     <div class="menu-item" onclick="showPage('budget')">💰 Budget</div>
     <div class="menu-item" onclick="showPage('history')">📖 History</div>
     <div class="menu-divider"></div>
@@ -653,9 +672,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="home-stat-val" id="stat-last-entry">—</div>
       <div class="home-stat-lbl">Last Review ↗</div>
     </div>
-    <div class="home-stat">
+    <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
       <div class="home-stat-val" id="stat-streak">—</div>
-      <div class="home-stat-lbl">Week Streak 🔥</div>
+      <div class="home-stat-lbl">Week Streak 🔥 ↗</div>
+    </div>
+    <div class="home-stat" onclick="showPage('budget')" style="cursor:pointer" title="Go to Budget">
+      <div class="home-stat-val" id="stat-budget">—</div>
+      <div class="home-stat-lbl">This Month 💰 ↗</div>
     </div>
   </div>
 
@@ -825,8 +848,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 <!-- ── 2026 DATES ── -->
 <div class="page" id="page-dates">
-  <div class="page-title">2026 Dates</div>
-  <div class="page-sub">All the good stuff to look forward to this year. 🎉</div>
+  <div class="page-title" id="dates-page-title">Dates</div>
+  <div class="page-sub">All the good stuff to look forward to. 🎉</div>
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -1458,6 +1481,15 @@ function showPage(name) {
     document.querySelectorAll('#nav-menu .menu-item').forEach(i => i.classList.remove('active'));
     if (menuMap[name] !== undefined) document.querySelectorAll('#nav-menu .menu-item')[menuMap[name]]?.classList.add('active');
     closeNavMenu();
+    // Sync bottom nav
+    const bnavMap = {home:'bnav-home', review:'bnav-review', plan:'bnav-plan', todos:'bnav-todos'};
+    document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
+    const bId = bnavMap[name];
+    if (bId) document.getElementById(bId)?.classList.add('active');
+    else document.getElementById('bnav-more')?.classList.add('active');
+    // FABs
+    document.getElementById('fab-todos').style.display  = name === 'todos'  ? 'flex' : 'none';
+    document.getElementById('fab-budget').style.display = name === 'budget' ? 'flex' : 'none';
   };
   const current = document.querySelector('.page.active');
   if (current && current.id !== 'page-' + name) {
@@ -1511,16 +1543,32 @@ function renderHome() {
   }
 
   const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
-  document.getElementById('home-trips').innerHTML = _upcoming.map(t => `
+  document.getElementById('home-trips').innerHTML = _upcoming.length
+    ? _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates}</div>
       <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
     </div>
-  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates ↗</div>`;
+  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates ↗</div>`
+    : `<div style="text-align:center;padding:20px 0">
+        <div style="font-size:32px;margin-bottom:8px">🗺️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:4px">No adventures planned yet</div>
+        <div style="font-size:12px;color:var(--text-3)">Add some trips in the <span onclick="showPage('dates')" style="color:var(--amber);cursor:pointer;font-weight:600">Dates tab ↗</span></div>
+      </div>`;
   // Streak
   const streak = getStreak();
   const streakEl = document.getElementById('stat-streak');
   if (streakEl) streakEl.textContent = streak > 0 ? streak : '—';
+  // Budget stat: current month spending (matches budget tab logic)
+  const _nowYear = new Date().getFullYear().toString();
+  const _nowMonth = monthName(new Date());
+  const _monthSpend = expenses
+    .filter(e => e.date.startsWith(_nowYear) && e.month === _nowMonth && !EXPENSE_CATS_EXCL.has(e.category))
+    .reduce((s, e) => s + e.amount, 0);
+  const _budgetEl = document.getElementById('stat-budget');
+  if (_budgetEl) _budgetEl.textContent = _monthSpend > 0
+    ? '$' + Math.round(_monthSpend).toLocaleString()
+    : '—';
 
   renderPhotoWidget();
   renderMoodWidget();
@@ -1734,8 +1782,10 @@ function editTodo(id) {
 }
 
 function deleteTodo(id) {
+  const item = todos.find(x => x.id === id);
   todos = todos.filter(x => x.id !== id);
   saveTodos(); renderTodos();
+  if (item) showToast('To-do deleted', () => { todos.push(item); saveTodos(); renderTodos(); });
 }
 
 function addTodoSection() {
@@ -1894,12 +1944,28 @@ function addCategoryDragListeners() {
 }
 
 // ─── DATES ───────────────────────────────────────────────────────────────────
+function _setDatesYear(y) { _datesYear = y; renderDates(); }
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
   const isPast = t => t.sortDate && new Date(t.sortDate + 'T00:00:00') < today;
   const sortByDate = (a, b) => (a.sortDate || '9999').localeCompare(b.sortDate || '9999');
-  const upcoming = trips.filter(t => !isPast(t)).sort(sortByDate);
-  const past     = trips.filter(t =>  isPast(t)).sort(sortByDate);
+
+  // Year picker
+  const allYears = [...new Set(trips.filter(t => t.sortDate).map(t => +t.sortDate.slice(0,4)))].sort();
+  if (allYears.length && !allYears.includes(_datesYear)) _datesYear = allYears[allYears.length - 1];
+  const yearStr = String(_datesYear);
+  const yearPickerHtml = allYears.length > 1 ? `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+    ${allYears.map(y => `<button onclick="_setDatesYear(${y})" style="padding:5px 16px;border-radius:20px;border:1px solid ${y===_datesYear?'var(--amber)':'var(--border)'};background:${y===_datesYear?'var(--amber)':'transparent'};color:${y===_datesYear?'white':'var(--text-2)'};font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">${y}</button>`).join('')}
+  </div>` : '';
+
+  // Update page title
+  const titleEl = document.getElementById('dates-page-title');
+  if (titleEl) titleEl.textContent = _datesYear + ' Dates';
+
+  // Filter trips to selected year
+  const yearTrips = trips.filter(t => !t.sortDate || t.sortDate.startsWith(yearStr));
+  const upcoming = yearTrips.filter(t => !isPast(t)).sort(sortByDate);
+  const past     = yearTrips.filter(t =>  isPast(t)).sort(sortByDate);
 
   // Compute overlapping trip IDs (check upcoming trips only)
   const icsToIso = s => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
@@ -1937,7 +2003,7 @@ function renderDates() {
     </div>`;
   };
 
-  document.getElementById('trip-grid').innerHTML = upcoming.map(t => tripCardHtml(t, false)).join('') + `
+  document.getElementById('trip-grid').innerHTML = yearPickerHtml + upcoming.map(t => tripCardHtml(t, false)).join('') + `
     <div class="add-trip-form">
       <input type="text" id="new-trip-dates"  placeholder="Dates (e.g. Jun 5–7)">
       <input type="text" id="new-trip-name"   placeholder="Trip or event name">
@@ -2508,9 +2574,10 @@ function addTrip() {
 }
 
 function deleteTrip(id) {
+  const item = trips.find(t => t.id === id);
   trips = trips.filter(t => t.id !== id);
-  saveTrips();
-  renderDates();
+  saveTrips(); renderDates();
+  if (item) showToast('Trip deleted', () => { trips.push(item); saveTrips(); renderDates(); });
 }
 
 function editTripInline(id) {
@@ -2606,14 +2673,16 @@ function editBucketItem(id) {
 }
 
 function deleteListItem(type, id) {
-  if (type === 'logistics') {
-    logisticsList = logisticsList.filter(x => x.id !== id);
-    saveLogistics();
-  } else {
-    bucketList = bucketList.filter(x => x.id !== id);
-    saveBucket();
-  }
+  const arr = type === 'logistics' ? logisticsList : bucketList;
+  const item = arr.find(x => x.id === id);
+  if (type === 'logistics') { logisticsList = logisticsList.filter(x => x.id !== id); saveLogistics(); }
+  else { bucketList = bucketList.filter(x => x.id !== id); saveBucket(); }
   renderDates();
+  if (item) showToast('Item deleted', () => {
+    if (type === 'logistics') { logisticsList.push(item); saveLogistics(); }
+    else { bucketList.push(item); saveBucket(); }
+    renderDates();
+  });
 }
 
 // ─── HISTORY ─────────────────────────────────────────────────────────────────
@@ -3115,11 +3184,37 @@ function _confirmCancel() {
   _confirmCallback = null;
 }
 
-function showToast(msg) {
+let _toastTimer = null;
+let _toastUndo = null;
+function showToast(msg, undoFn) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
+  clearTimeout(_toastTimer);
+  _toastUndo = undoFn || null;
+  if (undoFn) {
+    t.innerHTML = `<span>${msg}</span><button class="toast-undo" onclick="_doUndo()">Undo</button>`;
+  } else {
+    t.innerHTML = `<span>${msg}</span>`;
+  }
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
+  _toastTimer = setTimeout(() => { t.classList.remove('show'); _toastUndo = null; }, undoFn ? 5000 : 3200);
+}
+function _doUndo() {
+  clearTimeout(_toastTimer);
+  if (_toastUndo) { _toastUndo(); _toastUndo = null; }
+  document.getElementById('toast').classList.remove('show');
+}
+function fabTodos() {
+  const firstCat = todoCategories[0];
+  if (!firstCat) return;
+  const input = document.getElementById('add-' + firstCat.id);
+  if (input) { input.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(() => input.focus(), 300); }
+}
+function fabBudget() {
+  const body = document.getElementById('quickadd-body');
+  if (body && body.style.display === 'none') toggleQuickAdd();
+  const card = document.querySelector('.budget-quickadd-card');
+  if (card) card.scrollIntoView({behavior:'smooth', block:'start'});
+  setTimeout(() => document.getElementById('b-desc')?.focus(), 350);
 }
 
 function burstAt(cx, cy, count = 36, maxDist = 120) {
@@ -3236,6 +3331,7 @@ const MONTHS_LIST = ['January','February','March','April','May','June','July','A
 const CAT_COLORS = {Dining:'#d96a52',Groceries:'#5c7a62',Shopping:'#bf7c36',Entertainment:'#4472a8',Transportation:'#9b6fa8',Housing:'#6b5c47',Travel:'#3a9ea5',Utilities:'#e0a030',Pet:'#e07a5f',Subscriptions:'#81b29a',Insurance:'#b5838d',Savings:'#4a7c59',Investments:'#2d6a4f',Income:'#52b788',Misc:'#aaa'};
 const CAT_EMOJIS = {Dining:'🍽️',Groceries:'🛒',Shopping:'🛍️',Entertainment:'🎬',Transportation:'🚗',Housing:'🏠',Travel:'✈️',Utilities:'💡',Pet:'🐾',Subscriptions:'📱',Insurance:'🛡️',Savings:'🏦',Investments:'📈',Income:'💰',Misc:'📦'};
 
+let _datesYear = new Date().getFullYear();
 let budgetTargets = {};
 function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}).catch(_onSaveErr); }
 
@@ -3499,8 +3595,8 @@ function deleteExpense(id) {
   if (item) db.collection('state').doc('expenses').update({
     items: firebase.firestore.FieldValue.arrayRemove(item)
   }).catch(_onSaveErr);
-  renderBudget();
-  renderRecurring();
+  renderBudget(); renderRecurring();
+  if (item) showToast('Expense deleted', () => { expenses.push(item); saveExpenses(); renderBudget(); renderRecurring(); });
 }
 
 const EXPENSE_CATS_LIST = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
@@ -4000,5 +4096,16 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/our-weekly-3613/sw.js');
 }
 </script>
+<!-- ── Bottom Nav (mobile) ── -->
+<nav id="bottom-nav">
+  <div class="bnav-item active" id="bnav-home"   onclick="showPage('home')">🏠<span>Home</span></div>
+  <div class="bnav-item" id="bnav-review" onclick="showPage('review')">✏️<span>Review</span></div>
+  <div class="bnav-item" id="bnav-plan"   onclick="showPage('plan')">🗓️<span>Plan</span></div>
+  <div class="bnav-item" id="bnav-todos"  onclick="showPage('todos')">✅<span>To-Dos</span></div>
+  <div class="bnav-item" id="bnav-more"   onclick="toggleNavMenu()">☰<span>More</span></div>
+</nav>
+<!-- ── FABs ── -->
+<button class="fab" id="fab-todos"  style="display:none" onclick="fabTodos()"  title="Add to-do" aria-label="Add to-do">+</button>
+<button class="fab" id="fab-budget" style="display:none" onclick="fabBudget()" title="Add expense" aria-label="Add expense">+</button>
 </body>
 </html>
