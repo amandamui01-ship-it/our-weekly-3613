@@ -334,7 +334,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .plan-meal-input:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 
 /* ── Budget ── */
-.budget-period-row{display:flex;align-items:center;gap:14px;margin-top:20px;margin-bottom:16px;flex-wrap:wrap}
+.budget-period-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
 .budget-period-row select{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
 .budget-period-row select:focus{border-color:var(--amber)}
 .budget-month-pills{display:flex;gap:8px;flex-wrap:wrap}
@@ -1446,6 +1446,14 @@ function showPage(name) {
   const doSwitch = () => {
     document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.opacity = ''; p.style.transition = ''; });
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    // Render content before making page visible so fadeIn starts with full content
+    if (name === 'todos')   renderTodos();
+    if (name === 'history') renderHistory();
+    if (name === 'home')    renderHome();
+    if (name === 'dates')   renderDates();
+    if (name === 'plan')    renderPlan();
+    if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); }
+    if (name === 'review')  loadReviewDraft();
     document.getElementById('page-' + name).classList.add('active');
     const map = {home:-1, review:0, plan:1, todos:2, dates:3, budget:4, history:5};
     if (map[name] >= 0) document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
@@ -1454,13 +1462,6 @@ function showPage(name) {
     if (menuMap[name] !== undefined) document.querySelectorAll('#nav-menu .menu-item')[menuMap[name]]?.classList.add('active');
     window.scrollTo(0, 0);
     closeNavMenu();
-    if (name === 'todos')   renderTodos();
-    if (name === 'history') renderHistory();
-    if (name === 'home')    renderHome();
-    if (name === 'dates')   renderDates();
-    if (name === 'plan')    renderPlan();
-    if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); }
-    if (name === 'review')  loadReviewDraft();
   };
   const current = document.querySelector('.page.active');
   if (current && current.id !== 'page-' + name) {
