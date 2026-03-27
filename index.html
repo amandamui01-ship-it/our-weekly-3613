@@ -1433,6 +1433,7 @@ function initFirestore() {
       if (changed) ref('expenses').set({items: expenses});
     }
     if (isActive('budget')) renderBudget();
+    if (isActive('home'))   renderHome();
   });
 }
 
