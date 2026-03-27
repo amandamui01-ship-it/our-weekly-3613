@@ -256,8 +256,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .budget-cat-row:nth-child(6){animation-delay:.15s}.budget-cat-row:nth-child(7){animation-delay:.18s}
 
 /* ── Plan: today highlight ── */
-.plan-day-today{box-shadow:0 0 0 2px var(--amber);border-radius:10px}
-.plan-day-today .plan-day-label{background:var(--amber);color:white}
+.plan-day-today .plan-day-label::after{content:'today';display:block;font-size:8px;font-weight:700;color:var(--amber);letter-spacing:.06em;margin-top:3px;text-transform:lowercase}
 
 /* ── Trip countdown badge ── */
 .trip-countdown{font-size:10px;font-weight:700;color:var(--text-3);margin-top:5px;letter-spacing:.02em}
@@ -891,8 +890,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
   <!-- Meal Plan -->
   <div class="card">
-    <div class="card-title" onclick="toggleMealPlan()" style="cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center;gap:6px">
-      Meal Plan <span id="meal-chevron" style="font-size:11px;transition:transform .2s;display:inline-block">▾</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleMealPlan()">
+      <div class="card-title" style="margin-bottom:0">Meal Plan</div>
+      <span id="meal-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
     </div>
     <div id="plan-meals-wrap" style="display:none">
       <div class="plan-meals" id="plan-meals"></div>
@@ -2075,7 +2075,7 @@ function _applyMealCollapse() {
   const wrap = document.getElementById('plan-meals-wrap');
   const chevron = document.getElementById('meal-chevron');
   if (wrap) wrap.style.display = _mealExpanded ? '' : 'none';
-  if (chevron) chevron.style.transform = _mealExpanded ? 'rotate(180deg)' : '';
+  if (chevron) chevron.textContent = _mealExpanded ? '▼' : '▶';
 }
 
 const PLAN_DAYS = [
@@ -2166,7 +2166,7 @@ function renderPlan() {
     const isToday = dayDate.getTime() === _planToday.getTime();
     return `<div class="plan-day${isPast?' plan-day-past':isToday?' plan-day-today':''}" id="plan-day-${key}">
       <div class="plan-day-label"><span class="day-full">${full}</span><span class="day-short">${label}</span></div>
-      <div class="plan-day-slots"${isPast?' style="display:none"':''}>
+      <div class="plan-day-slots">
         <div class="plan-slot">
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
