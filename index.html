@@ -513,9 +513,22 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── History photo ── */
 .history-body-inner{display:flex;gap:18px;align-items:flex-start}
-.history-photo{width:38%;flex-shrink:0;border-radius:10px;display:block;object-fit:cover;max-height:320px}
+.history-photo{width:100%;border-radius:10px;display:block;object-fit:cover;max-height:320px}
+.history-photo-carousel{width:38%;flex-shrink:0}
+.history-photo-solo{width:38%;flex-shrink:0}
 .history-sections{flex:1;min-width:0}
-@media(max-width:580px){.history-body-inner{flex-direction:column}.history-photo{width:100%}}
+@media(max-width:580px){.history-body-inner{flex-direction:column}.history-photo-carousel,.history-photo-solo{width:100%}}
+.history-photo-nav{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px}
+.hpn-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 10px;font-size:18px;cursor:pointer;line-height:1.5;color:var(--text-2);transition:all .15s}
+.hpn-btn:hover{border-color:var(--amber);color:var(--amber)}
+.hpn-count{font-size:11px;color:var(--text-3);min-width:30px;text-align:center}
+/* ── Review photo thumbnails ── */
+.review-photo-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.review-photo-thumb{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0}
+.review-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.review-photo-remove{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+/* ── Heart hover preview ── */
+.heart-preview-val{font-size:12px;color:var(--amber-dark);font-weight:600;min-width:38px;align-self:center}
 /* ── History edit button ── */
 .history-edit-btn-row{margin-top:14px;display:flex;justify-content:flex-end;gap:8px}
 .history-edit-btn{background:none;border:1px solid var(--border);color:var(--text-2);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
@@ -775,12 +788,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="step-sub">The most important part. How are we doing?</div>
       <div class="field">
         <label>How would you rate this week? (1–5 ❤️)</label>
-        <div class="heart-rating">
-          <span class="hw" onclick="setHeartClick(event,this,1)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,2)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,3)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,4)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,5)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+        <div class="heart-rating" onmouseleave="clearHeartPreview()" style="display:flex;align-items:center;gap:8px">
+          <span class="hw" onclick="setHeartClick(event,this,1)" onmousemove="previewHeart(event,this,1)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,2)" onmousemove="previewHeart(event,this,2)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,3)" onmousemove="previewHeart(event,this,3)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,4)" onmousemove="previewHeart(event,this,4)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,5)" onmousemove="previewHeart(event,this,5)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="heart-preview-val" id="heart-preview-val"></span>
         </div>
       </div>
       <div class="field">
@@ -822,10 +836,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
         <input type="text" id="r-theme" placeholder="Or type your own theme...">
       </div>
       <div class="field">
-        <label>This week's memory photo <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
-        <label class="photo-upload-label" style="margin-top:4px">
-          📷 Choose Photo
-          <input type="file" id="r-photo" accept="image/*" style="display:none" onchange="previewReviewPhoto(this.files[0])">
+        <label>This week's memory photos <span style="color:var(--text-3);font-weight:400">(optional, up to 4)</span></label>
+        <label class="photo-upload-label" style="margin-top:4px" id="r-photo-add-btn">
+          📷 Add Photo
+          <input type="file" id="r-photo" accept="image/*" style="display:none" onchange="addReviewPhoto(this.files[0]);this.value=''">
         </label>
         <div id="r-photo-preview"></div>
       </div>
@@ -1291,6 +1305,7 @@ let todoCategories = [
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let currentStep = 0;
 let heartVal = 0;
+let _reviewPhotos = [];
 let todos = [];
 let newEntries = [];
 let trips = [], logisticsList = [], bucketList = [];
@@ -1657,6 +1672,76 @@ function setHeart(n) {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
   });
+  const lbl = document.getElementById('heart-preview-val');
+  if (lbl) lbl.textContent = n > 0 ? n + ' / 5' : '';
+}
+function previewHeart(e, el, n) {
+  const rect = el.getBoundingClientRect();
+  const val = (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n;
+  const lbl = document.getElementById('heart-preview-val');
+  if (lbl) lbl.textContent = val + ' / 5';
+}
+function clearHeartPreview() {
+  const lbl = document.getElementById('heart-preview-val');
+  if (lbl) lbl.textContent = heartVal > 0 ? heartVal + ' / 5' : '';
+}
+
+// ── Review photos ──
+function addReviewPhoto(file) {
+  if (!file || _reviewPhotos.length >= 4) return;
+  _reviewPhotos.push(file);
+  renderReviewPhotos();
+}
+function removeReviewPhoto(i) {
+  _reviewPhotos.splice(i, 1);
+  renderReviewPhotos();
+}
+function renderReviewPhotos() {
+  const preview = document.getElementById('r-photo-preview');
+  const addBtn = document.getElementById('r-photo-add-btn');
+  if (!preview) return;
+  if (!_reviewPhotos.length) {
+    preview.innerHTML = '';
+    preview.style.display = 'none';
+    if (addBtn) addBtn.style.display = '';
+    return;
+  }
+  preview.style.display = 'block';
+  preview.innerHTML = `<div class="review-photo-list">${
+    _reviewPhotos.map((f, i) => `<div class="review-photo-thumb"><img src="${URL.createObjectURL(f)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`).join('')
+  }</div>`;
+  if (addBtn) addBtn.style.display = _reviewPhotos.length >= 4 ? 'none' : '';
+}
+
+// ── History photo helpers ──
+function getEntryPhotoUrls(e) {
+  if (e.photoUrls && e.photoUrls.length) return e.photoUrls;
+  if (e.photoUrl) return [e.photoUrl];
+  return [];
+}
+function buildHistoryPhotoSection(e) {
+  const urls = getEntryPhotoUrls(e);
+  if (!urls.length) return '';
+  if (urls.length === 1) return `<div class="history-photo-solo"><img class="history-photo" src="${urls[0]}" alt="Memory photo"></div>`;
+  return `<div class="history-photo-carousel" id="hpc-${e.id}" data-idx="0">
+    <img class="history-photo" src="${urls[0]}" alt="Memory photo">
+    <div class="history-photo-nav">
+      <button class="hpn-btn" onclick="shiftHistoryPhoto('${e.id}',-1);event.stopPropagation()">&#8249;</button>
+      <span class="hpn-count">1 / ${urls.length}</span>
+      <button class="hpn-btn" onclick="shiftHistoryPhoto('${e.id}',1);event.stopPropagation()">&#8250;</button>
+    </div>
+  </div>`;
+}
+function shiftHistoryPhoto(id, dir) {
+  const wrap = document.getElementById('hpc-' + id);
+  if (!wrap) return;
+  const entry = getAllEntries().find(e => e.id === id);
+  if (!entry) return;
+  const urls = getEntryPhotoUrls(entry);
+  const idx = ((parseInt(wrap.dataset.idx) || 0) + dir + urls.length) % urls.length;
+  wrap.dataset.idx = idx;
+  wrap.querySelector('img').src = urls[idx];
+  wrap.querySelector('.hpn-count').textContent = `${idx + 1} / ${urls.length}`;
 }
 
 function saveEntry() {
@@ -1678,24 +1763,25 @@ function saveEntry() {
     misc:     get('r-misc'),
     hearts:   heartVal,
   };
-  // Handle optional photo: resize to ≤900px wide, store as base64 in Firestore
-  const photoFile = document.getElementById('r-photo')?.files[0];
-  const finishSave = (dataUrl) => {
-    if (dataUrl) entry.photoUrl = dataUrl;
+  // Handle optional photos: resize to ≤900px wide, store as base64 array in Firestore
+  const finishSave = (urls) => {
+    if (urls.length) entry.photoUrls = urls;
     newEntries.unshift(entry);
     saveEntries();
   };
-  if (photoFile) {
-    resizePhoto(photoFile, 900, 0.75).then(finishSave).catch(() => finishSave(null));
+  if (_reviewPhotos.length) {
+    Promise.all(_reviewPhotos.map(f => resizePhoto(f, 900, 0.75).catch(() => null)))
+      .then(urls => finishSave(urls.filter(Boolean)));
   } else {
-    finishSave(null);
+    finishSave([]);
   }
   ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   localStorage.removeItem('ow-review-draft');
+  _reviewPhotos = [];
+  renderReviewPhotos();
   const rp = document.getElementById('r-photo');
-  if (rp) { rp.value = ''; }
-  document.getElementById('r-photo-preview').style.display = 'none';
+  if (rp) rp.value = '';
   setHeart(0);
   document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
   nextStep(0);
@@ -2726,7 +2812,7 @@ function buildHistoryBodyHtml(e) {
   ].filter(Boolean);
   return `
     <div class="history-body-inner">
-      ${e.photoUrl ? `<img class="history-photo" src="${e.photoUrl}" alt="Memory photo">` : ''}
+      ${buildHistoryPhotoSection(e)}
       <div class="history-sections">
         ${sections.map(s => `
           <div class="history-section">
@@ -2823,17 +2909,18 @@ function editHistoryEntry(id) {
     {key:'aidan',  lbl:'Aidan ♥ Amanda',     multi:false},
     {key:'misc',   lbl:'Notes',              multi:true},
   ];
+  const v0 = entry.hearts || 0;
   const heartsHtml = Array.from({length:5}, (_,i) => {
-    const pos = i + 1, v = entry.hearts || 0;
-    const pct = v >= pos ? '100%' : v >= pos - 0.5 ? '50%' : '0%';
-    return `<span class="hw" onclick="setEditHeartClick(event,this,'${id}',${pos})"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
+    const pos = i + 1;
+    const pct = v0 >= pos ? '100%' : v0 >= pos - 0.5 ? '50%' : '0%';
+    return `<span class="hw" onclick="setEditHeartClick(event,this,'${id}',${pos})" onmousemove="previewEditHeart(event,this,'${id}',${pos})"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
   }).join('');
   setTimeout(() => {
     body.innerHTML = `
       <div class="history-edit-form" id="hef-${id}">
         <div class="history-edit-field">
           <div class="history-section-lbl">How was this week?</div>
-          <div class="history-edit-hearts" style="display:flex;gap:6px;margin-top:2px">${heartsHtml}</div>
+          <div class="history-edit-hearts" style="display:flex;align-items:center;gap:6px;margin-top:2px" onmouseleave="clearEditHeartPreview('${id}')">${heartsHtml}<span class="heart-preview-val" id="hep-${id}">${v0 > 0 ? v0 + ' / 5' : ''}</span></div>
         </div>
         ${fields.map(f => `
           <div class="history-edit-field">
@@ -2868,8 +2955,20 @@ function saveHistoryField(id, field, val) {
 }
 
 function setEditHeartClick(e, el, id, n) {
+  e.stopPropagation();
   const rect = el.getBoundingClientRect();
   setEditHeart(id, (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n);
+}
+function previewEditHeart(e, el, id, n) {
+  const rect = el.getBoundingClientRect();
+  const val = (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n;
+  const lbl = document.getElementById('hep-' + id);
+  if (lbl) lbl.textContent = val + ' / 5';
+}
+function clearEditHeartPreview(id) {
+  const entry = newEntries.find(e => e.id === id);
+  const lbl = document.getElementById('hep-' + id);
+  if (lbl) lbl.textContent = entry && entry.hearts > 0 ? entry.hearts + ' / 5' : '';
 }
 function setEditHeart(id, val) {
   const entry = newEntries.find(e => e.id === id);
@@ -2880,6 +2979,8 @@ function setEditHeart(id, val) {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
   });
+  const lbl = document.getElementById('hep-' + id);
+  if (lbl) lbl.textContent = val > 0 ? val + ' / 5' : '';
 }
 
 function doneEditingHistory(id) {
@@ -4114,7 +4215,6 @@ auth.onAuthStateChanged(user => {
     initFirestore();
     document.getElementById('review-date-sub').textContent = getReviewWeekLabel();
     const now2 = new Date();
-    if (now2.getDay() === 0) setTimeout(() => burst(), 900);
   } else {
     localStorage.removeItem('ow-was-authed');
     document.documentElement.removeAttribute('data-preauthed');
