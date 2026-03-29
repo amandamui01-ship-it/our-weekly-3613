@@ -144,10 +144,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .step-nav{display:flex;gap:10px;margin-top:24px}
 
 /* ── Heart rating ── */
+.hw{position:relative;display:inline-block;user-select:none}
+.hw .hbg{filter:grayscale(1) opacity(.25)}
+.hw .hfill{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;width:0%;pointer-events:none}
 .heart-rating{display:flex;gap:8px;margin:10px 0 20px}
-.heart{font-size:30px;cursor:pointer;transition:transform .15s;filter:grayscale(1) opacity(.25);user-select:none}
-.heart.on{filter:none}
-.heart:hover{transform:scale(1.2)}
+.heart-rating .hw{font-size:30px;cursor:pointer;transition:transform .15s}
+.heart-rating .hw:hover{transform:scale(1.2)}
 
 /* ── Theme chips ── */
 .theme-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
@@ -245,8 +247,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-del:hover{opacity:1!important;color:var(--coral)}
 .history-header.open .history-chevron{transform:rotate(180deg)}
 .history-hearts{display:flex;gap:3px;flex-shrink:0}
-.history-heart{font-size:14px;filter:grayscale(1) opacity(.2)}
-.history-heart.on{filter:none}
+.history-hearts .hw{font-size:14px}
 .history-body{display:block;overflow:hidden;max-height:0;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 22px;transition:max-height .28s ease,padding .28s ease,background .15s,border-color .15s}
 .history-body.open{max-height:3000px;padding:20px 22px}
 .history-section{margin-bottom:14px}
@@ -528,8 +529,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-edit-ta:focus{border-color:var(--amber)}
 .history-edit-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;box-sizing:border-box}
 .history-edit-input:focus{border-color:var(--amber)}
-.history-edit-heart{font-size:20px;cursor:pointer;filter:grayscale(1) opacity(.25);transition:filter .1s;user-select:none}
-.history-edit-heart.on{filter:none}
+.history-edit-hearts .hw{font-size:20px;cursor:pointer;transition:transform .1s}
+.history-edit-hearts .hw:hover{transform:scale(1.15)}
 .history-edit-done-btn{background:var(--amber);color:white;border:none;border-radius:9px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s}
 .history-edit-done-btn:hover{opacity:.88}
 
@@ -777,11 +778,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div class="field">
         <label>How would you rate this week? (1–5 ❤️)</label>
         <div class="heart-rating">
-          <span class="heart" onclick="setHeart(1)">❤️</span>
-          <span class="heart" onclick="setHeart(2)">❤️</span>
-          <span class="heart" onclick="setHeart(3)">❤️</span>
-          <span class="heart" onclick="setHeart(4)">❤️</span>
-          <span class="heart" onclick="setHeart(5)">❤️</span>
+          <span class="hw" onclick="setHeartClick(event,1)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,2)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,3)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,4)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,5)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
         </div>
       </div>
       <div class="field">
@@ -1634,9 +1635,23 @@ function pickTheme(el) {
   document.getElementById('r-theme').value = el.textContent;
 }
 
+function renderHeartsHtml(val) {
+  return Array.from({length:5}, (_,i) => {
+    const pos = i + 1;
+    const pct = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
+    return `<span class="hw"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
+  }).join('');
+}
+function setHeartClick(e, n) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  setHeart((e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n);
+}
 function setHeart(n) {
   heartVal = n;
-  document.querySelectorAll('.heart').forEach((h,i) => h.classList.toggle('on', i < n));
+  document.querySelectorAll('.heart-rating .hw').forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
+  });
 }
 
 function saveEntry() {
@@ -2729,8 +2744,7 @@ function renderHistory() {
     const d = new Date(e.date + 'T12:00:00');
     const dateLabel = `${MONTHS_S[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
     const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
-    const heartsHtml = e.hearts > 0
-      ? Array.from({length:5}, (_,i) => `<span class="history-heart${i < e.hearts?' on':''}">❤️</span>`).join('') : '';
+    const heartsHtml = e.hearts > 0 ? renderHeartsHtml(e.hearts) : '';
 
     return `
       <div class="history-entry">
@@ -2803,15 +2817,17 @@ function editHistoryEntry(id) {
     {key:'aidan',  lbl:'Aidan ♥ Amanda',     multi:false},
     {key:'misc',   lbl:'Notes',              multi:true},
   ];
-  const heartsHtml = Array.from({length:5}, (_,i) =>
-    `<span class="history-edit-heart${i < (entry.hearts||0) ? ' on':''}" onclick="setEditHeart('${id}',${i+1})">❤️</span>`
-  ).join('');
+  const heartsHtml = Array.from({length:5}, (_,i) => {
+    const pos = i + 1, v = entry.hearts || 0;
+    const pct = v >= pos ? '100%' : v >= pos - 0.5 ? '50%' : '0%';
+    return `<span class="hw" onclick="setEditHeartClick(event,'${id}',${pos})"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
+  }).join('');
   setTimeout(() => {
     body.innerHTML = `
       <div class="history-edit-form" id="hef-${id}">
         <div class="history-edit-field">
           <div class="history-section-lbl">How was this week?</div>
-          <div style="display:flex;gap:6px;margin-top:2px">${heartsHtml}</div>
+          <div class="history-edit-hearts" style="display:flex;gap:6px;margin-top:2px">${heartsHtml}</div>
         </div>
         ${fields.map(f => `
           <div class="history-edit-field">
@@ -2845,13 +2861,18 @@ function saveHistoryField(id, field, val) {
   saveEntries();
 }
 
+function setEditHeartClick(e, id, n) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  setEditHeart(id, (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n);
+}
 function setEditHeart(id, val) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   entry.hearts = val;
   saveEntries();
-  document.querySelectorAll(`#hef-${id} .history-edit-heart`).forEach((h, i) => {
-    h.classList.toggle('on', i < val);
+  document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
   });
 }
 
@@ -2877,8 +2898,7 @@ function doneEditingHistory(id) {
         const previewEl = header.querySelector('.history-preview');
         if (previewEl) previewEl.textContent = preview || '—';
         const heartsEl = header.querySelector('.history-hearts');
-        if (heartsEl) heartsEl.innerHTML = e.hearts > 0
-          ? Array.from({length:5}, (_,i) => `<span class="history-heart${i < e.hearts?' on':''}">❤️</span>`).join('') : '';
+        if (heartsEl) heartsEl.innerHTML = e.hearts > 0 ? renderHeartsHtml(e.hearts) : '';
         const themeEl = header.querySelector('.history-theme');
         if (themeEl && e.theme) themeEl.textContent = e.theme.replace(/^[\p{Emoji}\s]+/u,'').split('(')[0].trim();
       }
