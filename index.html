@@ -794,7 +794,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
           <span class="hw" onclick="setHeartClick(event,this,3)" onmousemove="previewHeart(event,this,3)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
           <span class="hw" onclick="setHeartClick(event,this,4)" onmousemove="previewHeart(event,this,4)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
           <span class="hw" onclick="setHeartClick(event,this,5)" onmousemove="previewHeart(event,this,5)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="heart-preview-val" id="heart-preview-val"></span>
         </div>
       </div>
       <div class="field">
@@ -1672,18 +1671,20 @@ function setHeart(n) {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
   });
-  const lbl = document.getElementById('heart-preview-val');
-  if (lbl) lbl.textContent = n > 0 ? n + ' / 5' : '';
 }
 function previewHeart(e, el, n) {
   const rect = el.getBoundingClientRect();
   const val = (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n;
-  const lbl = document.getElementById('heart-preview-val');
-  if (lbl) lbl.textContent = val + ' / 5';
+  document.querySelectorAll('.heart-rating .hw').forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
+  });
 }
 function clearHeartPreview() {
-  const lbl = document.getElementById('heart-preview-val');
-  if (lbl) lbl.textContent = heartVal > 0 ? heartVal + ' / 5' : '';
+  document.querySelectorAll('.heart-rating .hw').forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
+  });
 }
 
 // ── Review photos ──
@@ -2920,7 +2921,7 @@ function editHistoryEntry(id) {
       <div class="history-edit-form" id="hef-${id}">
         <div class="history-edit-field">
           <div class="history-section-lbl">How was this week?</div>
-          <div class="history-edit-hearts" style="display:flex;align-items:center;gap:6px;margin-top:2px" onmouseleave="clearEditHeartPreview('${id}')">${heartsHtml}<span class="heart-preview-val" id="hep-${id}">${v0 > 0 ? v0 + ' / 5' : ''}</span></div>
+          <div class="history-edit-hearts" style="display:flex;gap:6px;margin-top:2px" onmouseleave="clearEditHeartPreview('${id}')">${heartsHtml}</div>
         </div>
         ${fields.map(f => `
           <div class="history-edit-field">
@@ -2962,13 +2963,18 @@ function setEditHeartClick(e, el, id, n) {
 function previewEditHeart(e, el, id, n) {
   const rect = el.getBoundingClientRect();
   const val = (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n;
-  const lbl = document.getElementById('hep-' + id);
-  if (lbl) lbl.textContent = val + ' / 5';
+  document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
+  });
 }
 function clearEditHeartPreview(id) {
   const entry = newEntries.find(e => e.id === id);
-  const lbl = document.getElementById('hep-' + id);
-  if (lbl) lbl.textContent = entry && entry.hearts > 0 ? entry.hearts + ' / 5' : '';
+  const val = entry ? (entry.hearts || 0) : 0;
+  document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
+  });
 }
 function setEditHeart(id, val) {
   const entry = newEntries.find(e => e.id === id);
@@ -2979,8 +2985,6 @@ function setEditHeart(id, val) {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
   });
-  const lbl = document.getElementById('hep-' + id);
-  if (lbl) lbl.textContent = val > 0 ? val + ' / 5' : '';
 }
 
 function doneEditingHistory(id) {
