@@ -234,9 +234,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-entry{margin-bottom:12px}
 .history-header{display:flex;align-items:center;gap:12px;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:background .15s,border-color .15s}
 .history-entry:hover .history-header{border-color:var(--amber);background:var(--amber-bg)}
-.history-header.open{border-radius:var(--radius) var(--radius) 0 0;border-bottom-color:transparent}
-.history-entry:hover .history-header.open{border-bottom-color:var(--amber-bg)}
-.history-entry:hover .history-body.open{border-color:var(--amber);background:var(--amber-bg)}
+.history-header.open{border-radius:var(--radius) var(--radius) 0 0;border-bottom-color:transparent;border-color:var(--amber);background:var(--amber-bg)}
+.history-body.open{border-color:var(--amber);background:var(--amber-bg)}
 .history-date-badge{background:var(--amber-bg);color:var(--amber-dark);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .history-preview{flex:1;font-size:13px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .history-theme{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--sage-bg);color:var(--sage);white-space:nowrap;flex-shrink:0}
@@ -542,8 +541,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-edit-input:focus{border-color:var(--amber)}
 .history-edit-hearts .hw{font-size:20px;cursor:pointer;transition:transform .1s}
 .history-edit-hearts .hw:hover{transform:scale(1.15)}
-.history-edit-done-btn{background:var(--amber);color:white;border:none;border-radius:9px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity .15s}
-.history-edit-done-btn:hover{opacity:.88}
+.history-edit-done-btn{background:none;border:1px solid var(--amber);color:var(--amber-dark);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
+.history-edit-done-btn:hover{background:var(--amber);color:white}
 
 
 /* ── Todo Priority & Drag ── */
@@ -1712,6 +1711,46 @@ function renderReviewPhotos() {
     _reviewPhotos.map((f, i) => `<div class="review-photo-thumb"><img src="${URL.createObjectURL(f)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`).join('')
   }</div>`;
   if (addBtn) addBtn.style.display = _reviewPhotos.length >= 4 ? 'none' : '';
+}
+
+// ── Edit-mode photo helpers ──
+function editPhotoThumbsHtml(id, urls) {
+  return urls.map((url, i) =>
+    `<div class="review-photo-thumb"><img src="${url}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeEditPhoto(event,'${id}',${i})">✕</button></div>`
+  ).join('');
+}
+function renderEditPhotos(id) {
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  const urls = getEntryPhotoUrls(entry);
+  const list = document.getElementById('hef-photo-list-' + id);
+  const addBtn = document.getElementById('hef-photo-add-' + id);
+  if (list) list.innerHTML = editPhotoThumbsHtml(id, urls);
+  if (addBtn) addBtn.style.display = urls.length >= 4 ? 'none' : '';
+}
+function addEditPhoto(id, file) {
+  if (!file) return;
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  const urls = getEntryPhotoUrls(entry);
+  if (urls.length >= 4) return;
+  resizePhoto(file, 900, 0.75).then(dataUrl => {
+    entry.photoUrls = [...urls, dataUrl];
+    delete entry.photoUrl;
+    saveEntries();
+    renderEditPhotos(id);
+  });
+}
+function removeEditPhoto(event, id, idx) {
+  event.stopPropagation();
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  const urls = getEntryPhotoUrls(entry);
+  urls.splice(idx, 1);
+  entry.photoUrls = urls;
+  delete entry.photoUrl;
+  saveEntries();
+  renderEditPhotos(id);
 }
 
 // ── History photo helpers ──
@@ -2911,6 +2950,7 @@ function editHistoryEntry(id) {
     {key:'misc',   lbl:'Notes',              multi:true},
   ];
   const v0 = entry.hearts || 0;
+  const urls0 = getEntryPhotoUrls(entry);
   const heartsHtml = Array.from({length:5}, (_,i) => {
     const pos = i + 1;
     const pct = v0 >= pos ? '100%' : v0 >= pos - 0.5 ? '50%' : '0%';
@@ -2937,6 +2977,14 @@ function editHistoryEntry(id) {
                 />`
             }
           </div>`).join('')}
+        <div class="history-edit-field">
+          <div class="history-section-lbl">Photos</div>
+          <div class="review-photo-list" id="hef-photo-list-${id}">${editPhotoThumbsHtml(id, urls0)}</div>
+          <label class="photo-upload-label" style="margin-top:8px;font-size:12px;padding:6px 12px${urls0.length >= 4 ? ';display:none' : ''}" id="hef-photo-add-${id}">
+            📷 Add Photo
+            <input type="file" accept="image/*" style="display:none" onchange="addEditPhoto('${id}',this.files[0]);this.value=''">
+          </label>
+        </div>
         <div style="display:flex;justify-content:flex-end;margin-top:6px">
           <button class="history-edit-done-btn" onclick="doneEditingHistory('${id}')">✓ Done</button>
         </div>
