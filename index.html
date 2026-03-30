@@ -234,7 +234,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .history-entry{margin-bottom:12px}
 .history-header{display:flex;align-items:center;gap:12px;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:background .15s,border-color .15s}
 .history-entry:hover .history-header{border-color:var(--amber);background:var(--amber-bg)}
-.history-header.open{border-radius:var(--radius) var(--radius) 0 0;border-bottom-color:transparent;border-color:var(--amber);background:var(--amber-bg)}
+.history-header.open{border-radius:var(--radius) var(--radius) 0 0;border-color:var(--amber);border-bottom-color:var(--amber-bg);background:var(--amber-bg)}
 .history-body.open{border-color:var(--amber);background:var(--amber-bg)}
 .history-date-badge{background:var(--amber-bg);color:var(--amber-dark);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .history-preview{flex:1;font-size:13px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -526,6 +526,11 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .review-photo-thumb{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0}
 .review-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .review-photo-remove{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+/* ── Photo lightbox ── */
+#photo-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;align-items:center;justify-content:center;cursor:zoom-out}
+#photo-lightbox.open{display:flex}
+#photo-lightbox img{max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;user-select:none}
+.photo-zoomable{cursor:zoom-in}
 /* ── Heart hover preview ── */
 .heart-preview-val{font-size:12px;color:var(--amber-dark);font-weight:600;min-width:38px;align-self:center}
 /* ── History edit button ── */
@@ -1065,6 +1070,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 <div class="toast" id="toast"></div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
+<div id="photo-lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt="Full size photo"></div>
 
 <!-- In-page confirm / prompt dialog -->
 <div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;padding:20px">
@@ -1753,6 +1759,18 @@ function removeEditPhoto(event, id, idx) {
   renderEditPhotos(id);
 }
 
+// ── Photo lightbox ──
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('photo-lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('photo-lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
 // ── History photo helpers ──
 function getEntryPhotoUrls(e) {
   if (e.photoUrls && e.photoUrls.length) return e.photoUrls;
@@ -1762,9 +1780,11 @@ function getEntryPhotoUrls(e) {
 function buildHistoryPhotoSection(e) {
   const urls = getEntryPhotoUrls(e);
   if (!urls.length) return '';
-  if (urls.length === 1) return `<div class="history-photo-solo"><img class="history-photo" src="${urls[0]}" alt="Memory photo"></div>`;
-  return `<div class="history-photo-carousel" id="hpc-${e.id}" data-idx="0">
-    <img class="history-photo" src="${urls[0]}" alt="Memory photo">
+  if (urls.length === 1) return `<div class="history-photo-solo"><img class="history-photo photo-zoomable" src="${urls[0]}" alt="Memory photo" onclick="openLightbox(this.src);event.stopPropagation()"></div>`;
+  return `<div class="history-photo-carousel" id="hpc-${e.id}" data-idx="0"
+    ontouchstart="this._tx=event.touches[0].clientX"
+    ontouchend="var d=event.changedTouches[0].clientX-this._tx;if(Math.abs(d)>40)shiftHistoryPhoto('${e.id}',d<0?1:-1)">
+    <img class="history-photo photo-zoomable" src="${urls[0]}" alt="Memory photo" onclick="openLightbox(this.src);event.stopPropagation()">
     <div class="history-photo-nav">
       <button class="hpn-btn" onclick="shiftHistoryPhoto('${e.id}',-1);event.stopPropagation()">&#8249;</button>
       <span class="hpn-count">1 / ${urls.length}</span>
@@ -2253,7 +2273,7 @@ function addListDragListeners() {
 }
 
 // ─── REVIEW DRAFT ────────────────────────────────────────────────────────────
-const _REVIEW_DRAFT_IDS = ['r-well','r-stress','r-adjust','r-misc'];
+const _REVIEW_DRAFT_IDS = ['r-well','r-stress','r-adjust','r-misc','r-amanda','r-aidan','r-theme'];
 function loadReviewDraft() {
   try {
     const draft = JSON.parse(localStorage.getItem('ow-review-draft') || '{}');
@@ -2261,11 +2281,21 @@ function loadReviewDraft() {
       const el = document.getElementById(id);
       if (el && draft[id] && !el.value) { el.value = draft[id]; _growNotes(el); }
     });
+    if (draft.heartVal) setHeart(draft.heartVal);
+    if (draft.photoCount > 0) {
+      const preview = document.getElementById('r-photo-preview');
+      if (preview) {
+        preview.style.display = 'block';
+        preview.innerHTML = `<div style="font-size:12px;color:var(--amber-dark);margin-top:6px;padding:8px 12px;background:var(--amber-bg);border-radius:8px;border:1px solid var(--amber)">📷 You had ${draft.photoCount} photo${draft.photoCount > 1 ? 's' : ''} — re-add if needed</div>`;
+      }
+    }
   } catch(e) {}
 }
 function _saveReviewDraft() {
   const draft = {};
   _REVIEW_DRAFT_IDS.forEach(id => { const el = document.getElementById(id); if (el) draft[id] = el.value; });
+  draft.heartVal = heartVal;
+  draft.photoCount = _reviewPhotos.length;
   localStorage.setItem('ow-review-draft', JSON.stringify(draft));
 }
 
