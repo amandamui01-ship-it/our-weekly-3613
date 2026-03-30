@@ -1856,10 +1856,11 @@ function renderTodos() {
   const doneCollapsed = document.getElementById('done-items-list')?.style.display === 'none';
   const doneHtml = done.length ? `
     <div class="card todo-category">
-      <div class="todo-cat-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'" style="cursor:pointer">
-        ✅ Completed (${done.length}) <span style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px">tap to toggle</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleDone()">
+        <div class="card-title" style="margin-bottom:0">✅ Completed (${done.length})</div>
+        <span id="done-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">${doneCollapsed ? '▶' : '▼'}</span>
       </div>
-      <div class="todo-items" id="done-items-list" style="display:${doneCollapsed?'none':''}">${done.map(renderTodoItem).join('')}</div>
+      <div class="todo-items" id="done-items-list" style="display:${doneCollapsed?'none':''};margin-top:12px">${done.map(renderTodoItem).join('')}</div>
     </div>` : '';
 
   const addSectionHtml = `
@@ -3732,6 +3733,14 @@ function promptTarget(cat) {
     saveBudgetTargets();
     renderBudget();
   });
+}
+
+function toggleDone() {
+  const body = document.getElementById('done-items-list');
+  const chev = document.getElementById('done-chevron');
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
 function toggleQuickAdd() {
