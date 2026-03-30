@@ -2277,9 +2277,11 @@ function _growNotes(el) {
 
 let _mealExpanded = localStorage.getItem('ow-meal-expanded') === '1';
 function toggleMealPlan() {
+  const y = window.scrollY;
   _mealExpanded = !_mealExpanded;
   localStorage.setItem('ow-meal-expanded', _mealExpanded ? '1' : '0');
   _applyMealCollapse();
+  window.scrollTo(0, y);
 }
 function _applyMealCollapse() {
   const wrap = document.getElementById('plan-meals-wrap');
