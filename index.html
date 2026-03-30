@@ -2348,7 +2348,7 @@ function renderPlan() {
     if (lastTheme) {
       const themePills = lastTheme.split(',').map(t=>t.trim()).filter(Boolean).slice(0,2)
         .map(t=>`<span style="display:inline-block;padding:6px 18px;background:var(--surface);border:1.5px solid var(--amber);color:var(--amber-dark);border-radius:20px;font-size:13px;font-weight:700;letter-spacing:.03em;box-shadow:0 1px 6px rgba(0,0,0,.07)">${escHtml(t)}</span>`).join('');
-      themeBanner.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">${themePills}</div>`;
+      themeBanner.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">${themePills}</div>`;
       themeBanner.style.display = 'block';
     } else {
       themeBanner.style.display = 'none';
