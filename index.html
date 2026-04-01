@@ -3584,10 +3584,12 @@ function renderBudget() {
       ).join('');
   }
 
-  // For 3M/6M views, collect the last N calendar months across any year
+  // For 3M/6M views, collect the last N calendar months across any year.
+  // Start from the previous month so "3M" = last 3 complete months (not the current partial month).
   const getLastNMonthPeriods = n => {
     const periods = [];
     const d = new Date(); d.setDate(1);
+    d.setMonth(d.getMonth() - 1); // anchor to last completed month
     for (let i = 0; i < n; i++) {
       periods.push({ year: d.getFullYear().toString(), month: monthName(d) });
       d.setMonth(d.getMonth() - 1);
