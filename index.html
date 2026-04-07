@@ -899,6 +899,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <div class="card-title">Bucket List & Ideas 🌟</div>
     <div class="list-items" id="bucket-list"></div>
   </div>
+
+  <div class="card" id="past-adventures-card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togglePastAdventures()">
+      <div class="card-title" style="margin-bottom:0" id="past-adventures-title">✅ Past Adventures</div>
+      <span id="past-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
+    </div>
+    <div class="trip-grid" id="past-grid" style="display:none;margin-top:12px"></div>
+  </div>
 </div>
 
 <!-- ── HISTORY ── -->
@@ -2193,14 +2201,15 @@ function renderDates() {
       <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
     </div>`;
 
+  const pastCard = document.getElementById('past-adventures-card');
+  const pastGrid = document.getElementById('past-grid');
+  const pastTitle = document.getElementById('past-adventures-title');
   if (past.length) {
-    document.getElementById('trip-grid').innerHTML += `
-      <div style="grid-column:1/-1;margin-top:8px">
-        <div class="todo-cat-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'" style="cursor:pointer;margin-bottom:10px">
-          ✅ Past Adventures (${past.length}) <span style="font-size:11px;color:var(--text-3);font-weight:400;margin-left:4px">tap to toggle</span>
-        </div>
-        <div class="trip-grid" style="margin-bottom:0">${past.map(t => tripCardHtml(t, true)).join('')}</div>
-      </div>`;
+    pastCard.style.display = '';
+    pastTitle.textContent = `✅ Past Adventures (${past.length})`;
+    pastGrid.innerHTML = past.map(t => tripCardHtml(t, true)).join('');
+  } else {
+    pastCard.style.display = 'none';
   }
 
 
@@ -3803,6 +3812,14 @@ function toggleQuickAdd() {
 function toggleRecurring() {
   const body = document.getElementById('recurring-body');
   const chev = document.getElementById('rec-chevron');
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  if (chev) chev.textContent = open ? '▼' : '▶';
+}
+
+function togglePastAdventures() {
+  const body = document.getElementById('past-grid');
+  const chev = document.getElementById('past-chev');
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
   if (chev) chev.textContent = open ? '▼' : '▶';
