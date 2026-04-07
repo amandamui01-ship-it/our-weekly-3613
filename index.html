@@ -60,6 +60,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 #nav-menu .menu-divider{height:1px;background:var(--border-light);margin:4px 0}
 #nav-menu .menu-item.menu-util{color:var(--text-3);font-size:13px}
 #nav-menu .menu-item.menu-util:hover{color:var(--text-2)}
+@media(max-width:720px) and (min-width:541px){
+  #hamburger{display:flex;align-items:center}
+  .nav-tab{display:none}
+  .nav-dark-controls{display:none!important}
+  #signout-btn{display:none!important}
+  #nav{overflow:visible}
+}
 @media(max-width:540px){
   #hamburger{display:none!important}
   .nav-tab{display:none}
@@ -69,6 +76,14 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   #bottom-nav{display:flex!important}
   .page{padding-bottom:84px!important}
   .toast{bottom:72px}
+  /* Typography scaling */
+  .page-title{font-size:20px;margin-bottom:4px}
+  .page-sub{font-size:12px;margin-bottom:20px}
+  .welcome-greeting{font-size:20px}
+  .step-title{font-size:18px}
+  .coffee-name{font-size:22px}
+  .home-stat-val{font-size:17px}
+  .field label{font-size:13px;text-transform:none;letter-spacing:0}
 }
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
