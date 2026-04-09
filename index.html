@@ -3524,7 +3524,7 @@ function renderNextTrip() {
   document.getElementById('next-trip-name').textContent = `${next.dates} — ${next.label}`;
   const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
   document.getElementById('next-trip-days').textContent = days || 'Today!';
-  document.getElementById('next-trip-label').style.display = days ? '' : 'none';
+  document.getElementById('next-trip-label').style.visibility = days ? '' : 'hidden';
 }
 
 // ─── ANNIVERSARY COUNTDOWN ────────────────────────────────────────────────────
@@ -3534,7 +3534,7 @@ function renderAnniversary() {
   if (anniv < today) anniv = new Date(today.getFullYear() + 1, 9, 1);
   const days = Math.ceil((anniv - today) / 864e5);
   document.getElementById('anniv-days').textContent = days || '🎉 Today!';
-  document.getElementById('anniv-label').style.display = days ? '' : 'none';
+  document.getElementById('anniv-label').style.visibility = days ? '' : 'hidden';
 }
 
 // ─── JAPAN COUNTDOWN ─────────────────────────────────────────────────────────
