@@ -3593,18 +3593,17 @@ function renderBudget() {
   const yearSel = document.getElementById('b-filter-year');
   const filterYear = yearSel ? yearSel.value : new Date().getFullYear().toString();
   const curYear = new Date().getFullYear().toString();
-  const filterMonth = _budgetMonth;
   const filterPerson = document.getElementById('b-filter-person')?.value || '';
 
-  // Month pills
+  // Snap _budgetMonth to most recent month with data BEFORE deriving filterMonth
+  const available = [...new Set(expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month))];
+  const rangeViews = ['all', '3m', '6m'];
+  if (!rangeViews.includes(_budgetMonth) && available.length && !available.includes(_budgetMonth)) {
+    _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
+  }
+  const filterMonth = _budgetMonth; // derived AFTER snap so it reflects the corrected month
   const pillContainer = document.getElementById('budget-month-pills');
   if (pillContainer) {
-    const available = [...new Set(expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month))];
-    // If current _budgetMonth has no data for this year (and not in a range view), snap to most recent
-    const rangeViews = ['all', '3m', '6m'];
-    if (!rangeViews.includes(_budgetMonth) && available.length && !available.includes(filterMonth)) {
-      _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
-    }
     pillContainer.innerHTML =
       `<div class="bmonth-pill${'all'===_budgetMonth?' active':''}" onclick="setBudgetMonth('all')">All</div>` +
       `<div class="bmonth-pill${'6m'===_budgetMonth?' active':''}" onclick="setBudgetMonth('6m')">6M</div>` +
