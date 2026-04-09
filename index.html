@@ -85,6 +85,9 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .home-stat-val{font-size:17px}
   .field label{font-size:13px;text-transform:none;letter-spacing:0}
   .plan-slot-add-input{width:150px}
+  /* Bottom-sheet menu on mobile — slides up from bottom nav instead of dropping from top */
+  #nav-menu{position:fixed;top:auto;bottom:calc(60px + env(safe-area-inset-bottom,0px));border-bottom:none;border-top:1px solid var(--border);border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(45,36,23,.18);transform:translateY(16px);z-index:201}
+  #nav-menu.open{transform:translateY(0)}
 }
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
