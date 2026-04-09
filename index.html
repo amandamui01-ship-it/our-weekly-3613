@@ -70,7 +70,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 @media(max-width:540px){
   #hamburger{display:none!important}
   .nav-tab{display:none}
-  #nav{overflow:visible;position:relative}
+  #nav{overflow:visible;position:sticky}
   .nav-dark-controls{display:none!important}
   #signout-btn{display:none!important}
   #bottom-nav{display:flex!important}
@@ -84,6 +84,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .coffee-name{font-size:22px}
   .home-stat-val{font-size:17px}
   .field label{font-size:13px;text-transform:none;letter-spacing:0}
+  .plan-slot-add-input{width:150px}
 }
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
@@ -117,8 +118,8 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .field textarea,.field input[type=text],.field input[type=password],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
 .field textarea{min-height:60px;resize:none;overflow:hidden}
 .field textarea:focus,.field input[type=text]:focus,.field input[type=password]:focus,.field input[type=number]:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
-/* ── Prevent iOS auto-zoom on input focus (Safari zooms when font-size < 16px) ── */
-@supports (-webkit-touch-callout: none){
+/* ── Prevent auto-zoom on mobile input focus (browsers zoom when font-size < 16px) ── */
+@media(max-width:768px){
   input,textarea,select{font-size:16px!important}
 }
 
@@ -446,12 +447,12 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Bottom Nav (mobile) ── */
 #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom,0px)}
 .bnav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:8px 4px 6px;font-size:20px;cursor:pointer;color:var(--text-3);gap:1px;transition:color .15s;-webkit-tap-highlight-color:transparent}
-.bnav-item span{font-size:10px;font-weight:600;letter-spacing:-.2px}
+.bnav-item span{font-size:11px;font-weight:600;letter-spacing:-.2px}
 .bnav-item.active,.bnav-item.active span{color:var(--amber)}
 [data-theme="dark"] #bottom-nav{border-top-color:var(--border)}
 
 /* ── FAB ── */
-.fab{position:fixed;bottom:28px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--amber);color:white;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(191,124,54,.45);align-items:center;justify-content:center;z-index:190;transition:transform .15s,box-shadow .15s;line-height:1;font-weight:300}
+.fab{position:fixed;bottom:28px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--amber);color:white;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(191,124,54,.45);align-items:center;justify-content:center;z-index:201;transition:transform .15s,box-shadow .15s;line-height:1;font-weight:300}
 .fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(191,124,54,.55)}
 .fab:active{transform:scale(0.93)}
 @media(max-width:540px){.fab{bottom:72px;right:14px}}
@@ -719,13 +720,13 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
       <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
+      <div id="next-trip-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
     </div>
     <div class="card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8;margin-top:0">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Anniversary</div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">October 1st</div>
       <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
+      <div id="anniv-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
     </div>
   </div>
 
@@ -940,7 +941,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">Notes & Reminders</div>
     <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
-      style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:13px;font-family:inherit;background:var(--surface);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text)"
+      style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;background:var(--surface);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text)"
       onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
   </div>
 
@@ -998,7 +999,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
       <div id="bulk-cat-chips" style="flex:1;min-width:0"></div>
       <!-- Right: picker + button stacked -->
       <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-        <select id="bulk-person" class="bq-sel" style="width:110px;font-size:12px">
+        <select id="bulk-person" class="bq-sel" style="width:110px">
           <option value="Amanda">Amanda</option>
           <option value="Aidan">Aidan</option>
         </select>
@@ -1009,7 +1010,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
     <!-- Full-width hint + textarea -->
     <div style="font-size:11px;color:var(--text-3);margin-bottom:8px"><code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-size:10px">[date,] Category, description, amount, y/n</code></div>
     <textarea id="bulk-text" placeholder="Groceries, Costco run, 84.15, y&#10;3/20, Dining, Dinner out, 30.00, n&#10;Subscriptions, Spotify, 13.70, n"
-      style="width:100%;height:140px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:12px;font-family:monospace;resize:vertical;outline:none;background:var(--bg);color:var(--text);line-height:1.7"
+      style="width:100%;height:140px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:14px;font-family:monospace;resize:vertical;outline:none;background:var(--bg);color:var(--text);line-height:1.7"
       onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"
       oninput="renderBulkPreview()"></textarea>
     <div id="bulk-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:9px;overflow:hidden"></div>
@@ -1500,7 +1501,7 @@ function closeNavMenu() {
   document.getElementById('nav-menu')?.classList.remove('open');
 }
 document.addEventListener('click', e => {
-  if (!e.target.closest('#nav-menu') && !e.target.closest('#hamburger')) closeNavMenu();
+  if (!e.target.closest('#nav-menu') && !e.target.closest('#hamburger') && !e.target.closest('#bnav-more')) closeNavMenu();
 });
 
 function showPage(name) {
@@ -3520,6 +3521,7 @@ function renderNextTrip() {
   document.getElementById('next-trip-name').textContent = `${next.dates} — ${next.label}`;
   const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
   document.getElementById('next-trip-days').textContent = days || 'Today!';
+  document.getElementById('next-trip-label').style.display = days ? '' : 'none';
 }
 
 // ─── ANNIVERSARY COUNTDOWN ────────────────────────────────────────────────────
@@ -3529,6 +3531,7 @@ function renderAnniversary() {
   if (anniv < today) anniv = new Date(today.getFullYear() + 1, 9, 1);
   const days = Math.ceil((anniv - today) / 864e5);
   document.getElementById('anniv-days').textContent = days || '🎉 Today!';
+  document.getElementById('anniv-label').style.display = days ? '' : 'none';
 }
 
 // ─── JAPAN COUNTDOWN ─────────────────────────────────────────────────────────
@@ -3885,16 +3888,16 @@ function editExpense(id) {
   el.style.cssText = 'grid-column:1/-1;display:block;padding:8px 4px;background:var(--surface-warm);border-radius:8px';
   el.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center" onclick="event.stopPropagation()">
-      <select id="txe-person-${id}" class="bq-input" style="width:80px;font-size:12px;padding:4px 6px">
+      <select id="txe-person-${id}" class="bq-input" style="width:80px;padding:4px 6px">
         <option${e.person==='Amanda'?' selected':''}>Amanda</option>
         <option${e.person==='Aidan'?' selected':''}>Aidan</option>
       </select>
-      <select id="txe-cat-${id}" class="bq-input" style="font-size:12px;padding:4px 6px">
+      <select id="txe-cat-${id}" class="bq-input" style="padding:4px 6px">
         ${EXPENSE_CATS_LIST.map(c=>`<option${c===e.category?' selected':''}>${c}</option>`).join('')}
       </select>
-      <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;font-size:12px;padding:4px 8px">
-      <input id="txe-amt-${id}" type="number" step="0.01" value="${e.amount}" class="bq-input" style="width:90px;font-size:12px;padding:4px 8px">
-      <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="font-size:12px;padding:4px 8px">
+      <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;padding:4px 8px">
+      <input id="txe-amt-${id}" type="number" step="0.01" value="${e.amount}" class="bq-input" style="width:90px;padding:4px 8px">
+      <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="padding:4px 8px">
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> 50/50</label>
       <button class="trip-edit-save" onclick="commitExpenseEdit('${id}');event.stopPropagation()">Save</button>
       <button class="trip-edit-cancel" onclick="_cleanExpEdit();renderBudget();event.stopPropagation()">Cancel</button>
@@ -4029,15 +4032,15 @@ function editRecurring(id) {
   el.onclick = null;
   el.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;align-items:center">
-      <select id="rece-person-${id}" class="bq-input" style="width:80px;padding:4px 6px;font-size:12px">
+      <select id="rece-person-${id}" class="bq-input" style="width:80px;padding:4px 6px">
         <option${r.person==='Amanda'?' selected':''}>Amanda</option>
         <option${r.person==='Aidan'?' selected':''}>Aidan</option>
       </select>
-      <select id="rece-cat-${id}" class="bq-input" style="flex:1;min-width:110px;padding:4px 6px;font-size:12px">
+      <select id="rece-cat-${id}" class="bq-input" style="flex:1;min-width:110px;padding:4px 6px">
         ${REC_CATS.map(c=>`<option${c===r.category?' selected':''}>${c}</option>`).join('')}
       </select>
-      <input id="rece-amt-${id}" type="number" value="${r.amount}" class="bq-input" style="width:80px;padding:4px 6px;font-size:12px">
-      <input id="rece-desc-${id}" type="text" value="${escHtml(r.description||'')}" placeholder="Description (optional)" class="bq-input" style="flex:1;min-width:120px;padding:4px 6px;font-size:12px">
+      <input id="rece-amt-${id}" type="number" value="${r.amount}" class="bq-input" style="width:80px;padding:4px 6px">
+      <input id="rece-desc-${id}" type="text" value="${escHtml(r.description||'')}" placeholder="Description (optional)" class="bq-input" style="flex:1;min-width:120px;padding:4px 6px">
       <label style="font-size:12px;color:var(--text-2);display:flex;align-items:center;gap:4px;cursor:pointer">
         <input type="checkbox" id="rece-shared-${id}" ${r.shared?'checked':''}> 50/50
       </label>
