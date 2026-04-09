@@ -3595,9 +3595,11 @@ function renderBudget() {
   const curYear = new Date().getFullYear().toString();
   const filterPerson = document.getElementById('b-filter-person')?.value || '';
 
-  // Snap _budgetMonth to most recent month with data BEFORE deriving filterMonth
-  const available = [...new Set(expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month))];
+  // Always include the current month as a pill (even if empty) so users can add data to it
+  const thisMon = monthName(new Date());
+  const available = [...new Set([...expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month), thisMon])];
   const rangeViews = ['all', '3m', '6m'];
+  // Only snap away if on a month that has no data AND isn't the current month
   if (!rangeViews.includes(_budgetMonth) && available.length && !available.includes(_budgetMonth)) {
     _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
   }
