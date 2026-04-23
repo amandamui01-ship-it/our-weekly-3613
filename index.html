@@ -741,11 +741,13 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 <div class="page active" id="page-home">
 
   <div class="welcome-banner">
-    <div class="welcome-date" id="home-date-label"></div>
-    <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
-    <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
-      ✏️ Start This Week's Review →
-    </button>
+    <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:center">
+      <div class="welcome-date" id="home-date-label"></div>
+      <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
+      <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
+        ✏️ Start This Week's Review →
+      </button>
+    </div>
   </div>
 
 
@@ -1658,9 +1660,14 @@ function spawnBannerParticles() {
   if (!banner) return;
   banner.querySelectorAll('.banner-particle').forEach(p => p.remove());
   const season = [...document.body.classList].find(c => c.startsWith('season-'))?.replace('season-','') || 'fall';
-  const sets = { spring:['🌸','✨','🌸','✨','🌷'], summer:['☀️','✨','🌟','💛','🌻'], fall:['🍂','✨','🍁','🌟'], winter:['❄️','✨','⭐','❄️'] };
+  const sets = {
+    spring: ['🌸','🌷','🌺','🌼','🦋','✨','💐','🌿','🌱','🫧','🌸','🌷'],
+    summer: ['☀️','🌻','🌟','🍋','🌈','✨','🌴','🍦','⭐','🌊','🌻','☀️'],
+    fall:   ['🍂','🍁','🌟','🍄','🌾','✨','🍊','⭐','🌰','🍂','🍁','🌾'],
+    winter: ['❄️','⭐','✨','🌙','💫','🌨️','❄️','🕯️','⭐','✨','🌙','❄️']
+  };
   const icons = sets[season] || sets.fall;
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 14; i++) {
     const p = document.createElement('span');
     p.className = 'banner-particle';
     p.textContent = icons[i % icons.length];
@@ -3401,7 +3408,7 @@ function renderMoodWidget() {
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'aidan')">+ Set mood</button>`}
     </div>
     <div style="grid-column:1/-1;margin-top:8px">
-      <button class="spin-btn" style="width:100%;padding:9px 16px;font-size:13px" onclick="spinMood()">✨ Surprise us both!</button>
+      <button class="spin-btn" style="width:100%" onclick="spinMood()">✨ Surprise</button>
     </div>`;
 }
 
