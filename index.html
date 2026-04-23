@@ -331,7 +331,13 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .banner-heart-graphic{font-size:30px;color:rgba(245,194,122,.55);line-height:1;margin-bottom:10px;letter-spacing:0;user-select:none}
 
 /* ── Floating banner particles ── */
-@keyframes banner-float{0%{transform:translateY(0) rotate(0deg) scale(.6);opacity:0}18%{opacity:.85}82%{opacity:.65}100%{transform:translateY(-80px) rotate(25deg) scale(.3);opacity:0}}
+@keyframes banner-float{
+  0%  {transform:translateY(0) translateX(0) scale(.65) rotate(0deg);opacity:0}
+  18% {opacity:.8}
+  55% {transform:translateY(-42px) translateX(var(--dx,8px)) scale(.75) rotate(18deg);opacity:.75}
+  82% {opacity:.55}
+  100%{transform:translateY(-88px) translateX(var(--dx2,-4px)) scale(.28) rotate(32deg);opacity:0}
+}
 .banner-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;animation-fill-mode:backwards}
 
@@ -1678,6 +1684,9 @@ function spawnBannerParticles() {
     const slotW = 88 / count;
     p.style.left = (6 + i * slotW + Math.random() * slotW) + '%';
     p.style.bottom = (Math.random() * 35) + '%';
+    const dir = Math.random() > 0.5 ? 1 : -1;
+    p.style.setProperty('--dx',  (dir * (6 + Math.random() * 14)) + 'px');
+    p.style.setProperty('--dx2', (dir * (2 + Math.random() * 8) * -1) + 'px');
     p.style.fontSize = (18 + Math.random() * 14) + 'px';
     p.style.animationDuration = (8 + Math.random() * 8) + 's';
     p.style.animationDelay = (Math.random() * 14) + 's';
