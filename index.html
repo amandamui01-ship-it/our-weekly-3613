@@ -148,6 +148,8 @@ body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--borde
 .welcome-banner{background:linear-gradient(135deg,#2d2417 0%,#5c3c1e 100%);border-radius:18px;padding:36px 40px;color:white;margin-bottom:20px;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center}
 .welcome-banner::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(191,124,54,.3) 0%,transparent 70%);pointer-events:none}
 .welcome-date{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.55;margin-bottom:8px}
+#home-review-btn{transition:background .2s,transform .15s,box-shadow .2s}
+#home-review-btn:hover{background:rgba(255,255,255,.28)!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:800;line-height:1.25;margin-bottom:22px}
 .welcome-greeting span{color:#f5c27a}
 .home-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
@@ -325,9 +327,23 @@ body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--borde
 .confetti-dot{position:absolute;width:16px;height:16px;border-radius:50%;opacity:0}
 @keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
 
+/* ── Beating heart ── */
+@keyframes heartbeat{0%,70%,100%{transform:scale(1)}14%{transform:scale(1.4)}28%{transform:scale(1.1)}42%{transform:scale(1.3)}}
+.heart-beat{display:inline-block;animation:heartbeat 2s ease-in-out infinite}
+
+/* ── Floating banner particles ── */
+@keyframes banner-float{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:.9}100%{transform:translateY(-90px) rotate(30deg) scale(.5);opacity:0}}
+.banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;z-index:0}
+
+/* ── Stat count-up ── */
+@keyframes stat-pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.stat-popping{animation:stat-pop .4s cubic-bezier(.36,.07,.19,.97) both}
+
 /* ── Japan Countdown ── */
 .japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:18px 18px;margin-bottom:14px;position:relative;overflow:hidden}
 .japan-card::before{content:'🗾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
+@keyframes japan-shimmer{0%{transform:translateX(-120%) skewX(-15deg)}100%{transform:translateX(320%) skewX(-15deg)}}
+.japan-card::after{content:'';position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(to right,transparent,rgba(255,255,255,.07),transparent);animation:japan-shimmer 5s ease-in-out infinite;animation-delay:3s;pointer-events:none}
 .japan-card-label{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:800;color:rgba(255,255,255,.85);margin-bottom:4px;letter-spacing:0}
 .japan-card-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px}
 .japan-countdown{display:flex;align-items:center;justify-content:center;gap:6px}
@@ -723,7 +739,7 @@ body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--borde
 
   <div class="welcome-banner">
     <div class="welcome-date" id="home-date-label"></div>
-    <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
+    <div class="welcome-greeting" id="welcome-greeting"><span>Amanda <span class="heart-beat">♥</span> Aidan!</span></div>
     <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
       ✏️ Start This Week's Review →
     </button>
@@ -1617,6 +1633,44 @@ function showPage(name) {
   }
 }
 
+// ─── HOME HELPERS ────────────────────────────────────────────────────────────
+function countUp(el, target, prefix = '', suffix = '') {
+  if (!el || isNaN(target)) return;
+  el.classList.remove('stat-popping');
+  void el.offsetWidth;
+  el.classList.add('stat-popping');
+  const dur = Math.min(600, 100 + target * 18);
+  const start = Date.now();
+  const tick = () => {
+    const p = Math.min(1, (Date.now() - start) / dur);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = prefix + Math.round(ease * target).toLocaleString() + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function spawnBannerParticles() {
+  const banner = document.querySelector('.welcome-banner');
+  if (!banner) return;
+  banner.querySelectorAll('.banner-particle').forEach(p => p.remove());
+  const season = [...document.body.classList].find(c => c.startsWith('season-'))?.replace('season-','') || 'fall';
+  const sets = { spring:['🌸','✨','🌸','✨','🌷'], summer:['☀️','✨','🌟','💛','🌻'], fall:['🍂','✨','🍁','🌟'], winter:['❄️','✨','⭐','❄️'] };
+  const icons = sets[season] || sets.fall;
+  for (let i = 0; i < 9; i++) {
+    const p = document.createElement('span');
+    p.className = 'banner-particle';
+    p.textContent = icons[i % icons.length];
+    p.style.left = (8 + Math.random() * 84) + '%';
+    p.style.bottom = (Math.random() * 30) + '%';
+    p.style.fontSize = (10 + Math.random() * 10) + 'px';
+    p.style.animationDuration = (4 + Math.random() * 5) + 's';
+    p.style.animationDelay = (Math.random() * 6) + 's';
+    p.style.opacity = '0';
+    banner.appendChild(p);
+  }
+}
+
 // ─── HOME ────────────────────────────────────────────────────────────────────
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1634,9 +1688,9 @@ function homeNavBtn() {
 function renderHome() {
   const now = new Date();
   document.getElementById('home-date-label').textContent =
-    `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   document.getElementById('welcome-greeting').innerHTML =
-    `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda & Aidan!</span>`;
+    `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda <span class="heart-beat">♥</span> Aidan!</span>`;
 
   const isWeekend = now.getDay() === 0 || now.getDay() === 6;
   const reviewBtn = document.getElementById('home-review-btn');
@@ -1644,7 +1698,10 @@ function renderHome() {
     ? '<div style="line-height:1.2">☕ It\'s Review Day!<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">Grab a coffee and let\'s do this.</div></div>'
     : '🗓️ See This Week →';
 
-  document.getElementById('stat-todos').textContent = todos.filter(t => !t.done).length;
+  spawnBannerParticles();
+
+  const todosCount = todos.filter(t => !t.done).length;
+  countUp(document.getElementById('stat-todos'), todosCount);
 
   const _today = new Date(); _today.setHours(0,0,0,0);
   const _sortedTrips = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate));
@@ -1673,8 +1730,7 @@ function renderHome() {
       </div>`;
   // Streak
   const streak = getStreak();
-  const streakEl = document.getElementById('stat-streak');
-  if (streakEl) streakEl.textContent = streak;
+  countUp(document.getElementById('stat-streak'), streak);
   // Budget stat: current month spending (matches budget tab logic)
   const _nowYear = new Date().getFullYear().toString();
   const _nowMonth = monthName(new Date());
@@ -1682,9 +1738,8 @@ function renderHome() {
     .filter(e => e.date.startsWith(_nowYear) && e.month === _nowMonth && !EXPENSE_CATS_EXCL.has(e.category))
     .reduce((s, e) => s + e.amount, 0);
   const _budgetEl = document.getElementById('stat-budget');
-  if (_budgetEl) _budgetEl.textContent = _monthSpend > 0
-    ? '$' + Math.round(_monthSpend).toLocaleString()
-    : '—';
+  if (_budgetEl && _monthSpend > 0) countUp(_budgetEl, Math.round(_monthSpend), '$');
+  else if (_budgetEl) _budgetEl.textContent = '—';
 
   renderPhotoWidget();
   renderMoodWidget();
