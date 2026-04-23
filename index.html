@@ -3591,9 +3591,7 @@ function renderNextTrip() {
   card.style.display = '';
   document.getElementById('next-trip-name').textContent = `${next.dates} — ${next.label}`;
   const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
-  const daysStr = days ? String(days) : 'Today!';
-  document.getElementById('next-trip-days').innerHTML = daysStr.split('').map((c, i) =>
-    `<span class="flip-digit" style="animation-delay:${i * 0.08}s">${c}</span>`).join('');
+  document.getElementById('next-trip-days').textContent = days || 'Today!';
   document.getElementById('next-trip-label').style.visibility = days ? '' : 'hidden';
 }
 
