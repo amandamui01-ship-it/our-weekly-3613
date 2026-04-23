@@ -332,7 +332,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 
 /* ── Floating banner particles ── */
 @keyframes banner-float{0%{transform:translateY(0) rotate(0deg) scale(.6);opacity:0}18%{opacity:.85}82%{opacity:.65}100%{transform:translateY(-80px) rotate(25deg) scale(.3);opacity:0}}
-.banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;animation-fill-mode:backwards;z-index:0}
+.banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;animation-fill-mode:backwards}
 
 /* ── Mood spin button ── */
 .mood-spin-btn{font-size:11px;color:var(--text-3);background:none;border:1px dashed var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;margin-top:5px;width:100%;font-family:inherit;transition:color .15s,border-color .15s}
@@ -1677,7 +1677,7 @@ function spawnBannerParticles() {
     p.style.animationDuration = (4 + Math.random() * 5) + 's';
     p.style.animationDelay = (Math.random() * 6) + 's';
     p.style.opacity = '0';
-    banner.appendChild(p);
+    banner.insertBefore(p, banner.firstChild);
   }
 }
 
