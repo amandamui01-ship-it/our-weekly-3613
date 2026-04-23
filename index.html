@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#bf7c36">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700&family=Lora:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&family=Satisfy&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -123,7 +123,7 @@ body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--borde
 
 /* ── Typography ── */
 .page-title{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center}
-.page-sub{font-family:'Caveat',cursive;font-size:17px;font-weight:500;color:var(--text-3);margin-bottom:28px;text-align:center;letter-spacing:.01em}
+.page-sub{font-family:'Satisfy',cursive;font-size:17px;font-weight:500;color:var(--text-3);margin-bottom:28px;text-align:center;letter-spacing:.01em}
 
 /* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
@@ -1674,7 +1674,7 @@ function renderHome() {
   // Streak
   const streak = getStreak();
   const streakEl = document.getElementById('stat-streak');
-  if (streakEl) streakEl.textContent = streak > 0 ? streak : '—';
+  if (streakEl) streakEl.textContent = streak;
   // Budget stat: current month spending (matches budget tab logic)
   const _nowYear = new Date().getFullYear().toString();
   const _nowMonth = monthName(new Date());
