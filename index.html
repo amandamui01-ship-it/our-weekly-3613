@@ -900,6 +900,20 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   <div class="page-sub">All the good stuff to look forward to. 🎉</div>
 
   <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleAddDate()">
+      <div class="card-title" style="margin-bottom:0">Add a Date ✨</div>
+      <span id="add-date-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">▼</span>
+    </div>
+    <div id="add-date-form" style="margin-top:12px">
+      <div class="add-trip-form" style="margin-top:0;padding-top:0;border-top:none">
+        <input type="text" id="new-trip-dates" placeholder="Dates (e.g. Jun 5–7)">
+        <input type="text" id="new-trip-name" placeholder="Trip or event name">
+        <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
       <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px">📅 Export to Calendar</button>
@@ -2215,12 +2229,7 @@ function renderDates() {
     </div>`;
   };
 
-  document.getElementById('trip-grid').innerHTML = yearPickerHtml + upcoming.map(t => tripCardHtml(t, false)).join('') + `
-    <div class="add-trip-form">
-      <input type="text" id="new-trip-dates"  placeholder="Dates (e.g. Jun 5–7)">
-      <input type="text" id="new-trip-name"   placeholder="Trip or event name">
-      <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
-    </div>`;
+  document.getElementById('trip-grid').innerHTML = yearPickerHtml + upcoming.map(t => tripCardHtml(t, false)).join('');
 
   const pastCard = document.getElementById('past-adventures-card');
   const pastGrid = document.getElementById('past-grid');
@@ -3849,6 +3858,14 @@ function toggleQuickAdd() {
 function toggleRecurring() {
   const body = document.getElementById('recurring-body');
   const chev = document.getElementById('rec-chevron');
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  if (chev) chev.textContent = open ? '▼' : '▶';
+}
+
+function toggleAddDate() {
+  const body = document.getElementById('add-date-form');
+  const chev = document.getElementById('add-date-chev');
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
   if (chev) chev.textContent = open ? '▼' : '▶';
