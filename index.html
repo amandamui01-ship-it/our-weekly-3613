@@ -152,11 +152,11 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 #home-review-btn:hover{background:rgba(255,255,255,.28)!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .welcome-greeting{font-family:'Playfair Display',Georgia,serif;font-size:30px;font-weight:800;line-height:1.25;margin-bottom:22px}
 .welcome-greeting span{color:#f5c27a}
-.home-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
-.home-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s;text-align:center}
+.home-stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;justify-content:center}
+.home-stat{background:var(--amber-bg);border:1px solid rgba(191,124,54,.3);border-radius:20px;padding:7px 16px;box-shadow:none;display:flex;align-items:center;gap:8px;min-width:0}
 .home-stat[onclick]:hover{border-color:var(--amber);box-shadow:var(--shadow-lg)}
-.home-stat-val{font-size:20px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:3px}
-.home-stat-lbl{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+.home-stat-val{font-size:15px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:0}
+.home-stat-lbl{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
 
 /* ── Coffee Roulette ── */
 .coffee-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;margin-bottom:20px;text-align:center;box-shadow:var(--shadow)}
@@ -350,7 +350,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .stat-popping{animation:stat-pop .4s cubic-bezier(.36,.07,.19,.97) both}
 
 /* ── Japan Countdown ── */
-.japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:18px 18px;margin-bottom:14px;position:relative;overflow:hidden}
+.japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:28px 24px;margin-bottom:14px;position:relative;overflow:hidden}
 .japan-card::before{content:'🗾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
 @keyframes japan-shimmer{0%{transform:translateX(-120%) skewX(-15deg)}100%{transform:translateX(320%) skewX(-15deg)}}
 .japan-card::after{content:'';position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(to right,transparent,rgba(255,255,255,.07),transparent);animation:japan-shimmer 5s ease-in-out infinite;animation-delay:3s;pointer-events:none}
@@ -358,7 +358,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .japan-card-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px}
 .japan-countdown{display:flex;align-items:center;justify-content:center;gap:6px}
 .japan-unit{display:flex;flex-direction:column;align-items:center;min-width:68px}
-.japan-num{font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:800;color:white;line-height:1;letter-spacing:-.02em}
+.japan-num{font-family:'Playfair Display',Georgia,serif;font-size:52px;font-weight:800;color:white;line-height:1;letter-spacing:-.02em}
 .japan-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-top:5px}
 .japan-sep{font-size:36px;font-weight:300;color:rgba(255,255,255,.2);margin-bottom:14px;line-height:1}
 
@@ -521,7 +521,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 /* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
-  .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:repeat(2,1fr)!important;grid-template-rows:auto auto!important}
+  .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:unset!important;grid-template-rows:unset!important}
   .home-2col{grid-template-columns:1fr!important}
   .budget-top-row{grid-template-columns:1fr}
   .budget-snapshot{grid-template-columns:1fr 1fr}
@@ -779,11 +779,18 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 
   <!-- Countdown widgets row -->
   <div class="home-countdown-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;align-items:start">
-    <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
-      <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
-      <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
-      <div id="next-trip-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
+    <div class="card boarding-pass" id="next-trip-card" style="padding:0;overflow:hidden;border:2px dashed var(--amber);background:var(--surface)">
+      <div style="display:flex;align-items:stretch;min-height:90px">
+        <div style="flex:1;padding:14px 16px;border-right:2px dashed var(--border)">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:6px">Next Adventure 🗺️</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="next-trip-name">—</div>
+          <div style="font-size:10px;color:var(--text-3)">✈️ departing soon</div>
+        </div>
+        <div style="width:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 10px;background:var(--amber-bg);flex-shrink:0">
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:34px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
+          <div id="next-trip-label" style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:4px">days away</div>
+        </div>
+      </div>
     </div>
     <div class="card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8;margin-top:0">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Anniversary</div>
