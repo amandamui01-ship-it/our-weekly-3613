@@ -116,10 +116,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .card+.card{margin-top:16px}
 .card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px;text-align:center}
 
-/* ── Seasonal theming ── */
-body.season-spring{--bg:#f2f8f3;--surface:#fafff9;--surface-warm:#f5fdf4;--border:#cfe0cc;--border-light:#e0f0de}
-body.season-summer{--bg:#fdf9ec;--surface:#fffef5;--surface-warm:#fffcef;--border:#e8d8b0;--border-light:#f2e9cc}
-body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--border:#cdd8ea;--border-light:#dde6f5}
+/* ── Seasonal theming (light mode only — dark mode has its own palette) ── */
+html:not([data-theme="dark"]) body.season-spring{--bg:#f2f8f3;--surface:#fafff9;--surface-warm:#f5fdf4;--border:#cfe0cc;--border-light:#e0f0de}
+html:not([data-theme="dark"]) body.season-summer{--bg:#fdf9ec;--surface:#fffef5;--surface-warm:#fffcef;--border:#e8d8b0;--border-light:#f2e9cc}
+html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--border:#cdd8ea;--border-light:#dde6f5}
 
 /* ── Typography ── */
 .page-title{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center}
@@ -327,13 +327,16 @@ body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--borde
 .confetti-dot{position:absolute;width:16px;height:16px;border-radius:50%;opacity:0}
 @keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
 
-/* ── Beating heart ── */
-@keyframes heartbeat{0%,70%,100%{transform:scale(1)}14%{transform:scale(1.4)}28%{transform:scale(1.1)}42%{transform:scale(1.3)}}
-.heart-beat{display:inline-block;animation:heartbeat 2s ease-in-out infinite}
+/* ── Banner heart graphic ── */
+.banner-heart-graphic{font-size:30px;color:rgba(245,194,122,.55);line-height:1;margin-bottom:10px;letter-spacing:0;user-select:none}
 
 /* ── Floating banner particles ── */
-@keyframes banner-float{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:.9}100%{transform:translateY(-90px) rotate(30deg) scale(.5);opacity:0}}
-.banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;z-index:0}
+@keyframes banner-float{0%{transform:translateY(0) rotate(0deg) scale(.6);opacity:0}18%{opacity:.85}82%{opacity:.65}100%{transform:translateY(-80px) rotate(25deg) scale(.3);opacity:0}}
+.banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;animation-fill-mode:backwards;z-index:0}
+
+/* ── Mood spin button ── */
+.mood-spin-btn{font-size:11px;color:var(--text-3);background:none;border:1px dashed var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;margin-top:5px;width:100%;font-family:inherit;transition:color .15s,border-color .15s}
+.mood-spin-btn:hover{color:var(--amber);border-color:var(--amber)}
 
 /* ── Stat count-up ── */
 @keyframes stat-pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
@@ -739,7 +742,8 @@ body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--borde
 
   <div class="welcome-banner">
     <div class="welcome-date" id="home-date-label"></div>
-    <div class="welcome-greeting" id="welcome-greeting"><span>Amanda <span class="heart-beat">♥</span> Aidan!</span></div>
+    <div class="banner-heart-graphic">♥</div>
+    <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
     <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
       ✏️ Start This Week's Review →
     </button>
@@ -1690,7 +1694,7 @@ function renderHome() {
   document.getElementById('home-date-label').textContent =
     `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   document.getElementById('welcome-greeting').innerHTML =
-    `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda <span class="heart-beat">♥</span> Aidan!</span>`;
+    `${DAY_GREETINGS[now.getDay()]}<br><span>Amanda & Aidan!</span>`;
 
   const isWeekend = now.getDay() === 0 || now.getDay() === 6;
   const reviewBtn = document.getElementById('home-review-btn');
@@ -3390,12 +3394,14 @@ function renderMoodWidget() {
       ${amanda
         ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'amanda')" title="Change mood">${amanda}</button>`
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'amanda')">+ Set mood</button>`}
+      <button class="mood-spin-btn" onclick="spinMood('amanda')">✨ Surprise me</button>
     </div>
     <div class="mood-person">
       <div class="mood-person-name" style="color:var(--blue)">Aidan</div>
       ${aidan
         ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'aidan')" title="Change mood">${aidan}</button>`
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'aidan')">+ Set mood</button>`}
+      <button class="mood-spin-btn" onclick="spinMood('aidan')">✨ Surprise me</button>
     </div>`;
 }
 
@@ -3431,6 +3437,11 @@ function pickMood(person, emoji) {
   mood = { ...mood, [person]: emoji, week: getISOWeek() };
   saveMood();
   renderMoodWidget();
+}
+
+function spinMood(person) {
+  const emoji = MOOD_EMOJIS[Math.floor(Math.random() * MOOD_EMOJIS.length)];
+  pickMood(person, emoji);
 }
 
 // ─── STREAK ───────────────────────────────────────────────────────────────────
