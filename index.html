@@ -1670,12 +1670,14 @@ function spawnBannerParticles() {
     winter: ['❄️','⭐','✨','🌙','💫','🌨️','❄️','🕯️','⭐','✨','🌙','❄️']
   };
   const icons = sets[season] || sets.fall;
-  for (let i = 0; i < 14; i++) {
+  const count = 14;
+  for (let i = 0; i < count; i++) {
     const p = document.createElement('span');
     p.className = 'banner-particle';
     p.textContent = icons[i % icons.length];
-    p.style.left = (8 + Math.random() * 84) + '%';
-    p.style.bottom = (Math.random() * 30) + '%';
+    const slotW = 88 / count;
+    p.style.left = (6 + i * slotW + Math.random() * slotW * 0.8) + '%';
+    p.style.bottom = (Math.random() * 35) + '%';
     p.style.fontSize = (18 + Math.random() * 14) + 'px';
     p.style.animationDuration = (4 + Math.random() * 5) + 's';
     p.style.animationDelay = (Math.random() * 6) + 's';
