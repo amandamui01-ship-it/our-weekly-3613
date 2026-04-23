@@ -332,6 +332,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 
 /* ── Floating banner particles ── */
 @keyframes banner-float{0%{transform:translateY(0) rotate(0deg) scale(.6);opacity:0}18%{opacity:.85}82%{opacity:.65}100%{transform:translateY(-80px) rotate(25deg) scale(.3);opacity:0}}
+.banner-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;animation-fill-mode:backwards}
 
 /* ── Mood spin button ── */
@@ -1658,7 +1659,9 @@ function countUp(el, target, prefix = '', suffix = '') {
 function spawnBannerParticles() {
   const banner = document.querySelector('.welcome-banner');
   if (!banner) return;
-  banner.querySelectorAll('.banner-particle').forEach(p => p.remove());
+  let pc = banner.querySelector('.banner-particles');
+  if (!pc) { pc = document.createElement('div'); pc.className = 'banner-particles'; banner.insertBefore(pc, banner.firstChild); }
+  pc.innerHTML = '';
   const season = [...document.body.classList].find(c => c.startsWith('season-'))?.replace('season-','') || 'fall';
   const sets = {
     spring: ['🌸','🌷','🌺','🌼','🦋','✨','💐','🌿','🌱','🫧','🌸','🌷'],
@@ -1677,7 +1680,7 @@ function spawnBannerParticles() {
     p.style.animationDuration = (4 + Math.random() * 5) + 's';
     p.style.animationDelay = (Math.random() * 6) + 's';
     p.style.opacity = '0';
-    banner.insertBefore(p, banner.firstChild);
+    pc.appendChild(p);
   }
 }
 
