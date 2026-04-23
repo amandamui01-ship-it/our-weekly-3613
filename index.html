@@ -742,7 +742,6 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 
   <div class="welcome-banner">
     <div class="welcome-date" id="home-date-label"></div>
-    <div class="banner-heart-graphic">♥</div>
     <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
     <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
       ✏️ Start This Week's Review →
@@ -3394,14 +3393,15 @@ function renderMoodWidget() {
       ${amanda
         ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'amanda')" title="Change mood">${amanda}</button>`
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'amanda')">+ Set mood</button>`}
-      <button class="mood-spin-btn" onclick="spinMood('amanda')">✨ Surprise me</button>
     </div>
     <div class="mood-person">
       <div class="mood-person-name" style="color:var(--blue)">Aidan</div>
       ${aidan
         ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'aidan')" title="Change mood">${aidan}</button>`
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'aidan')">+ Set mood</button>`}
-      <button class="mood-spin-btn" onclick="spinMood('aidan')">✨ Surprise me</button>
+    </div>
+    <div style="grid-column:1/-1;margin-top:8px">
+      <button class="spin-btn" style="width:100%;padding:9px 16px;font-size:13px" onclick="spinMood()">✨ Surprise us both!</button>
     </div>`;
 }
 
@@ -3440,8 +3440,14 @@ function pickMood(person, emoji) {
 }
 
 function spinMood(person) {
-  const emoji = MOOD_EMOJIS[Math.floor(Math.random() * MOOD_EMOJIS.length)];
-  pickMood(person, emoji);
+  const pick = () => MOOD_EMOJIS[Math.floor(Math.random() * MOOD_EMOJIS.length)];
+  if (person) {
+    pickMood(person, pick());
+  } else {
+    mood = { ...mood, amanda: pick(), aidan: pick(), week: getISOWeek() };
+    saveMood();
+    renderMoodWidget();
+  }
 }
 
 // ─── STREAK ───────────────────────────────────────────────────────────────────
