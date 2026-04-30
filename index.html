@@ -4185,7 +4185,14 @@ function renderRecurring() {
     el.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 0">No recurring expenses saved yet.</div>';
     return;
   }
-  el.innerHTML = recurringItems.map(r => `
+  const month = monthName(new Date());
+  const year  = new Date().getFullYear().toString();
+  el.innerHTML = recurringItems.map(r => {
+    const loaded = expenses.some(e =>
+      e.person === r.person && e.description === r.description &&
+      e.month === month && e.date.startsWith(year)
+    );
+    return `
     <div class="recurring-item" id="rec-item-${r.id}" onclick="editRecurring('${r.id}')" style="cursor:pointer">
       <span class="rec-person-badge ${r.person}">${r.person==='Aidan'?'AF':'AM'}</span>
       <div class="rec-info">
@@ -4193,8 +4200,10 @@ function renderRecurring() {
         ${r.description?`<div class="rec-meta">${escHtml(r.description)}</div>`:''}
       </div>
       <span class="rec-amt">${fmt(r.amount)}</span>
+      <button class="rec-load-one" title="${loaded?'Already loaded this month':'Add to this month'}" onclick="loadSingleRecurring('${r.id}');event.stopPropagation()" ${loaded?'disabled':''} style="background:none;border:none;cursor:${loaded?'default':'pointer'};font-size:15px;padding:0 3px;line-height:1;opacity:${loaded?'0.5':'1'};color:${loaded?'var(--sage)':'var(--text-3)'};">${loaded?'✓':'＋'}</button>
       <button class="rec-del" onclick="deleteRecurring('${r.id}');event.stopPropagation()">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function addRecurring() {
@@ -4289,6 +4298,29 @@ function loadRecurring() {
   } else {
     showToast('Already loaded this month!');
   }
+}
+
+function loadSingleRecurring(id) {
+  const r = recurringItems.find(x => x.id === id);
+  if (!r) return;
+  const today = new Date().toISOString().slice(0,10);
+  const month = monthName(new Date());
+  const year  = new Date().getFullYear().toString();
+  const already = expenses.some(e =>
+    e.person === r.person && e.description === r.description &&
+    e.month === month && e.date.startsWith(year)
+  );
+  if (already) { showToast('Already loaded this month!'); return; }
+  const item = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
+    date:today, month, person:r.person, category:r.category,
+    description:r.description, amount:r.amount, shared:r.shared};
+  expenses.push(item);
+  db.collection('state').doc('expenses').update({
+    items: firebase.firestore.FieldValue.arrayUnion(item)
+  }).catch(_onSaveErr);
+  renderBudget();
+  renderRecurring();
+  showToast(`✅ Added ${r.description}`);
 }
 
 function _evalAmount(str) {
