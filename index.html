@@ -376,7 +376,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-day-slots{display:flex;flex-direction:column;gap:0}
 .plan-slot{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:7px 12px;border-bottom:1px solid var(--border-light);transition:background .1s}
 .plan-slot:last-child{border-bottom:none}
-.plan-slot-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid transparent;flex-shrink:0}
+.plan-slot-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer;transition:all .15s;border:1.5px solid transparent;flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .plan-slot-chip.gym    {background:#eaf2eb;color:#8ab89a;border-color:#c3ddc7}
 .plan-slot-chip.gym:hover    {background:#2e5233;color:white;border-color:#2e5233}
 .plan-slot-chip.gym.on {background:#2e5233;color:white;border-color:#2e5233}
@@ -402,6 +402,24 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-add-event-btn{display:none;align-items:center;justify-content:center;width:20px;height:20px;border-radius:99px;border:1.5px dashed var(--border);background:var(--surface-warm);color:var(--text-3);font-size:13px;cursor:pointer;line-height:1;transition:all .15s;flex-shrink:0}
 .plan-add-event-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);border-style:solid}
 .plan-day:hover .plan-add-event-btn{display:inline-flex}
+/* Auto-injected trip events */
+.plan-slot-trip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;background:var(--amber-bg);color:var(--amber-dark);border:1.5px solid #f0d4a8;cursor:default;user-select:none}
+[data-theme="dark"] .plan-slot-trip{background:#2a1e0c;color:#d4974a;border-color:#4a3018}
+/* This Week's Focus — todo picker */
+.week-todo-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;background:var(--surface-warm);border:1px solid var(--border-light);margin-bottom:6px}
+.week-todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;transition:all .15s;background:white}
+.week-todo-item.done-item .week-todo-cb{background:var(--sage);border-color:var(--sage)}
+.week-todo-item.done-item .week-todo-text{text-decoration:line-through;color:var(--text-3)}
+.week-todo-text{font-size:13px;color:var(--text);flex:1}
+.week-todo-cat{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0}
+.week-todo-unpin{font-size:16px;color:var(--text-3);cursor:pointer;opacity:.4;transition:opacity .15s;background:none;border:none;padding:2px 6px;line-height:1;flex-shrink:0}
+.week-todo-unpin:hover{opacity:1;color:var(--coral)}
+.week-todo-picker-wrap{border-top:1px dashed var(--border);margin-top:12px;padding-top:12px}
+.week-todo-picker-cat{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px}
+.week-todo-picker-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:background .12s}
+.week-todo-picker-item:hover{background:var(--amber-bg)}
+.week-todo-picker-item input[type=checkbox]{accent-color:var(--amber);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+.week-todo-picker-item label{font-size:13px;color:var(--text);cursor:pointer;flex:1}
 
 .plan-meals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .plan-meal-row{display:flex;flex-direction:column;gap:4px;background:var(--surface-warm);border:1px solid var(--border-light);border-radius:10px;padding:12px 14px}
@@ -549,6 +567,9 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 [data-theme="dark"] .plan-slot-chip.gym    {background:#1c2e1e;color:#6a9870;border-color:#2a4a2e}
 [data-theme="dark"] .plan-slot-chip.date   {background:#2e1a18;color:#c07060;border-color:#4a2820}
 [data-theme="dark"] .plan-slot-chip.friends{background:#181e30;color:#7090c8;border-color:#28305a}
+[data-theme="dark"] .plan-slot-chip.gym.on    {background:#2e5233;color:white;border-color:#2e5233}
+[data-theme="dark"] .plan-slot-chip.date.on   {background:#8a2a18;color:white;border-color:#8a2a18}
+[data-theme="dark"] .plan-slot-chip.friends.on{background:#1a3d6e;color:white;border-color:#1a3d6e}
 [data-theme="dark"] .budget-quickadd-card{border-color:#3a2a14!important}
 [data-theme="dark"] #bulk-errors{background:rgba(217,106,82,.12)!important;border-color:#6a3020!important}
 [data-theme="dark"] #bulk-preview{border-color:var(--border)}
@@ -1012,6 +1033,16 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">Weekly Schedule</div>
     <div class="plan-week" id="plan-week"></div>
+  </div>
+
+  <!-- This Week's Focus -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="card-title" style="margin-bottom:0">This Week's Focus ✅</div>
+      <button class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleWeekTodoPicker()">+ Pick To-Dos</button>
+    </div>
+    <div id="week-todos-list"></div>
+    <div id="week-todo-picker" style="display:none"></div>
   </div>
 
   <!-- Notes -->
@@ -2575,6 +2606,19 @@ function renderPlan() {
   }
   const _dayOff = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
 
+  // Pre-compute which trips overlap each day of the plan week
+  const _tripsByDay = {};
+  PLAN_DAYS.forEach(({key}, i) => {
+    const dayDate = new Date(_planMon); dayDate.setDate(_planMon.getDate() + i);
+    const dayStr = dayDate.toISOString().slice(0,10); // YYYY-MM-DD
+    _tripsByDay[key] = trips.filter(t => {
+      if (!t.sortDate) return false;
+      const endICS = parseICSEndDate(t.dates, t.sortDate); // YYYYMMDD exclusive
+      const endStr = endICS.slice(0,4)+'-'+endICS.slice(4,6)+'-'+endICS.slice(6,8);
+      return dayStr >= t.sortDate && dayStr < endStr;
+    });
+  });
+
   document.getElementById('plan-week').innerHTML = PLAN_DAYS.map(({key, label, full}) => {
     const d = p[key] || {};
     const gymOn     = d.gym     ? 'on' : '';
@@ -2583,6 +2627,7 @@ function renderPlan() {
     const dayDate = new Date(_planMon); dayDate.setDate(_planMon.getDate() + _dayOff[key]);
     const isPast  = dayDate < _planToday;
     const isToday = dayDate.getTime() === _planToday.getTime();
+    const autoTrips = _tripsByDay[key] || [];
     return `<div class="plan-day${isPast?' plan-day-past':isToday?' plan-day-today':''}" id="plan-day-${key}">
       <div class="plan-day-label"><span class="day-full">${full}</span><span class="day-short">${label}</span></div>
       <div class="plan-day-slots">
@@ -2590,6 +2635,7 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
+          ${autoTrips.map(t => `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`).join('')}
           ${(d.events || (d.notesList?.length ? d.notesList : d.notes ? [d.notes] : [])).map((evt, i) => `
             <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
           <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event…" style="display:none"
@@ -2625,6 +2671,7 @@ function renderPlan() {
   }
 
   _applyMealCollapse();
+  renderWeekTodos();
 }
 
 function clearPlan() {
@@ -2633,6 +2680,90 @@ function clearPlan() {
     savePlan();
     renderPlan();
   }, 'Clear');
+}
+
+// ── This Week's Focus (pinned to-dos) ────────────────────────────────────────
+function renderWeekTodos() {
+  const listEl   = document.getElementById('week-todos-list');
+  const pickerEl = document.getElementById('week-todo-picker');
+  if (!listEl) return;
+  const pinned = weekPlan._pinnedTodos || [];
+  if (!pinned.length) {
+    listEl.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:4px 0">No to-dos selected — pick some with the button above.</div>';
+  } else {
+    listEl.innerHTML = pinned.map(id => {
+      const t = todos.find(x => x.id === id);
+      if (!t) return '';
+      const cat = todoCategories.find(c => c.id === t.cat);
+      const isDone = t.done;
+      return `<div class="week-todo-item${isDone ? ' done-item' : ''}">
+        <div class="week-todo-cb" onclick="checkWeekTodo('${id}')">${isDone ? '✓' : ''}</div>
+        <span class="week-todo-text">${escHtml(t.text)}</span>
+        <span class="week-todo-cat">${escHtml(cat?.label||'')}</span>
+        <button class="week-todo-unpin" onclick="unpinTodo('${id}')" title="Remove from this week">×</button>
+      </div>`;
+    }).filter(Boolean).join('');
+  }
+  // Re-render picker if open
+  if (pickerEl && pickerEl.style.display !== 'none') renderWeekTodoPicker();
+}
+
+function renderWeekTodoPicker() {
+  const pickerEl = document.getElementById('week-todo-picker');
+  if (!pickerEl) return;
+  const pinned = new Set(weekPlan._pinnedTodos || []);
+  const openTodos = todos.filter(t => !t.done);
+  if (!openTodos.length) {
+    pickerEl.innerHTML = '<div class="week-todo-picker-wrap" style="font-size:13px;color:var(--text-3)">No open to-dos yet!</div>';
+    return;
+  }
+  pickerEl.innerHTML = '<div class="week-todo-picker-wrap">' +
+    todoCategories.map(cat => {
+      const items = openTodos.filter(t => t.cat === cat.id);
+      if (!items.length) return '';
+      return `<div class="week-todo-picker-cat">${escHtml(cat.label)}</div>` +
+        items.map(t => `
+          <div class="week-todo-picker-item" onclick="togglePinTodo('${t.id}')">
+            <input type="checkbox" ${pinned.has(t.id) ? 'checked' : ''} onclick="event.stopPropagation();togglePinTodo('${t.id}')">
+            <label>${escHtml(t.text)}</label>
+          </div>`).join('');
+    }).join('') +
+  '</div>';
+}
+
+function toggleWeekTodoPicker() {
+  const pickerEl = document.getElementById('week-todo-picker');
+  if (!pickerEl) return;
+  const isOpen = pickerEl.style.display !== 'none';
+  if (isOpen) {
+    pickerEl.style.display = 'none';
+  } else {
+    pickerEl.style.display = '';
+    renderWeekTodoPicker();
+  }
+}
+
+function togglePinTodo(id) {
+  if (!weekPlan._pinnedTodos) weekPlan._pinnedTodos = [];
+  const idx = weekPlan._pinnedTodos.indexOf(id);
+  if (idx === -1) weekPlan._pinnedTodos.push(id);
+  else weekPlan._pinnedTodos.splice(idx, 1);
+  savePlan();
+  renderWeekTodos();
+}
+
+function unpinTodo(id) {
+  if (!weekPlan._pinnedTodos) return;
+  weekPlan._pinnedTodos = weekPlan._pinnedTodos.filter(x => x !== id);
+  savePlan();
+  renderWeekTodos();
+}
+
+function checkWeekTodo(id) {
+  // Marks the todo done in the main to-do list
+  toggleTodo(id);
+  // Re-render this week's list after the animation delay
+  setTimeout(renderWeekTodos, 800);
 }
 
 function toggleChip(dayKey, type) {
