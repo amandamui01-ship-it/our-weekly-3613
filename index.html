@@ -403,8 +403,8 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-add-event-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg);border-style:solid}
 .plan-day:hover .plan-add-event-btn{display:inline-flex}
 /* Auto-injected trip events */
-.plan-slot-trip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;background:var(--amber-bg);color:var(--amber-dark);border:1.5px solid #f0d4a8;cursor:default;user-select:none}
-[data-theme="dark"] .plan-slot-trip{background:#2a1e0c;color:#d4974a;border-color:#4a3018}
+.plan-slot-trip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;background:#92590f;color:white;border:1.5px solid #92590f;cursor:default;user-select:none}
+[data-theme="dark"] .plan-slot-trip{background:#7a4a0a;color:white;border-color:#7a4a0a}
 /* This Week's Focus — todo picker */
 .week-todo-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;background:var(--surface-warm);border:1px solid var(--border-light);margin-bottom:6px}
 .week-todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;transition:all .15s;background:white}
@@ -4457,7 +4457,9 @@ function _evalAmount(str) {
   let result = 0, op = '+';
   for (const tok of tokens) {
     if (tok === '+' || tok === '-') { op = tok; continue; }
-    const n = parseFloat(tok);
+    const t = tok.trim();
+    if (!/^-?(\d+\.?\d*|\.\d+)$/.test(t)) return NaN;
+    const n = parseFloat(t);
     if (isNaN(n)) return NaN;
     result = op === '+' ? result + n : result - n;
     op = '+';
