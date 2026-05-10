@@ -508,7 +508,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .budget-tx-amt.income{color:var(--sage)}
 .budget-tx-shared{font-size:11px;color:var(--amber-dark);font-weight:800;white-space:nowrap;background:var(--amber-bg);border-radius:4px;padding:1px 5px}
 .shared-tx{background:var(--amber-bg);border-radius:6px}
-.budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
+.budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;line-height:1;-webkit-tap-highlight-color:transparent}
 .budget-tx-del:hover{color:var(--coral)}
 
 .recurring-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border-light);font-size:12px}
@@ -880,7 +880,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
       <div class="field">
         <label>Any adjustments for next week?</label>
         <textarea id="r-adjust" placeholder="What would you do differently?"></textarea>
-        <div id="review-adjust-hint" style="display:none;margin-top:6px;padding:10px 14px;background:var(--amber-bg);border:1px solid #f0d4a8;border-radius:9px;font-size:12px;color:var(--amber-dark);display:flex;align-items:flex-start;gap:10px">
+        <div id="review-adjust-hint" style="display:none;margin-top:6px;padding:10px 14px;background:var(--amber-bg);border:1px solid var(--border);border-radius:9px;font-size:12px;color:var(--amber-dark);align-items:flex-start;gap:10px">
           <span style="flex:1;line-height:1.55"><strong>📌 Last week:</strong> <span id="review-adjust-hint-text"></span></span>
           <button onclick="pullLastAdjust()" style="flex-shrink:0;background:var(--amber);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Use ↑</button>
         </div>
@@ -2549,7 +2549,7 @@ function _saveReviewDraft() {
 // ─── PLAN ────────────────────────────────────────────────────────────────────
 function _growNotes(el) {
   el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
+  el.style.height = Math.min(el.scrollHeight, 320) + 'px';
 }
 
 let _mealExpanded = localStorage.getItem('ow-meal-expanded') === '1';
@@ -4475,7 +4475,7 @@ function checkRecurringReminder() {
           const loaded = expenses.some(e => e.person === r.person && e.description === r.description &&
             e.month === month && e.date.startsWith(String(year)));
           return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light)">
-            <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;${r.person==='Amanda'?'background:#fceae5;color:var(--coral)':'background:var(--blue-bg);color:var(--blue)'}">${r.person}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;${r.person==='Amanda'?'background:var(--coral-bg);color:var(--coral)':'background:var(--blue-bg);color:var(--blue)'}">${r.person}</span>
             <span style="flex:1;font-size:13px;color:var(--text);${loaded?'text-decoration:line-through;opacity:.45':''}">${escHtml(r.description)}</span>
             <span style="font-size:11px;color:var(--text-3);flex-shrink:0">${escHtml(r.category)}</span>
             <input type="number" step="0.01" min="0" value="${r.amount.toFixed(2)}" data-rec-id="${r.id}"
