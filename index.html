@@ -769,7 +769,6 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
     <div class="menu-item" onclick="showPage('history')">📖 History</div>
     <div class="menu-divider"></div>
     <div class="menu-item menu-util" id="menu-dark-item" onclick="toggleDarkMode()">🌙 Dark mode</div>
-    <div class="menu-item menu-util" onclick="exportData()">💾 Export backup</div>
     <div class="menu-item menu-util" onclick="auth.signOut()">↩ Sign out</div>
   </div>
 </nav>
@@ -1031,6 +1030,9 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
   </div>
   <div id="history-search-meta" style="font-size:12px;color:var(--text-3);margin-bottom:12px;min-height:18px"></div>
   <div id="history-list"></div>
+  <div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--border-light)">
+    <button onclick="exportData()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-3);padding:4px 8px;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">💾 export backup</button>
+  </div>
 </div>
 
 <!-- ── THIS WEEK PLAN ── -->
@@ -3831,7 +3833,6 @@ function exportData() {
   a.download = `our-weekly-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  closeNavMenu();
   showToast('✅ Backup downloaded!');
 }
 
