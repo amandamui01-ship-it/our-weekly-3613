@@ -29,6 +29,11 @@
 }
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
+/* ── Offline banner ── */
+#offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#5c5c5c;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:6px 16px;letter-spacing:.02em}
+#offline-banner.visible{display:block}
+[data-theme="dark"] #offline-banner{background:#333}
+
 /* ── Login overlay ── */
 #login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .35s ease}
 #login-overlay.fading{opacity:0;pointer-events:none}
@@ -714,6 +719,9 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 </head>
 <body>
 
+<!-- ── Offline Banner ── -->
+<div id="offline-banner">📡 You're offline — changes will sync when you reconnect</div>
+
 <!-- ── Login Overlay ── -->
 <div id="login-overlay">
   <div id="login-box">
@@ -761,6 +769,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
     <div class="menu-item" onclick="showPage('history')">📖 History</div>
     <div class="menu-divider"></div>
     <div class="menu-item menu-util" id="menu-dark-item" onclick="toggleDarkMode()">🌙 Dark mode</div>
+    <div class="menu-item menu-util" onclick="exportData()">💾 Export backup</div>
     <div class="menu-item menu-util" onclick="auth.signOut()">↩ Sign out</div>
   </div>
 </nav>
@@ -1255,6 +1264,25 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 let storage = null;
 try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage unavailable:', e); }
+
+// ── Offline indicator ──
+(function() {
+  const banner = () => document.getElementById('offline-banner');
+  const update = () => banner() && banner().classList.toggle('visible', !navigator.onLine);
+  window.addEventListener('online',  update);
+  window.addEventListener('offline', update);
+  update();
+})();
+
+// Enable offline persistence so the app works without a connection
+db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+  if (err.code === 'failed-precondition') {
+    // Multiple tabs open — only one tab can use persistence at a time
+    console.warn('Firestore persistence unavailable: multiple tabs open');
+  } else if (err.code === 'unimplemented') {
+    console.warn('Firestore persistence not supported in this browser');
+  }
+});
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -1965,8 +1993,9 @@ function addEditPhoto(id, file) {
   if (!entry) return;
   const urls = getEntryPhotoUrls(entry);
   if (urls.length >= 4) return;
-  resizePhoto(file, 800, 0.65).then(dataUrl => {
-    entry.photoUrls = [...urls, dataUrl];
+  if (storage) showToast('📸 Uploading photo…');
+  uploadPhoto(file, entry.id, urls.length, 800, 0.65).then(url => {
+    entry.photoUrls = [...getEntryPhotoUrls(entry), url];
     delete entry.photoUrl;
     saveEntries();
     renderEditPhotos(id);
@@ -2055,7 +2084,8 @@ function saveEntry() {
     saveEntries();
   };
   if (_reviewPhotos.length) {
-    Promise.all(_reviewPhotos.map(f => resizePhoto(f, 900, 0.75).catch(() => null)))
+    if (storage) showToast('📸 Uploading photos…');
+    Promise.all(_reviewPhotos.map((f, i) => uploadPhoto(f, entry.id, i, 900, 0.75).catch(() => null)))
       .then(urls => finishSave(urls.filter(Boolean)));
   } else {
     finishSave([]);
@@ -2177,8 +2207,17 @@ function editTodo(id) {
 function deleteTodo(id) {
   const item = todos.find(x => x.id === id);
   todos = todos.filter(x => x.id !== id);
-  saveTodos(); renderTodos();
-  if (item) showToast('To-do deleted', () => { todos.push(item); saveTodos(); renderTodos(); });
+  renderTodos();
+  if (item) {
+    db.collection('state').doc('todos').update({ items: firebase.firestore.FieldValue.arrayRemove(item) }).catch(_onSaveErr);
+    showToast('To-do deleted', () => {
+      todos.push(item);
+      db.collection('state').doc('todos').update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
+      renderTodos();
+    });
+  } else {
+    saveTodos();
+  }
 }
 
 function addTodoSection() {
@@ -2238,8 +2277,12 @@ function addTodo(cat) {
   const input = document.getElementById('add-' + cat);
   const text = input.value.trim();
   if (!text) return;
-  todos.push({ id:'td-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text, cat, done:false });
-  saveTodos(); renderTodos();
+  const item = { id:'td-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text, cat, done:false };
+  todos.push(item);
+  // Atomic add — safe if both people add simultaneously
+  db.collection('state').doc('todos').update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
+  input.value = '';
+  renderTodos();
 }
 
 function cycleTodoPriority(id) {
@@ -3106,8 +3149,9 @@ function addTrip() {
   if (!label) return;
   const sortDate       = parseSortDate(dates);
   const labelWithEmoji = `${label} ${tripEmoji(label)}`;
-  trips.push({ id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate });
-  saveTrips();
+  const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
+  trips.push(trip);
+  db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayUnion(trip) }).catch(_onSaveErr);
   burst();
   renderDates();
 }
@@ -3115,8 +3159,17 @@ function addTrip() {
 function deleteTrip(id) {
   const item = trips.find(t => t.id === id);
   trips = trips.filter(t => t.id !== id);
-  saveTrips(); renderDates();
-  if (item) showToast('Trip deleted', () => { trips.push(item); saveTrips(); renderDates(); });
+  renderDates();
+  if (item) {
+    db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayRemove(item) }).catch(_onSaveErr);
+    showToast('Trip deleted', () => {
+      trips.push(item);
+      db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
+      renderDates();
+    });
+  } else {
+    saveTrips();
+  }
 }
 
 function editTripInline(id) {
@@ -3676,6 +3729,24 @@ function getStreak() {
 }
 
 // ─── REVIEW PHOTO HELPERS ─────────────────────────────────────────────────────
+// Uploads a resized photo to Firebase Storage and returns a download URL.
+// Falls back to base64 if Storage isn't available.
+async function uploadPhoto(file, entryId, idx, maxPx, quality) {
+  const dataUrl = await resizePhoto(file, maxPx, quality);
+  if (!storage) return dataUrl;
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = `entries/${entryId}/${Date.now()}_${idx}.jpg`;
+    const ref = storage.ref(path);
+    await ref.put(blob, { contentType: 'image/jpeg' });
+    return await ref.getDownloadURL();
+  } catch (e) {
+    console.warn('Storage upload failed, falling back to base64:', e);
+    return dataUrl;
+  }
+}
+
 function resizePhoto(file, maxPx, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -3732,6 +3803,36 @@ function addSwipeToDelete() {
       dx = 0;
     });
   });
+}
+
+// ─── EXPORT / BACKUP ─────────────────────────────────────────────────────────
+function exportData() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: 1,
+    todos,
+    todoCategories,
+    trips,
+    entries: newEntries,
+    expenses,
+    budgetTargets,
+    recurringItems,
+    weekPlan,
+    logisticsList,
+    bucketList,
+    mood,
+    photos,
+  };
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `our-weekly-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  closeNavMenu();
+  showToast('✅ Backup downloaded!');
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
