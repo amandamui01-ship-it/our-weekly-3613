@@ -1863,7 +1863,6 @@ function showPage(name) {
     if (bId) document.getElementById(bId)?.classList.add('active');
     else document.getElementById('bnav-more')?.classList.add('active');
     // FABs
-    document.getElementById('fab-todos').style.display  = name === 'todos'  ? 'flex' : 'none';
     document.getElementById('fab-budget').style.display = name === 'budget' ? 'flex' : 'none';
   };
   const current = document.querySelector('.page.active');
@@ -2288,7 +2287,10 @@ function renderTodos() {
     <div class="card todo-category">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleDone()">
         <div class="card-title" style="margin-bottom:0">✅ Completed (${done.length})</div>
-        <span id="done-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">${doneCollapsed ? '▶' : '▼'}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="clearCompletedTodos();event.stopPropagation()" style="font-size:11px;font-weight:600;color:var(--text-3);background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer;line-height:1.4" title="Remove all completed items">Clear all</button>
+          <span id="done-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">${doneCollapsed ? '▶' : '▼'}</span>
+        </div>
       </div>
       <div class="todo-items" id="done-items-list" style="display:${doneCollapsed?'none':''};margin-top:12px">${done.map(renderTodoItem).join('')}</div>
     </div>` : '';
@@ -2373,6 +2375,19 @@ function deleteTodo(id) {
   } else {
     saveTodos();
   }
+}
+
+function clearCompletedTodos() {
+  const cleared = todos.filter(t => t.done);
+  if (!cleared.length) return;
+  todos = todos.filter(t => !t.done);
+  saveTodos();
+  renderTodos();
+  showToast(`Cleared ${cleared.length} completed item${cleared.length > 1 ? 's' : ''}`, () => {
+    todos = [...todos, ...cleared];
+    saveTodos();
+    renderTodos();
+  });
 }
 
 function addTodoSection() {
@@ -5349,7 +5364,6 @@ if ('serviceWorker' in navigator) {
   <div class="bnav-item" id="bnav-more"   onclick="toggleNavMenu()">☰<span>More</span></div>
 </nav>
 <!-- ── FABs ── -->
-<button class="fab" id="fab-todos"  style="display:none" onclick="fabTodos()"  title="Add to-do" aria-label="Add to-do">+</button>
 <button class="fab" id="fab-budget" style="display:none" onclick="fabBudget()" title="Add expense" aria-label="Add expense">+</button>
 </body>
 </html>
