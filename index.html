@@ -3718,9 +3718,10 @@ function updateBgSwatchColors() {
 })();
 
 // ─── HOME WIDGETS READY GATE ──────────────────────────────────────────────────
-const _homeReadyFlags = {todos: false, trips: false, expenses: false, countdowns: false};
+const _homeReadyFlags = {todos: false, trips: false, countdowns: false};
 let _homeRevealed = false;
 function _markHomeReady(flag) {
+  if (!(flag in _homeReadyFlags)) return;
   _homeReadyFlags[flag] = true;
   if (_homeRevealed) return;
   if (Object.values(_homeReadyFlags).every(Boolean)) _revealHomeWidgets();
@@ -3731,8 +3732,8 @@ function _revealHomeWidgets() {
   const c = document.getElementById('home-widgets');
   if (c) requestAnimationFrame(() => c.classList.add('ready'));
 }
-// Fallback: reveal after 2s regardless so the page never stays blank
-setTimeout(_revealHomeWidgets, 2000);
+// Fallback: reveal after 1.5s regardless so the page never stays blank
+setTimeout(_revealHomeWidgets, 1500);
 
 function setAccent(name) {
   // Clear any inline custom vars from a previous custom pick
