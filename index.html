@@ -641,7 +641,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 @media(max-width:480px){.custom-cd-add{grid-template-columns:1fr 1fr;}.custom-cd-add button{grid-column:1/-1}}
 
 /* ── Home widget drag & drop ── */
-#home-widgets{display:flex;flex-direction:column;gap:14px}
+#home-widgets{display:flex;flex-direction:column;gap:14px;opacity:0;transition:opacity .3s ease}
+#home-widgets.ready{opacity:1}
 .home-widget{position:relative}
 .home-widget>*{margin-bottom:0!important}
 .home-widget-handle{position:absolute;top:10px;right:10px;font-size:13px;color:var(--text-3);cursor:grab;opacity:0;pointer-events:none;transition:opacity .15s;z-index:5;user-select:none;line-height:1;padding:3px 4px;border-radius:4px;background:var(--surface)}
@@ -1679,6 +1680,7 @@ function initFirestore() {
     if (isActive('home'))  renderHome();
     const el = document.getElementById('stat-todos');
     if (el) el.textContent = todos.filter(t=>!t.done).length;
+    _markHomeReady('todos');
   });
 
   ref('entries').onSnapshot(snap => {
@@ -1719,6 +1721,7 @@ function initFirestore() {
     }
     if (isActive('dates')) renderDates();
     if (isActive('home'))  renderHome();
+    _markHomeReady('trips');
   });
 
   ref('logistics').onSnapshot(snap => {
@@ -1751,6 +1754,7 @@ function initFirestore() {
   ref('countdowns').onSnapshot(snap => {
     customCountdowns = snap.exists ? (snap.data().items || []) : [];
     if (isActive('home')) renderCustomCountdowns();
+    _markHomeReady('countdowns');
   });
 
   ref('recurring').onSnapshot(snap => {
@@ -1782,6 +1786,7 @@ function initFirestore() {
     }
     if (isActive('budget')) renderBudget();
     if (isActive('home'))   renderHome();
+    _markHomeReady('expenses');
   });
 }
 
@@ -3711,6 +3716,24 @@ function updateBgSwatchColors() {
   applyWidgetOrder();
   initWidgetDrag();
 })();
+
+// ─── HOME WIDGETS READY GATE ──────────────────────────────────────────────────
+const _homeReadyFlags = {todos: false, trips: false, expenses: false, countdowns: false};
+let _homeRevealed = false;
+function _markHomeReady(flag) {
+  _homeReadyFlags[flag] = true;
+  if (_homeRevealed) return;
+  if (Object.values(_homeReadyFlags).every(Boolean)) _revealHomeWidgets();
+}
+function _revealHomeWidgets() {
+  if (_homeRevealed) return;
+  _homeRevealed = true;
+  const c = document.getElementById('home-widgets');
+  if (c) requestAnimationFrame(() => c.classList.add('ready'));
+}
+// Fallback: reveal after 2s regardless so the page never stays blank
+setTimeout(_revealHomeWidgets, 2000);
+
 function setAccent(name) {
   // Clear any inline custom vars from a previous custom pick
   document.documentElement.style.removeProperty('--amber');
