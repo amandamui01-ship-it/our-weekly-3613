@@ -122,7 +122,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px;text-align:center}
 
 /* ── Seasonal theming (light mode only — dark mode has its own palette) ── */
-html:not([data-theme="dark"]) body.season-spring{--bg:#f2f8f3;--surface:#fafff9;--surface-warm:#f5fdf4;--border:#cfe0cc;--border-light:#e0f0de}
+html:not([data-theme="dark"]) body.season-spring{--bg:#fdf6f0;--surface:#fffbf8;--surface-warm:#fff8f5;--border:#e8d5ca;--border-light:#f5e8e2}
 html:not([data-theme="dark"]) body.season-summer{--bg:#fdf9ec;--surface:#fffef5;--surface-warm:#fffcef;--border:#e8d8b0;--border-light:#f2e9cc}
 html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--border:#cdd8ea;--border-light:#dde6f5}
 
@@ -580,6 +580,40 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 [data-theme="dark"] #bulk-preview{border-color:var(--border)}
 [data-theme="dark"] #bulk-preview thead tr{background:var(--surface)!important}
 [data-theme="dark"] code{background:var(--surface)!important;color:var(--text-2)}
+
+/* ── Accent palettes ── */
+[data-accent="rose"]  {--amber:#c05678;--amber-bg:#fde8ef;--amber-dark:#8a3050}
+[data-accent="sage"]  {--amber:#4a7a55;--amber-bg:#e8f4ea;--amber-dark:#2e5538}
+[data-accent="blue"]  {--amber:#4472a8;--amber-bg:#e8f0f8;--amber-dark:#2a4a78}
+[data-accent="coral"] {--amber:#d06545;--amber-bg:#fdeae5;--amber-dark:#8a3a22}
+[data-accent="plum"]  {--amber:#7a5590;--amber-bg:#f0eaf8;--amber-dark:#50356a}
+[data-theme="dark"][data-accent="rose"]  {--amber:#e07898;--amber-bg:rgba(192,86,120,.15)}
+[data-theme="dark"][data-accent="sage"]  {--amber:#6a9870;--amber-bg:rgba(74,122,85,.15)}
+[data-theme="dark"][data-accent="blue"]  {--amber:#6090d0;--amber-bg:rgba(68,114,168,.15)}
+[data-theme="dark"][data-accent="coral"] {--amber:#e07850;--amber-bg:rgba(208,101,69,.15)}
+[data-theme="dark"][data-accent="plum"]  {--amber:#9a70b8;--amber-bg:rgba(122,85,144,.15)}
+
+/* ── Palette picker ── */
+.palette-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
+.palette-swatch:hover{transform:scale(1.15)}
+.palette-swatch.active{border-color:var(--text);transform:scale(1.1)}
+
+/* ── Custom countdowns ── */
+.custom-cd-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)}
+.custom-cd-row:last-child{border-bottom:none}
+.custom-cd-days{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:800;color:var(--amber);line-height:1;min-width:44px;text-align:right;flex-shrink:0}
+.custom-cd-info{flex:1;min-width:0}
+.custom-cd-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.custom-cd-sub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--amber-dark);opacity:.75}
+.custom-cd-del{background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-3);padding:4px;border-radius:6px;transition:color .15s,background .15s;flex-shrink:0}
+.custom-cd-del:hover{color:var(--coral);background:var(--coral-bg)}
+.custom-cd-add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+.custom-cd-add input{padding:8px 10px;border:1px dashed var(--border);border-radius:8px;font-size:13px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:border-color .15s}
+.custom-cd-add input:focus{border-color:var(--amber);border-style:solid}
+.custom-cd-add button{padding:8px 14px;background:var(--amber);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
+.custom-cd-add button:hover{background:var(--amber-dark)}
+@media(max-width:480px){.custom-cd-add{grid-template-columns:1fr 1fr;}.custom-cd-add button{grid-column:1/-1}}
+
 .theme-icon{font-size:15px;line-height:1;color:var(--text-2);font-family:sans-serif}
 .dark-toggle{position:relative;width:40px;height:24px;background:var(--border);border-radius:12px;border:none;cursor:pointer;transition:background .3s;flex-shrink:0;align-self:center;vertical-align:middle}
 .dark-toggle.active{background:var(--sage)}
@@ -837,6 +871,17 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
     </div>
   </div>
 
+  <!-- Custom countdowns -->
+  <div class="card" id="custom-countdowns-card" style="margin-bottom:16px">
+    <div class="card-title">Countdowns ⏳</div>
+    <div id="custom-cd-list"></div>
+    <div class="custom-cd-add">
+      <input type="text" id="cd-name" placeholder="Event name">
+      <input type="date" id="cd-date">
+      <button onclick="addCustomCountdown()">+ Add</button>
+    </div>
+  </div>
+
   <!-- Bottom widgets row: Coffee + Mood -->
   <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
     <div class="coffee-card" style="margin:0">
@@ -853,9 +898,23 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
   </div>
 
   <!-- Coming Up -->
-  <div class="card" style="margin-bottom:0">
+  <div class="card" style="margin-bottom:14px">
     <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️</div>
     <div id="home-trips"></div>
+  </div>
+
+  <!-- Palette picker -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-title" style="margin-bottom:12px">Customize Palette 🎨</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="palette-swatch" id="swatch-amber"  style="background:#bf7c36" onclick="setAccent('amber')"  title="Amber"></div>
+      <div class="palette-swatch" id="swatch-rose"   style="background:#c05678" onclick="setAccent('rose')"   title="Rose"></div>
+      <div class="palette-swatch" id="swatch-coral"  style="background:#d06545" onclick="setAccent('coral')"  title="Coral"></div>
+      <div class="palette-swatch" id="swatch-plum"   style="background:#7a5590" onclick="setAccent('plum')"   title="Plum"></div>
+      <div class="palette-swatch" id="swatch-sage"   style="background:#4a7a55" onclick="setAccent('sage')"   title="Sage"></div>
+      <div class="palette-swatch" id="swatch-blue"   style="background:#4472a8" onclick="setAccent('blue')"   title="Blue"></div>
+      <span id="palette-label" style="font-size:12px;color:var(--text-3);margin-left:4px"></span>
+    </div>
   </div>
 
 </div>
@@ -1606,6 +1665,11 @@ function initFirestore() {
       && !document.querySelector('.plan-slot-event[contenteditable="true"]')) renderPlan();
   });
 
+  ref('countdowns').onSnapshot(snap => {
+    customCountdowns = snap.exists ? (snap.data().items || []) : [];
+    if (isActive('home')) renderCustomCountdowns();
+  });
+
   ref('recurring').onSnapshot(snap => {
     if (!snap.exists) {
       recurringItems = DEFAULT_RECURRING.map(r=>({...r}));
@@ -1822,7 +1886,7 @@ function renderHome() {
   document.getElementById('home-trips').innerHTML = _upcoming.length
     ? _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates.replace(/\b[a-z]/g, c => c.toUpperCase())}</div>
       <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
     </div>
   `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates ↗</div>`
@@ -1848,6 +1912,7 @@ function renderHome() {
   renderMoodWidget();
   renderNextTrip();
   renderAnniversary();
+  renderCustomCountdowns();
 }
 
 // ─── COFFEE ROULETTE ─────────────────────────────────────────────────────────
@@ -3154,6 +3219,8 @@ function addTrip() {
   const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
   trips.push(trip);
   db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayUnion(trip) }).catch(_onSaveErr);
+  document.getElementById('new-trip-dates').value = '';
+  document.getElementById('new-trip-name').value = '';
   burst();
   renderDates();
 }
@@ -3526,6 +3593,28 @@ function toggleDarkMode() {
   if (mi) mi.textContent = next === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
 }
 // Sync dark-toggle button + menu label (theme already applied in <head>)
+(function(){
+  const a = localStorage.getItem('ow-accent');
+  if (a && a !== 'amber') document.documentElement.setAttribute('data-accent', a);
+  const NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',plum:'Plum',sage:'Sage',blue:'Blue'};
+  const current = a || 'amber';
+  const activeEl = document.getElementById('swatch-' + current);
+  if (activeEl) activeEl.classList.add('active');
+  const lbl = document.getElementById('palette-label');
+  if (lbl) lbl.textContent = NAMES[current] || '';
+})();
+function setAccent(name) {
+  const NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',plum:'Plum',sage:'Sage',blue:'Blue'};
+  if (name === 'amber') document.documentElement.removeAttribute('data-accent');
+  else document.documentElement.setAttribute('data-accent', name);
+  localStorage.setItem('ow-accent', name);
+  document.querySelectorAll('.palette-swatch').forEach(el => el.classList.remove('active'));
+  const sw = document.getElementById('swatch-' + name);
+  if (sw) sw.classList.add('active');
+  const lbl = document.getElementById('palette-label');
+  if (lbl) lbl.textContent = NAMES[name] || '';
+}
+
 (function(){
   const t = localStorage.getItem('ow-theme');
   const btn = document.getElementById('dark-toggle');
@@ -3966,10 +4055,57 @@ function renderNextTrip() {
   const card = document.getElementById('next-trip-card');
   if (!next) { card.style.display = 'none'; return; }
   card.style.display = '';
-  document.getElementById('next-trip-name').textContent = `${next.dates} — ${next.label}`;
+  document.getElementById('next-trip-name').textContent = `${next.dates.replace(/\b[a-z]/g, c => c.toUpperCase())} — ${next.label}`;
   const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
   document.getElementById('next-trip-days').textContent = days || 'Today!';
   document.getElementById('next-trip-label').style.visibility = days ? '' : 'hidden';
+}
+
+// ─── CUSTOM COUNTDOWNS ───────────────────────────────────────────────────────
+let customCountdowns = [];
+function saveCustomCountdowns() {
+  db.collection('state').doc('countdowns').set({items: customCountdowns}).catch(_onSaveErr);
+}
+function renderCustomCountdowns() {
+  const list = document.getElementById('custom-cd-list');
+  if (!list) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  if (!customCountdowns.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px 0">No custom countdowns yet — add one below!</div>';
+    return;
+  }
+  list.innerHTML = customCountdowns
+    .slice().sort((a,b) => a.date.localeCompare(b.date))
+    .map(cd => {
+      const d = new Date(cd.date + 'T00:00:00');
+      const days = Math.ceil((d - today) / 864e5);
+      const sub = days > 0 ? `${days} day${days===1?'':'s'} away` : days === 0 ? 'Today! 🎉' : `${Math.abs(days)} day${Math.abs(days)===1?'':'s'} ago`;
+      const num = days > 0 ? days : days === 0 ? '🎉' : Math.abs(days);
+      return `<div class="custom-cd-row">
+        <div class="custom-cd-days">${num}</div>
+        <div class="custom-cd-info">
+          <div class="custom-cd-name">${escHtml(cd.name)}</div>
+          <div class="custom-cd-sub">${sub}</div>
+        </div>
+        <button class="custom-cd-del" onclick="deleteCustomCountdown('${cd.id}')" title="Delete">✕</button>
+      </div>`;
+    }).join('');
+}
+function addCustomCountdown() {
+  const name = document.getElementById('cd-name').value.trim();
+  const date = document.getElementById('cd-date').value;
+  if (!name || !date) return;
+  const item = {id: 'cd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), name, date};
+  customCountdowns.push(item);
+  saveCustomCountdowns();
+  document.getElementById('cd-name').value = '';
+  document.getElementById('cd-date').value = '';
+  renderCustomCountdowns();
+}
+function deleteCustomCountdown(id) {
+  customCountdowns = customCountdowns.filter(c => c.id !== id);
+  saveCustomCountdowns();
+  renderCustomCountdowns();
 }
 
 // ─── ANNIVERSARY COUNTDOWN ────────────────────────────────────────────────────
