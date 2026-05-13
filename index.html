@@ -1130,7 +1130,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     <div id="add-date-form" style="margin-top:12px">
       <div class="add-trip-form" style="margin-top:0;padding-top:0;border-top:none">
         <input type="text" id="new-trip-dates" placeholder="Dates (e.g. Jun 5–7)">
-        <input type="text" id="new-trip-name" placeholder="Trip or event name">
+        <input type="text" id="new-trip-name" placeholder="Trip or event name" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
         <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
       </div>
     </div>
@@ -2280,11 +2280,20 @@ function renderTodos() {
         </div>
         <div class="todo-items">${items.length ? items.map(renderTodoItem).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">Nothing here yet!</div>'}</div>
         <div class="add-todo">
-          <input type="text" placeholder="Add item..." id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')">
+          <input type="text" placeholder="Add item..." id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
           <button onclick="addTodo('${cat.id}')">+ Add</button>
         </div>
       </div>`;
   }).join('');
+
+  const allActive = todos.filter(t => !t.done);
+  const allDone   = todos.length > 0 && allActive.length === 0;
+  const celebHtml = allDone ? `
+    <div class="card" style="text-align:center;padding:28px 20px;background:var(--amber-bg);border-color:#f0d4a8">
+      <div style="font-size:36px;margin-bottom:8px">🎉</div>
+      <div style="font-family:'Lora',Georgia,serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px">All done!</div>
+      <div style="font-size:13px;color:var(--text-3)">Nothing left on the list. Enjoy the moment! ✨</div>
+    </div>` : '';
 
   const done = todos.filter(t => t.done);
   const doneCollapsed = document.getElementById('done-items-list')?.style.display === 'none';
@@ -2303,12 +2312,12 @@ function renderTodos() {
   const addSectionHtml = `
     <div class="card" style="padding:16px 20px">
       <div class="add-list-row">
-        <input type="text" id="new-section-name" placeholder="New section name..." onkeydown="if(event.key==='Enter')addTodoSection()">
+        <input type="text" id="new-section-name" placeholder="New section name..." onkeydown="if(event.key==='Enter')addTodoSection()" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
         <button onclick="addTodoSection()">+ Add Section</button>
       </div>
     </div>`;
 
-  document.getElementById('todos-container').innerHTML = activeHtml + doneHtml + addSectionHtml;
+  document.getElementById('todos-container').innerHTML = celebHtml + activeHtml + doneHtml + addSectionHtml;
   setTimeout(addSwipeToDelete, 50);
   setTimeout(addTodoDragListeners, 50);
   setTimeout(addCategoryDragListeners, 50);
@@ -2333,6 +2342,7 @@ function toggleTodo(id) {
   const t = todos.find(x => x.id === id);
   if (!t) return;
   if (!t.done) {
+    if (navigator.vibrate) navigator.vibrate(50);
     const el = document.getElementById('todo-' + id);
     if (el) {
       el.classList.add('done');
@@ -3405,6 +3415,9 @@ function saveTripEdit(id) {
   t.dates = dates || t.dates;
   t.label = label;
   if (dates) t.sortDate = parseSortDate(dates) || t.sortDate;
+  const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
+  dismissed.delete(id);
+  localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   saveTrips(); renderDates();
 }
 
@@ -4727,6 +4740,12 @@ function toggleQuickAdd() {
   const open = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
   if (chev) chev.textContent = open ? '▼' : '▶';
+  if (open) {
+    const savedPerson = localStorage.getItem('ow-bq-person');
+    const savedCat    = localStorage.getItem('ow-bq-cat');
+    if (savedPerson) document.getElementById('b-person').value = savedPerson;
+    if (savedCat)    document.getElementById('b-category').value = savedCat;
+  }
 }
 
 function toggleRecurring() {
@@ -4770,6 +4789,8 @@ function addExpense() {
   db.collection('state').doc('expenses').update({
     items: firebase.firestore.FieldValue.arrayUnion(newItem)
   }).catch(_onSaveErr);
+  localStorage.setItem('ow-bq-person', person);
+  localStorage.setItem('ow-bq-cat', category);
   document.getElementById('b-category').value = '';
   document.getElementById('b-desc').value = '';
   document.getElementById('b-amount').value = '';
