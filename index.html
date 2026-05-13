@@ -233,6 +233,8 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .trip-card.past::before{background:var(--sage)}
 .trip-card.overlap{border-color:var(--coral);background:var(--coral-bg)}
 .trip-card.overlap::before{background:var(--coral)}
+.overlap-dismiss{display:block;margin-top:6px;font-size:10px;font-weight:600;color:var(--coral);background:none;border:1px solid var(--coral);border-radius:5px;padding:2px 7px;cursor:pointer;font-family:inherit;opacity:.7;transition:opacity .15s}
+.overlap-dismiss:hover{opacity:1}
 .trip-dates{font-size:11px;font-weight:700;color:var(--tc,var(--amber));text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .trip-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3}
 .trip-days{font-size:11px;color:var(--text-3)}
@@ -2577,6 +2579,7 @@ function renderDates() {
   const past     = yearTrips.filter(t =>  isPast(t)).sort(sortByDate);
 
   // Compute overlapping trip IDs (check upcoming trips only)
+  const dismissedOverlaps = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
   const icsToIso = s => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
   const ranges = upcoming.filter(t => t.sortDate).map(t => ({
     id: t.id,
@@ -2588,8 +2591,8 @@ function renderDates() {
     for (let j = i + 1; j < ranges.length; j++) {
       const a = ranges[i], b = ranges[j];
       if (a.start < b.endExcl && b.start < a.endExcl) {
-        overlapping.add(a.id);
-        overlapping.add(b.id);
+        if (!dismissedOverlaps.has(a.id)) overlapping.add(a.id);
+        if (!dismissedOverlaps.has(b.id)) overlapping.add(b.id);
       }
     }
   }
@@ -2612,6 +2615,7 @@ function renderDates() {
       <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
       ${badge}
+      ${overlapping.has(t.id) ? `<button class="overlap-dismiss" onclick="dismissOverlap('${t.id}');event.stopPropagation()">✓ Dismiss warning</button>` : ''}
     </div>`;
   };
 
@@ -3328,6 +3332,13 @@ function addTrip() {
   document.getElementById('new-trip-dates').value = '';
   document.getElementById('new-trip-name').value = '';
   burst();
+  renderDates();
+}
+
+function dismissOverlap(id) {
+  const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
+  dismissed.add(id);
+  localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   renderDates();
 }
 
