@@ -233,7 +233,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .trip-card.past::before{background:var(--sage)}
 .trip-card.overlap{border-color:var(--coral);background:var(--coral-bg)}
 .trip-card.overlap::before{background:var(--coral)}
-.overlap-dismiss{display:block;margin-top:6px;font-size:10px;font-weight:600;color:var(--coral);background:none;border:1px solid var(--coral);border-radius:5px;padding:2px 7px;cursor:pointer;font-family:inherit;opacity:.7;transition:opacity .15s}
+.overlap-dismiss{font-size:10px;color:var(--coral);background:none;border:none;padding:0;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.75;transition:opacity .15s}
 .overlap-dismiss:hover{opacity:1}
 .trip-dates{font-size:11px;font-weight:700;color:var(--tc,var(--amber));text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .trip-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3}
@@ -2615,7 +2615,6 @@ function renderDates() {
       <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
       ${badge}
-      ${overlapping.has(t.id) ? `<button class="overlap-dismiss" onclick="dismissOverlap('${t.id}');event.stopPropagation()">✓ Dismiss warning</button>` : ''}
     </div>`;
   };
 
@@ -3364,6 +3363,7 @@ function editTripInline(id) {
   const card = document.querySelector(`.trip-card[data-id="${id}"]`);
   if (!card) return;
   _tripSaved = false;
+  const isOverlap = card.classList.contains('overlap');
   card.innerHTML = `
     <div class="trip-edit-form">
       <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)"
@@ -3374,6 +3374,7 @@ function editTripInline(id) {
         onclick="event.stopPropagation()"
         onkeydown="if(event.key==='Enter'){saveTripEdit('${id}');event.preventDefault()}if(event.key==='Escape'){renderDates();event.stopPropagation()}"
         onblur="setTimeout(()=>saveTripEditIfActive('${id}'),120)">
+      ${isOverlap ? `<button class="overlap-dismiss" onclick="dismissOverlap('${id}');event.stopPropagation()">⚠️ dismiss overlap warning</button>` : ''}
     </div>`;
   document.getElementById('tedit-name-' + id).focus();
 }
