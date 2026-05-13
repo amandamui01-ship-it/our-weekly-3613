@@ -3907,7 +3907,7 @@ function renderMoodWidget() {
         ? `<button class="mood-emoji-btn" onclick="openEmojiPicker(event,'aidan')" title="Change mood">${aidan}</button>`
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'aidan')">+ Set mood</button>`}
     </div>
-    <div style="grid-column:1/-1;margin-top:8px">
+    <div style="grid-column:1/-1;margin-top:8px;text-align:center">
       <button class="spin-btn" onclick="spinMood()">✨ Surprise</button>
     </div>`;
 }
@@ -3941,20 +3941,55 @@ function removePicker() { document.getElementById('emoji-picker-popup')?.remove(
 
 function pickMood(person, emoji) {
   removePicker();
-  mood = { ...mood, [person]: emoji, week: getISOWeek() };
+  const thisWeek = getISOWeek();
+  const other = person === 'amanda' ? 'aidan' : 'amanda';
+  mood = {
+    ...mood,
+    [person]: emoji,
+    [other]: mood.week !== thisWeek ? '' : mood[other],
+    week: thisWeek
+  };
   saveMood();
   renderMoodWidget();
 }
 
-function spinMood(person) {
+function spinMood() {
   const pick = () => MOOD_EMOJIS[Math.floor(Math.random() * MOOD_EMOJIS.length)];
-  if (person) {
-    pickMood(person, pick());
-  } else {
-    mood = { ...mood, amanda: pick(), aidan: pick(), week: getISOWeek() };
-    saveMood();
-    renderMoodWidget();
-  }
+  const finalAmanda = pick();
+  const finalAidan  = pick();
+  const thisWeek    = getISOWeek();
+  const el = document.getElementById('mood-widget');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="mood-person">
+      <div class="mood-person-name" style="color:var(--coral)">Amanda</div>
+      <div id="spin-slot-amanda" style="font-size:30px;text-align:center;min-height:38px;line-height:1.2">🎲</div>
+    </div>
+    <div class="mood-person">
+      <div class="mood-person-name" style="color:var(--blue)">Aidan</div>
+      <div id="spin-slot-aidan" style="font-size:30px;text-align:center;min-height:38px;line-height:1.2">🎲</div>
+    </div>
+    <div style="grid-column:1/-1;margin-top:8px;text-align:center">
+      <button class="spin-btn" disabled style="opacity:.5;cursor:not-allowed">✨ Spinning…</button>
+    </div>`;
+
+  const aSlot = document.getElementById('spin-slot-amanda');
+  const bSlot = document.getElementById('spin-slot-aidan');
+  const TICKS = 16;
+  let t = 0;
+  const id = setInterval(() => {
+    t++;
+    const done = t >= TICKS;
+    if (aSlot) aSlot.textContent = done ? finalAmanda : pick();
+    if (bSlot) bSlot.textContent = done ? finalAidan  : pick();
+    if (done) {
+      clearInterval(id);
+      mood = { ...mood, amanda: finalAmanda, aidan: finalAidan, week: thisWeek };
+      saveMood();
+      setTimeout(renderMoodWidget, 500);
+    }
+  }, 75);
 }
 
 // ─── STREAK ───────────────────────────────────────────────────────────────────
