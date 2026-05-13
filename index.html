@@ -2586,11 +2586,13 @@ function renderDates() {
     start: t.sortDate,
     endExcl: icsToIso(parseICSEndDate(t.dates, t.sortDate)),
   }));
+  _overlapPairs = [];
   const overlapping = new Set();
   for (let i = 0; i < ranges.length; i++) {
     for (let j = i + 1; j < ranges.length; j++) {
       const a = ranges[i], b = ranges[j];
       if (a.start < b.endExcl && b.start < a.endExcl) {
+        _overlapPairs.push([a.id, b.id]);
         if (!dismissedOverlaps.has(a.id)) overlapping.add(a.id);
         if (!dismissedOverlaps.has(b.id)) overlapping.add(b.id);
       }
@@ -3337,6 +3339,10 @@ function addTrip() {
 function dismissOverlap(id) {
   const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
   dismissed.add(id);
+  _overlapPairs.forEach(([a, b]) => {
+    if (a === id) dismissed.add(b);
+    if (b === id) dismissed.add(a);
+  });
   localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   renderDates();
 }
@@ -3380,6 +3386,7 @@ function editTripInline(id) {
 }
 
 let _tripSaved = false;
+let _overlapPairs = [];
 function saveTripEditIfActive(id) {
   if (_tripSaved) return;
   const focused = document.activeElement;
