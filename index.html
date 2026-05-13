@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>our weekly â™¥</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>ðŸŒ¸</text></svg>">
+<title>our weekly ♥</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -30,12 +30,12 @@
 }
 body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-/* â”€â”€ Offline banner â”€â”€ */
+/* ── Offline banner ── */
 #offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#5c5c5c;color:#fff;font-size:12px;font-weight:600;text-align:center;padding:6px 16px;letter-spacing:.02em}
 #offline-banner.visible{display:block}
 [data-theme="dark"] #offline-banner{background:#333}
 
-/* â”€â”€ Login overlay â”€â”€ */
+/* ── Login overlay ── */
 #login-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .35s ease}
 #login-overlay.fading{opacity:0;pointer-events:none}
 #login-overlay.hidden{display:none}
@@ -45,7 +45,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 #login-sub{font-size:13px;color:var(--text-3);text-align:center;margin-bottom:28px}
 #login-error{font-size:13px;color:var(--coral);text-align:center;min-height:20px;margin-bottom:12px}
 
-/* â”€â”€ Nav â”€â”€ */
+/* ── Nav ── */
 #nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(45,36,23,.06);overflow:hidden}
 #logo{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:800;color:var(--amber);padding:14px 16px 14px 0;border-right:1px solid var(--border);margin-right:4px;white-space:nowrap;letter-spacing:-.3px;flex-shrink:0}
 .nav-tab{padding:14px 12px;font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;flex-shrink:1;min-width:0}
@@ -53,7 +53,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 @media(max-width:780px){.nav-tab{padding:12px 8px;font-size:13px}#logo{font-size:15px;padding:12px 10px 12px 0}}
 @media(max-width:580px){.nav-tab{padding:11px 6px;font-size:12px}}
 
-/* â”€â”€ Mobile hamburger â”€â”€ */
+/* ── Mobile hamburger ── */
 #hamburger{display:none;background:none;border:none;cursor:pointer;padding:10px;margin-left:auto;flex-shrink:0;color:var(--text-2)}
 #hamburger span{display:block;width:20px;height:2px;background:currentColor;margin:4px 0;border-radius:2px;transition:all .2s}
 #nav-menu{position:absolute;top:100%;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 8px 24px rgba(45,36,23,.15);z-index:99;transform:translateY(-6px);opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease,visibility 0s .18s;pointer-events:none}
@@ -104,34 +104,34 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .todo-text{font-size:16px}
   .history-section-text{font-size:16px}
   .budget-tx-desc{font-size:15px}
-  /* Bottom-sheet menu on mobile â€” slides up from bottom nav instead of dropping from top */
+  /* Bottom-sheet menu on mobile — slides up from bottom nav instead of dropping from top */
   #nav-menu{position:fixed;top:auto;bottom:calc(50px + env(safe-area-inset-bottom,0px));border-bottom:none;border-top:1px solid var(--border);border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(45,36,23,.18);transform:translateY(16px);z-index:201}
   #nav-menu.open{transform:translateY(0)}
 }
 .nav-tab:hover{color:var(--text)}
 .nav-tab.active{color:var(--amber);border-bottom-color:var(--amber);font-weight:700}
 
-/* â”€â”€ Pages â”€â”€ */
+/* ── Pages ── */
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .page{display:none;padding:32px 40px 60px;max-width:920px;margin:0 auto}
 .page.active{display:block;animation:fadeIn .25s cubic-bezier(.2,.8,.4,1)}
 
-/* â”€â”€ Cards â”€â”€ */
+/* ── Cards ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow);transition:box-shadow .2s}
 @media(hover:hover){.card,.coffee-card{transition:box-shadow .2s}.card:hover,.coffee-card:hover{box-shadow:0 2px 20px rgba(45,36,23,.16),0 6px 32px rgba(45,36,23,.13)}.japan-card:hover{box-shadow:0 4px 28px rgba(0,0,0,.45),0 8px 40px rgba(0,0,0,.3)}}
 .card+.card{margin-top:16px}
 .card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px;text-align:center}
 
-/* â”€â”€ Seasonal theming (light mode only â€” dark mode has its own palette) â”€â”€ */
+/* ── Seasonal theming (light mode only — dark mode has its own palette) ── */
 html:not([data-theme="dark"]) body.season-spring{--bg:#fdf6f0;--surface:#fffbf8;--surface-warm:#fff8f5;--border:#e8d5ca;--border-light:#f5e8e2}
 html:not([data-theme="dark"]) body.season-summer{--bg:#fdf9ec;--surface:#fffef5;--surface-warm:#fffcef;--border:#e8d8b0;--border-light:#f2e9cc}
 html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--border:#cdd8ea;--border-light:#dde6f5}
 
-/* â”€â”€ Typography â”€â”€ */
+/* ── Typography ── */
 .page-title{font-family:'Lora',Georgia,serif;font-size:26px;font-weight:700;color:var(--text);margin-bottom:6px;text-align:center}
 .page-sub{font-family:'Satisfy',cursive;font-size:17px;font-weight:500;color:var(--text-3);margin-bottom:28px;text-align:center;letter-spacing:.01em}
 
-/* â”€â”€ Buttons â”€â”€ */
+/* ── Buttons ── */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
 .btn-primary{background:var(--amber);color:white}
 .btn-primary:hover{background:var(--amber-dark)}
@@ -139,18 +139,18 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .btn-secondary:hover{background:#dfd4c4;color:var(--text)}
 .btn-lg{padding:14px 32px;font-size:15px;border-radius:12px;width:100%;justify-content:center}
 
-/* â”€â”€ Inputs â”€â”€ */
+/* ── Inputs ── */
 .field{margin-bottom:18px}
 .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-bottom:6px}
 .field textarea,.field input[type=text],.field input[type=password],.field input[type=number]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--text);background:var(--surface);font-family:inherit;resize:vertical;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.65}
 .field textarea{min-height:60px;resize:none;overflow:hidden}
 .field textarea:focus,.field input[type=text]:focus,.field input[type=password]:focus,.field input[type=number]:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(191,124,54,.12)}
-/* â”€â”€ Prevent auto-zoom on mobile input focus (browsers zoom when font-size < 16px) â”€â”€ */
+/* ── Prevent auto-zoom on mobile input focus (browsers zoom when font-size < 16px) ── */
 @media(max-width:768px){
   input,textarea,select{font-size:16px!important}
 }
 
-/* â”€â”€ HOME â”€â”€ */
+/* ── HOME ── */
 .welcome-banner{background:linear-gradient(135deg,#2d2417 0%,#5c3c1e 100%);border-radius:18px;padding:36px 40px;color:white;margin-bottom:20px;position:relative;overflow:hidden;text-align:center;display:flex;flex-direction:column;align-items:center}
 .welcome-banner::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(191,124,54,.3) 0%,transparent 70%);pointer-events:none}
 .welcome-date{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;opacity:.55;margin-bottom:8px}
@@ -164,7 +164,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .home-stat-val{font-size:20px;font-weight:800;color:var(--amber);line-height:1;margin-bottom:3px}
 .home-stat-lbl{font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 
-/* â”€â”€ Coffee Roulette â”€â”€ */
+/* ── Coffee Roulette ── */
 .coffee-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;margin-bottom:20px;text-align:center;box-shadow:var(--shadow)}
 .coffee-icon{font-size:38px;margin-bottom:8px;display:block}
 .coffee-title-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px}
@@ -176,7 +176,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .spin-btn:active{transform:scale(.97)}
 .spin-btn:disabled{opacity:.7;cursor:not-allowed;transform:none}
 
-/* â”€â”€ REVIEW â”€â”€ */
+/* ── REVIEW ── */
 .step-progress{display:flex;gap:8px;align-items:center;margin-bottom:28px}
 .step-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:all .2s;flex-shrink:0}
 .step-dot.done{background:var(--sage)}
@@ -188,7 +188,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .step-sub{font-size:13px;color:var(--text-3);margin-bottom:24px;line-height:1.65;text-align:center}
 .step-nav{display:flex;gap:10px;margin-top:24px}
 
-/* â”€â”€ Heart rating â”€â”€ */
+/* ── Heart rating ── */
 .hw{position:relative;display:inline-block;user-select:none}
 .hw .hbg{filter:grayscale(1) opacity(.25)}
 .hw .hfill{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;width:0%;pointer-events:none}
@@ -196,13 +196,13 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .heart-rating .hw{font-size:30px;cursor:pointer;transition:transform .15s}
 .heart-rating .hw:hover{transform:scale(1.2)}
 
-/* â”€â”€ Theme chips â”€â”€ */
+/* ── Theme chips ── */
 .theme-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .theme-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;transition:all .15s;background:var(--surface)}
 .theme-chip:hover{border-color:var(--amber);color:var(--amber-dark)}
 .theme-chip.on{background:var(--amber-bg);border-color:var(--amber);color:var(--amber-dark)}
 
-/* â”€â”€ To-Dos â”€â”€ */
+/* ── To-Dos ── */
 .todo-category{margin-bottom:16px}
 .todo-cat-title{font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .todo-items{display:flex;flex-direction:column;gap:6px}
@@ -225,7 +225,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .add-todo button{padding:9px 16px;background:var(--amber-bg);color:var(--amber-dark);border:1px solid #f0d4a8;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .add-todo button:hover{background:var(--amber);color:white;border-color:var(--amber)}
 
-/* â”€â”€ Dates â”€â”€ */
+/* ── Dates ── */
 .trip-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:0}
 .trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .trip-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tc,var(--amber))}
@@ -246,7 +246,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .vaca-stats strong{color:var(--text)}
 .list-items{display:flex;flex-direction:column;gap:6px}
 .list-item{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);padding:8px 12px;border-radius:8px;background:var(--surface-warm);border:1px solid var(--border-light)}
-.list-item::before{content:'â†’';font-weight:700;color:var(--text-3);flex-shrink:0}
+.list-item::before{content:'→';font-weight:700;color:var(--text-3);flex-shrink:0}
 .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;vertical-align:middle;margin-left:6px}
 .tag-coral{background:var(--coral-bg);color:var(--coral)}
 .tag-sage{background:var(--sage-bg);color:var(--sage)}
@@ -275,7 +275,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .add-list-row button{padding:9px 16px;background:var(--amber-bg);color:var(--amber-dark);border:1px solid #f0d4a8;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
 .add-list-row button:hover{background:var(--amber);color:white;border-color:var(--amber)}
 
-/* â”€â”€ History â”€â”€ */
+/* ── History ── */
 .history-entry{margin-bottom:12px}
 .history-header{display:flex;align-items:center;gap:12px;padding:15px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:background .15s,border-color .15s}
 .history-entry:hover .history-header{border-color:var(--amber);background:var(--amber-bg)}
@@ -298,10 +298,10 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .history-section-text{font-size:13px;color:var(--text-2);line-height:1.75;white-space:pre-wrap}
 
 
-/* â”€â”€ Plan: today highlight â”€â”€ */
+/* ── Plan: today highlight ── */
 .plan-day-today .plan-day-label{background:var(--amber);color:white}
 
-/* â”€â”€ Trip countdown badge â”€â”€ */
+/* ── Trip countdown badge ── */
 .trip-countdown{font-size:10px;font-weight:700;color:var(--text-3);margin-top:5px;letter-spacing:.02em}
 .trip-countdown.soon{color:var(--amber-dark)}
 .trip-countdown.very-soon{color:var(--coral)}
@@ -315,28 +315,28 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .tc-lavender{--tc:#8a65aa;--tc-bg:rgba(138,101,170,.05)}
 .tc-gold{--tc:#bf7c36;--tc-bg:rgba(191,124,54,.05)}
 .trip-card:not(.past):not(.overlap).tc-rose,.trip-card:not(.past):not(.overlap).tc-sage,.trip-card:not(.past):not(.overlap).tc-sky,.trip-card:not(.past):not(.overlap).tc-peach,.trip-card:not(.past):not(.overlap).tc-lavender,.trip-card:not(.past):not(.overlap).tc-gold{background:var(--tc-bg)}
-/* Pulse for upcoming trips â‰¤7 days */
+/* Pulse for upcoming trips ≤7 days */
 @keyframes trip-pulse{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 4px 24px rgba(217,106,82,.4)}}
 .trip-pulse{animation:trip-pulse 2.5s ease-in-out infinite}
 /* Flip digit animation (next trip countdown) */
 .flip-digit{display:inline-block;animation:flip-in .45s cubic-bezier(.36,.07,.19,.97) both;transform-origin:top center}
 @keyframes flip-in{0%{transform:rotateX(-90deg);opacity:0}60%{opacity:1}100%{transform:rotateX(0);opacity:1}}
 
-/* â”€â”€ Toast â”€â”€ */
+/* ── Toast ── */
 .toast{position:fixed;bottom:28px;right:28px;background:#2d2417;color:white;padding:13px 22px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:14px}
 .toast.show{opacity:1;transform:translateY(0);pointer-events:auto}
 .toast-undo{background:none;border:1px solid rgba(255,255,255,.45);color:white;padding:4px 11px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .toast-undo:hover{background:rgba(255,255,255,.18)}
 
-/* â”€â”€ Confetti â”€â”€ */
+/* ── Confetti ── */
 .confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden}
 .confetti-dot{position:absolute;width:16px;height:16px;border-radius:50%;opacity:0}
 @keyframes confetti-fly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2)}}
 
-/* â”€â”€ Banner heart graphic â”€â”€ */
+/* ── Banner heart graphic ── */
 .banner-heart-graphic{font-size:30px;color:rgba(245,194,122,.55);line-height:1;margin-bottom:10px;letter-spacing:0;user-select:none}
 
-/* â”€â”€ Floating banner particles â”€â”€ */
+/* ── Floating banner particles ── */
 @keyframes banner-float{
   0%  {transform:translateY(0) translateX(0) scale(.65) rotate(0deg);opacity:0}
   18% {opacity:.8}
@@ -347,17 +347,17 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .banner-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .banner-particle{position:absolute;pointer-events:none;animation:banner-float linear infinite;animation-fill-mode:backwards}
 
-/* â”€â”€ Mood spin button â”€â”€ */
+/* ── Mood spin button ── */
 .mood-spin-btn{font-size:11px;color:var(--text-3);background:none;border:1px dashed var(--border);border-radius:8px;padding:4px 8px;cursor:pointer;margin-top:5px;width:100%;font-family:inherit;transition:color .15s,border-color .15s}
 .mood-spin-btn:hover{color:var(--amber);border-color:var(--amber)}
 
-/* â”€â”€ Stat count-up â”€â”€ */
+/* ── Stat count-up ── */
 @keyframes stat-pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 .stat-popping{animation:stat-pop .4s cubic-bezier(.36,.07,.19,.97) both}
 
-/* â”€â”€ Japan Countdown â”€â”€ */
+/* ── Japan Countdown ── */
 .japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:18px 18px;margin-bottom:14px;position:relative;overflow:hidden}
-.japan-card::before{content:'ðŸ—¾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
+.japan-card::before{content:'🗾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
 @keyframes japan-shimmer{0%{transform:translateX(-120%) skewX(-15deg)}100%{transform:translateX(320%) skewX(-15deg)}}
 .japan-card::after{content:'';position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(to right,transparent,rgba(255,255,255,.07),transparent);animation:japan-shimmer 5s ease-in-out infinite;animation-delay:3s;pointer-events:none}
 .japan-card-label{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:800;color:rgba(255,255,255,.85);margin-bottom:4px;letter-spacing:0}
@@ -368,11 +368,11 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .japan-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-top:5px}
 .japan-sep{font-size:36px;font-weight:300;color:rgba(255,255,255,.2);margin-bottom:14px;line-height:1}
 
-/* â”€â”€ Misc â”€â”€ */
+/* ── Misc ── */
 .empty-state{text-align:center;padding:48px 20px;color:var(--text-3);font-size:14px}
 .divider{height:1px;background:var(--border-light);margin:24px 0}
 
-/* â”€â”€ Next Week Plan â”€â”€ */
+/* ── Next Week Plan ── */
 .plan-week{display:grid;gap:8px}
 .plan-day{display:grid;grid-template-columns:110px 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .plan-day-label{background:var(--amber-bg);color:var(--amber-dark);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:10px 8px;text-transform:uppercase;letter-spacing:.05em;text-align:center;line-height:1.3}
@@ -411,7 +411,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 /* Auto-injected trip events */
 .plan-slot-trip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;background:#92590f;color:white;border:1.5px solid #92590f;cursor:default;user-select:none}
 [data-theme="dark"] .plan-slot-trip{background:#7a4a0a;color:white;border-color:#7a4a0a}
-/* This Week's Focus â€” todo picker */
+/* This Week's Focus — todo picker */
 .week-todo-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;background:var(--surface-warm);border:1px solid var(--border-light);margin-bottom:6px}
 .week-todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;transition:all .15s;background:white}
 .week-todo-item.done-item .week-todo-cb{background:var(--sage);border-color:var(--sage)}
@@ -434,7 +434,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-meal-input::placeholder{color:var(--text-3)}
 .plan-meal-input:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 
-/* â”€â”€ Budget â”€â”€ */
+/* ── Budget ── */
 .budget-period-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
 .budget-period-row select{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
 .budget-period-row select:focus{border-color:var(--amber)}
@@ -466,14 +466,14 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .bsum-value{font-family:'Lora',Georgia,serif;font-size:22px;font-weight:700}
 .budget-owes-card{min-width:180px;text-align:center}
 
-/* â”€â”€ Budget snapshot strip â”€â”€ */
+/* ── Budget snapshot strip ── */
 .budget-snapshot{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 .bsnap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 14px;box-shadow:var(--shadow);text-align:center}
 .bsnap-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:6px}
 .bsnap-val{font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;line-height:1}
 .bsnap-sub{font-size:11px;color:var(--text-3);margin-top:4px}
 
-/* â”€â”€ Budget trend bars â”€â”€ */
+/* ── Budget trend bars ── */
 .budget-trend{display:flex;align-items:flex-end;gap:4px;height:72px}
 .btrend-col{display:flex;flex-direction:column-reverse;align-items:center;gap:3px;flex:1}
 .btrend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .3s;background:var(--border);min-height:2px}
@@ -481,7 +481,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .btrend-col.active .btrend-bar{background:var(--amber)}
 .btrend-col.active .btrend-lbl{color:var(--amber)}
 
-/* â”€â”€ Budget quick-add 2-row â”€â”€ */
+/* ── Budget quick-add 2-row ── */
 .bqa-row1{display:grid;grid-template-columns:auto auto 1fr;gap:8px;margin-bottom:8px}
 .bqa-row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .bqa-row2 .bq-amt{width:110px}
@@ -529,20 +529,20 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .rec-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:14px;padding:0 2px}
 .rec-del:hover{color:var(--coral)}
 
-/* â”€â”€ Bottom Nav (mobile) â”€â”€ */
+/* ── Bottom Nav (mobile) ── */
 #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom,0px)}
 .bnav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:8px 4px 6px;font-size:20px;cursor:pointer;color:var(--text-3);gap:1px;transition:color .15s;-webkit-tap-highlight-color:transparent}
 .bnav-item span{font-size:11px;font-weight:600;letter-spacing:-.2px}
 .bnav-item.active,.bnav-item.active span{color:var(--amber)}
 [data-theme="dark"] #bottom-nav{border-top-color:var(--border)}
 
-/* â”€â”€ FAB â”€â”€ */
+/* ── FAB ── */
 .fab{position:fixed;bottom:28px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--amber);color:white;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(191,124,54,.45);align-items:center;justify-content:center;z-index:201;transition:transform .15s,box-shadow .15s;line-height:1;font-weight:300}
 .fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(191,124,54,.55)}
 .fab:active{transform:scale(0.93)}
 @media(max-width:540px){.fab{bottom:72px;right:14px}}
 
-/* â”€â”€ Responsive â”€â”€ */
+/* ── Responsive ── */
 @media(max-width:680px){
   .page{padding:20px 16px 40px}
   .trip-grid{grid-template-columns:1fr}.home-stats{grid-template-columns:repeat(2,1fr)!important;grid-template-rows:auto auto!important}
@@ -558,7 +558,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
   .budget-tools-row>.card{height:auto!important;min-height:300px}
 }
 
-/* â”€â”€ Dark mode â”€â”€ */
+/* ── Dark mode ── */
 [data-theme="dark"]{
   --bg:#1c1812;--surface:#252016;--surface-warm:#2b2318;
   --border:#3a3020;--border-light:#302818;
@@ -582,7 +582,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 [data-theme="dark"] #bulk-preview thead tr{background:var(--surface)!important}
 [data-theme="dark"] code{background:var(--surface)!important;color:var(--text-2)}
 
-/* â”€â”€ Accent palettes â”€â”€ */
+/* ── Accent palettes ── */
 [data-accent="rose"]     {--amber:#c05678;--amber-bg:#fde8ef;--amber-dark:#8a3050}
 [data-accent="coral"]    {--amber:#d06545;--amber-bg:#fdeae5;--amber-dark:#8a3a22}
 [data-accent="plum"]     {--amber:#7a5590;--amber-bg:#f0eaf8;--amber-dark:#50356a}
@@ -604,7 +604,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 [data-theme="dark"][data-accent="berry"]  {--amber:#8a68b8;--amber-bg:rgba(90,58,122,.15)}
 [data-theme="dark"][data-accent="pink"]   {--amber:#e870a8;--amber-bg:rgba(208,72,128,.15)}
 
-/* â”€â”€ Background presets (light mode only) â”€â”€ */
+/* ── Background presets (light mode only) ── */
 html:not([data-theme="dark"]) body[data-bg="blush"]     {--bg:#fdf6f0;--surface:#fffbf8;--surface-warm:#fff8f5;--border:#e8d5ca;--border-light:#f5e8e2}
 html:not([data-theme="dark"]) body[data-bg="ivory"]     {--bg:#fafaf7;--surface:#ffffff;--surface-warm:#fdfdf8;--border:#e4e4dc;--border-light:#eeeee6}
 html:not([data-theme="dark"]) body[data-bg="frost"]     {--bg:#f4f7fb;--surface:#f9fbff;--surface-warm:#f6f9ff;--border:#d0daea;--border-light:#dde8f4}
@@ -616,7 +616,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 [data-theme="dark"] body[data-bg="parchment"] {--bg:#1a1210;--surface:#241a10;--surface-warm:#221610;--border:#3a2818;--border-light:#302010}
 [data-theme="dark"] body[data-bg="sage"]      {--bg:#111a13;--surface:#182018;--surface-warm:#161e16;--border:#1e2e20;--border-light:#1a2a1c}
 
-/* â”€â”€ Palette + bg picker swatches â”€â”€ */
+/* ── Palette + bg picker swatches ── */
 .palette-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
 .palette-swatch:hover{transform:scale(1.15)}
 .palette-swatch.active{border-color:var(--text);transform:scale(1.1)}
@@ -625,7 +625,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .bg-swatch.active{border-color:var(--text)}
 .custom-color-swatch{background:conic-gradient(red,#ff0,lime,cyan,blue,magenta,red);position:relative;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;color:white;text-shadow:0 1px 2px rgba(0,0,0,.5)}
 
-/* â”€â”€ Custom countdowns â”€â”€ */
+/* ── Custom countdowns ── */
 .custom-cd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:12px}
 .custom-cd-widget{text-align:center;padding:14px 10px 12px;background:var(--amber-bg);border:1px solid var(--border);border-radius:var(--radius);position:relative;transition:box-shadow .15s}
 .custom-cd-widget:hover{box-shadow:var(--shadow-lg)}
@@ -641,7 +641,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .custom-cd-add button:hover{background:var(--amber-dark)}
 @media(max-width:480px){.custom-cd-add{grid-template-columns:1fr 1fr;}.custom-cd-add button{grid-column:1/-1}}
 
-/* â”€â”€ Home widget drag & drop â”€â”€ */
+/* ── Home widget drag & drop ── */
 #home-widgets{display:flex;flex-direction:column;gap:14px}
 .home-widget{position:relative}
 .home-widget>*{margin-bottom:0!important}
@@ -660,7 +660,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .dark-toggle::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .dark-toggle.active::after{transform:translateX(16px)}
 
-/* â”€â”€ Photo widget â”€â”€ */
+/* ── Photo widget ── */
 .photo-widget-wrap{position:relative;width:100%;padding-top:44%;border-radius:10px;overflow:hidden;background:var(--border-light);margin-bottom:10px}
 .photo-widget-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .6s}
 .photo-widget-img.fade-out{opacity:0}
@@ -669,7 +669,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .photo-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .2s;cursor:pointer;border:none;padding:0}
 .photo-dot.active{background:var(--amber)}
 
-/* â”€â”€ Mood widget â”€â”€ */
+/* ── Mood widget ── */
 .mood-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mood-person{text-align:center;padding:12px 8px;border-radius:10px;background:var(--surface-warm);border:1px solid var(--border-light);display:flex;flex-direction:column;align-items:center;justify-content:center}
 .mood-person-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px}
@@ -681,13 +681,13 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .emoji-picker-popup button{background:none;border:none;font-size:22px;cursor:pointer;padding:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:background .1s}
 .emoji-picker-popup button:hover{background:var(--amber-bg)}
 
-/* â”€â”€ Review photo upload â”€â”€ */
+/* ── Review photo upload ── */
 .photo-upload-label{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer}
 .photo-upload-label:hover{background:var(--blue);color:white}
 #r-photo-preview{margin-top:8px;border-radius:10px;overflow:hidden;display:none}
 #r-photo-preview img{width:100%;height:auto;display:block;border-radius:10px}
 
-/* â”€â”€ History photo â”€â”€ */
+/* ── History photo ── */
 .history-body-inner{display:flex;gap:18px;align-items:flex-start}
 .history-photo{width:100%;border-radius:10px;display:block;object-fit:cover;max-height:320px}
 .history-photo-carousel{width:38%;flex-shrink:0}
@@ -698,23 +698,23 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .hpn-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1px 10px;font-size:18px;cursor:pointer;line-height:1.5;color:var(--text-2);transition:all .15s}
 .hpn-btn:hover{border-color:var(--amber);color:var(--amber)}
 .hpn-count{font-size:11px;color:var(--text-3);min-width:30px;text-align:center}
-/* â”€â”€ Review photo thumbnails â”€â”€ */
+/* ── Review photo thumbnails ── */
 .review-photo-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .review-photo-thumb{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0}
 .review-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .review-photo-remove{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
-/* â”€â”€ Photo lightbox â”€â”€ */
+/* ── Photo lightbox ── */
 #photo-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9998;align-items:center;justify-content:center;cursor:zoom-out}
 #photo-lightbox.open{display:flex}
 #photo-lightbox img{max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;user-select:none}
 .photo-zoomable{cursor:zoom-in}
-/* â”€â”€ Heart hover preview â”€â”€ */
+/* ── Heart hover preview ── */
 .heart-preview-val{font-size:12px;color:var(--amber-dark);font-weight:600;min-width:38px;align-self:center}
-/* â”€â”€ History edit button â”€â”€ */
+/* ── History edit button ── */
 .history-edit-btn-row{margin-top:14px;display:flex;justify-content:flex-end;gap:8px}
 .history-edit-btn{background:none;border:1px solid var(--border);color:var(--text-2);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
 .history-edit-btn:hover{border-color:var(--amber);color:var(--amber);background:var(--amber-bg)}
-/* â”€â”€ History inline edit form â”€â”€ */
+/* ── History inline edit form ── */
 .history-edit-form{display:flex;flex-direction:column;gap:12px}
 .history-edit-field{display:flex;flex-direction:column;gap:5px}
 .history-edit-ta{width:100%;min-height:60px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);resize:vertical;outline:none;transition:border-color .15s;box-sizing:border-box}
@@ -727,7 +727,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .history-edit-done-btn:hover{background:var(--amber);color:white}
 
 
-/* â”€â”€ Todo Priority & Drag â”€â”€ */
+/* ── Todo Priority & Drag ── */
 .todo-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
 .todo-item.priority-critical{border-left:3px solid var(--coral);background:var(--coral-bg)}
 .todo-priority-btn{font-size:16px;cursor:pointer;opacity:0;transition:opacity .15s;padding:0 4px;background:none;border:none;flex-shrink:0;line-height:1}
@@ -739,7 +739,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .todo-item.drag-over{border-top:2px solid var(--amber)}
 .todo-category.cat-drag-over{border-color:var(--amber);box-shadow:0 0 0 2px rgba(191,124,54,.2)}
 
-/* â”€â”€ List Item Priority & Drag (Dates tab) â”€â”€ */
+/* ── List Item Priority & Drag (Dates tab) ── */
 .list-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
 .list-item.priority-critical{border-left:3px solid var(--coral);background:var(--coral-bg)}
 .list-priority-btn{font-size:16px;cursor:pointer;opacity:0;transition:opacity .15s;padding:0 4px;background:none;border:none;flex-shrink:0;line-height:1}
@@ -750,7 +750,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .list-item.dragging{opacity:.35}
 .list-item.drag-over{border-top:2px solid var(--amber)}
 
-/* â”€â”€ Small-screen responsive fixes â”€â”€ */
+/* ── Small-screen responsive fixes ── */
 @media(max-width:480px){
   /* Nav: tighter tabs */
   #logo{font-size:15px;padding:12px 12px 12px 0}
@@ -793,13 +793,13 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 </head>
 <body>
 
-<!-- â”€â”€ Offline Banner â”€â”€ -->
-<div id="offline-banner">ðŸ“¡ You're offline â€” changes will sync when you reconnect</div>
+<!-- ── Offline Banner ── -->
+<div id="offline-banner">📡 You're offline — changes will sync when you reconnect</div>
 
-<!-- â”€â”€ Login Overlay â”€â”€ -->
+<!-- ── Login Overlay ── -->
 <div id="login-overlay">
   <div id="login-box">
-    <div id="login-logo">our weekly â™¥</div>
+    <div id="login-logo">our weekly ♥</div>
     <p id="login-sub">Amanda & Aidan's space</p>
     <div class="field">
       <label for="login-email">Email</label>
@@ -807,47 +807,47 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     </div>
     <div class="field">
       <label for="login-password">Password</label>
-      <input type="password" id="login-password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password">
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div id="login-error"></div>
     <button class="btn btn-primary btn-lg" id="login-btn" onclick="doLogin()">Sign In</button>
   </div>
 </div>
 
-<!-- â”€â”€ Nav â”€â”€ -->
+<!-- ── Nav ── -->
 <nav id="nav">
-  <div id="logo" onclick="showPage('home')" style="cursor:pointer">our weekly â™¥</div>
-  <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">âœï¸ </span>Review</div>
-  <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">ðŸ—“ï¸ </span>This Week</div>
-  <div class="nav-tab" onclick="showPage('todos')"><span class="nav-emoji">âœ… </span>To-Dos</div>
-  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">âœˆï¸ </span>Dates</div>
-  <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">ðŸ’° </span>Budget</div>
-  <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">ðŸ“– </span>History</div>
+  <div id="logo" onclick="showPage('home')" style="cursor:pointer">our weekly ♥</div>
+  <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">✏️ </span>Review</div>
+  <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">🗓️ </span>This Week</div>
+  <div class="nav-tab" onclick="showPage('todos')"><span class="nav-emoji">✅ </span>To-Dos</div>
+  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>Dates</div>
+  <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
+  <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">📖 </span>History</div>
   <div class="nav-dark-controls" style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
     <span class="theme-icon">&#9728;</span>
     <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
     <span class="theme-icon">&#9790;</span>
   </div>
-  <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 10px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap"><span class="nav-emoji">Sign out</span><span class="nav-signout-icon" style="display:none">â†©</span></div>
+  <div id="signout-btn" onclick="auth.signOut()" title="Sign out" style="padding:14px 10px;font-size:12px;font-weight:500;color:var(--text-3);cursor:pointer;flex-shrink:0;white-space:nowrap"><span class="nav-emoji">Sign out</span><span class="nav-signout-icon" style="display:none">↩</span></div>
   <button id="hamburger" onclick="toggleNavMenu()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
   <div id="nav-menu">
-    <div class="menu-header">our weekly â™¥</div>
-    <div class="menu-item" onclick="showPage('home')">ðŸ  Home</div>
-    <div class="menu-item" onclick="showPage('review')">âœï¸ Review</div>
-    <div class="menu-item" onclick="showPage('plan')">ðŸ—“ï¸ This Week</div>
-    <div class="menu-item" onclick="showPage('todos')">âœ… To-Dos</div>
-    <div class="menu-item" onclick="showPage('dates')">âœˆï¸ Dates</div>
-    <div class="menu-item" onclick="showPage('budget')">ðŸ’° Budget</div>
-    <div class="menu-item" onclick="showPage('history')">ðŸ“– History</div>
+    <div class="menu-header">our weekly ♥</div>
+    <div class="menu-item" onclick="showPage('home')">🏠 Home</div>
+    <div class="menu-item" onclick="showPage('review')">✏️ Review</div>
+    <div class="menu-item" onclick="showPage('plan')">🗓️ This Week</div>
+    <div class="menu-item" onclick="showPage('todos')">✅ To-Dos</div>
+    <div class="menu-item" onclick="showPage('dates')">✈️ Dates</div>
+    <div class="menu-item" onclick="showPage('budget')">💰 Budget</div>
+    <div class="menu-item" onclick="showPage('history')">📖 History</div>
     <div class="menu-divider"></div>
-    <div class="menu-item menu-util" id="menu-dark-item" onclick="toggleDarkMode()">ðŸŒ™ Dark mode</div>
-    <div class="menu-item menu-util" onclick="auth.signOut()">â†© Sign out</div>
+    <div class="menu-item menu-util" id="menu-dark-item" onclick="toggleDarkMode()">🌙 Dark mode</div>
+    <div class="menu-item menu-util" onclick="auth.signOut()">↩ Sign out</div>
   </div>
 </nav>
 
-<!-- â”€â”€ HOME â”€â”€ -->
+<!-- ── HOME ── -->
 <div class="page active" id="page-home">
 
   <div class="welcome-banner">
@@ -855,7 +855,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="welcome-date" id="home-date-label"></div>
       <div class="welcome-greeting" id="welcome-greeting"><span>Amanda & Aidan!</span></div>
       <button id="home-review-btn" class="btn btn-primary btn-lg" style="max-width:280px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)" onclick="homeNavBtn()">
-        âœï¸ Start This Week's Review â†’
+        ✏️ Start This Week's Review →
       </button>
     </div>
   </div>
@@ -864,91 +864,91 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div id="home-widgets">
 
   <div class="home-widget" data-widget="stats">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div class="home-stats">
       <div class="home-stat" onclick="showPage('todos')" style="cursor:pointer" title="Go to To-Dos">
-        <div class="home-stat-val" id="stat-todos">â€”</div>
-        <div class="home-stat-lbl">Open To-Dos â†—</div>
+        <div class="home-stat-val" id="stat-todos">—</div>
+        <div class="home-stat-lbl">Open To-Dos ↗</div>
       </div>
       <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
-        <div class="home-stat-val" id="stat-last-entry">â€”</div>
-        <div class="home-stat-lbl">Last Review â†—</div>
+        <div class="home-stat-val" id="stat-last-entry">—</div>
+        <div class="home-stat-lbl">Last Review ↗</div>
       </div>
       <div class="home-stat" onclick="showPage('history')" style="cursor:pointer" title="Go to History">
-        <div class="home-stat-val" id="stat-streak">â€”</div>
-        <div class="home-stat-lbl">Week Streak ðŸ”¥ â†—</div>
+        <div class="home-stat-val" id="stat-streak">—</div>
+        <div class="home-stat-lbl">Week Streak 🔥 ↗</div>
       </div>
       <div class="home-stat" onclick="showPage('budget')" style="cursor:pointer" title="Go to Budget">
-        <div class="home-stat-val" id="stat-budget">â€”</div>
-        <div class="home-stat-lbl">Spent This Month â†—</div>
+        <div class="home-stat-val" id="stat-budget">—</div>
+        <div class="home-stat-lbl">Spent This Month ↗</div>
       </div>
     </div>
   </div>
 
   <div class="home-widget" data-widget="countdowns">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch">
       <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure ðŸ—ºï¸</div>
-        <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">â€”</div>
-        <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">â€”</div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="next-trip-days">—</div>
         <div id="next-trip-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
       </div>
       <div class="card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8;margin-top:0">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">ðŸ’• Anniversary</div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">💕 Anniversary</div>
         <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">October 1st</div>
-        <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">â€”</div>
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
         <div id="anniv-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
       </div>
     </div>
   </div>
 
   <div class="home-widget" data-widget="japan">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div class="card japan-card">
-      <div class="japan-card-label">âœˆï¸ Japan Countdown</div>
-      <div class="japan-card-sub">Oct 24, 2026 â€” Tokyo awaits ðŸŒ¸ æ¥½ã—ã¿ã«ã—ã¦ã‚‹</div>
+      <div class="japan-card-label">✈️ Japan Countdown</div>
+      <div class="japan-card-sub">Oct 24, 2026 — Tokyo awaits 🌸 楽しみにしてる</div>
       <div class="japan-countdown">
-        <div class="japan-unit"><span class="japan-num" id="jc-days">â€”</span><span class="japan-lbl">days</span></div>
+        <div class="japan-unit"><span class="japan-num" id="jc-days">—</span><span class="japan-lbl">days</span></div>
         <div class="japan-sep">:</div>
-        <div class="japan-unit"><span class="japan-num" id="jc-hrs">â€”</span><span class="japan-lbl">hours</span></div>
+        <div class="japan-unit"><span class="japan-num" id="jc-hrs">—</span><span class="japan-lbl">hours</span></div>
         <div class="japan-sep">:</div>
-        <div class="japan-unit"><span class="japan-num" id="jc-mins">â€”</span><span class="japan-lbl">mins</span></div>
+        <div class="japan-unit"><span class="japan-num" id="jc-mins">—</span><span class="japan-lbl">mins</span></div>
         <div class="japan-sep">:</div>
-        <div class="japan-unit"><span class="japan-num" id="jc-secs">â€”</span><span class="japan-lbl">secs</span></div>
+        <div class="japan-unit"><span class="japan-num" id="jc-secs">—</span><span class="japan-lbl">secs</span></div>
       </div>
     </div>
   </div>
 
   <div class="home-widget" data-widget="coffee-mood">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="coffee-card" style="margin:0">
-        <span class="coffee-icon">â˜•</span>
+        <span class="coffee-icon">☕</span>
         <div class="coffee-title-label">this week's coffee pick</div>
-        <div class="coffee-name" id="coffee-name">â€”</div>
+        <div class="coffee-name" id="coffee-name">—</div>
         <div class="coffee-area" id="coffee-area">tap spin to discover</div>
-        <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">â˜• Spin!</button>
+        <button class="spin-btn" id="spin-btn" onclick="spinCoffee()">☕ Spin!</button>
       </div>
       <div class="card" style="margin:0">
-        <div class="card-title" style="margin-bottom:12px">Mood ðŸ’­</div>
+        <div class="card-title" style="margin-bottom:12px">Mood 💭</div>
         <div class="mood-grid" id="mood-widget"></div>
       </div>
     </div>
   </div>
 
   <div class="home-widget" data-widget="coming-up">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div class="card">
-      <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up âœˆï¸</div>
+      <div class="card-title" onclick="showPage('dates')" style="cursor:pointer">Coming Up ✈️</div>
       <div id="home-trips"></div>
     </div>
   </div>
 
   <div class="home-widget" data-widget="custom-countdowns">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div class="card" id="custom-countdowns-card">
-      <div class="card-title">Countdowns â³</div>
+      <div class="card-title">Countdowns ⏳</div>
       <div id="custom-cd-list"></div>
       <div class="custom-cd-add">
         <input type="text" id="cd-name" placeholder="Event name">
@@ -959,14 +959,14 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 
   <div class="home-widget" data-widget="customize">
-    <div class="home-widget-handle" title="Drag to reorder">â ¿</div>
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div class="card">
       <div class="card-title" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
-        <span>Customize ðŸŽ¨</span>
-        <button id="edit-layout-btn" onclick="toggleEditMode()" style="font-size:11px;font-weight:700;color:var(--text-3);background:var(--border-light);border:1px solid var(--border);border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap">â ¿ Edit Layout</button>
+        <span>Customize 🎨</span>
+        <button id="edit-layout-btn" onclick="toggleEditMode()" style="font-size:11px;font-weight:700;color:var(--text-3);background:var(--border-light);border:1px solid var(--border);border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap">⠿ Edit Layout</button>
       </div>
       <div style="margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Accent Color â€” <span id="palette-label" style="color:var(--amber);font-weight:800"></span></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Accent Color — <span id="palette-label" style="color:var(--amber);font-weight:800"></span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <div class="palette-swatch" id="swatch-amber"  style="background:#bf7c36" onclick="setAccent('amber')"  title="Amber"></div>
           <div class="palette-swatch" id="swatch-rose"   style="background:#c05678" onclick="setAccent('rose')"   title="Rose"></div>
@@ -984,7 +984,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         </div>
       </div>
       <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Background â€” <span id="bg-label" style="color:var(--amber);font-weight:800"></span></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Background — <span id="bg-label" style="color:var(--amber);font-weight:800"></span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <div class="bg-swatch" id="bgswatch-default"   style="background:#faf7f2" onclick="setBackground('default')"   title="Linen (default)"></div>
           <div class="bg-swatch" id="bgswatch-blush"     style="background:#fdf6f0" onclick="setBackground('blush')"     title="Blush"></div>
@@ -1001,7 +1001,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
 </div>
 
-<!-- â”€â”€ THIS WEEK'S REVIEW â”€â”€ -->
+<!-- ── THIS WEEK'S REVIEW ── -->
 <div class="page" id="page-review">
   <div class="page-title">Weekly Review</div>
   <div class="page-sub" id="review-date-sub"></div>
@@ -1016,7 +1016,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
     <!-- Step 1: Overview -->
     <div class="step-page active" id="step-0">
-      <div class="step-title">ðŸŒ… Weekly Overview</div>
+      <div class="step-title">🌅 Weekly Overview</div>
       <div class="step-sub">Take a few minutes to reflect on how the week went as a team.</div>
       <div class="field">
         <label>What went well this week?</label>
@@ -1030,36 +1030,36 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <label>Any adjustments for next week?</label>
         <textarea id="r-adjust" placeholder="What would you do differently?"></textarea>
         <div id="review-adjust-hint" style="display:none;margin-top:6px;padding:10px 14px;background:var(--amber-bg);border:1px solid var(--border);border-radius:9px;font-size:12px;color:var(--amber-dark);align-items:flex-start;gap:10px">
-          <span style="flex:1;line-height:1.55"><strong>ðŸ“Œ Last week:</strong> <span id="review-adjust-hint-text"></span></span>
-          <button onclick="pullLastAdjust()" style="flex-shrink:0;background:var(--amber);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Use â†‘</button>
+          <span style="flex:1;line-height:1.55"><strong>📌 Last week:</strong> <span id="review-adjust-hint-text"></span></span>
+          <button onclick="pullLastAdjust()" style="flex-shrink:0;background:var(--amber);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Use ↑</button>
         </div>
       </div>
       <div class="step-nav">
-        <button class="btn btn-primary" onclick="nextStep(1)">Next â†’ Us â¤ï¸</button>
+        <button class="btn btn-primary" onclick="nextStep(1)">Next → Us ❤️</button>
       </div>
     </div>
 
     <!-- Step 2: Us + Theme -->
     <div class="step-page" id="step-1">
-      <div class="step-title">â¤ï¸ Us Check-in</div>
+      <div class="step-title">❤️ Us Check-in</div>
       <div class="step-sub">The most important part. How are we doing?</div>
       <div class="field">
-        <label>How would you rate this week? (1â€“5 â¤ï¸)</label>
+        <label>How would you rate this week? (1–5 ❤️)</label>
         <div class="heart-rating" onmouseleave="clearHeartPreview()" style="display:flex;align-items:center;gap:8px">
-          <span class="hw" onclick="setHeartClick(event,this,1)" onmousemove="previewHeart(event,this,1)"><span class="hbg">â¤ï¸</span><span class="hfill">â¤ï¸</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,2)" onmousemove="previewHeart(event,this,2)"><span class="hbg">â¤ï¸</span><span class="hfill">â¤ï¸</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,3)" onmousemove="previewHeart(event,this,3)"><span class="hbg">â¤ï¸</span><span class="hfill">â¤ï¸</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,4)" onmousemove="previewHeart(event,this,4)"><span class="hbg">â¤ï¸</span><span class="hfill">â¤ï¸</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,5)" onmousemove="previewHeart(event,this,5)"><span class="hbg">â¤ï¸</span><span class="hfill">â¤ï¸</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,1)" onmousemove="previewHeart(event,this,1)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,2)" onmousemove="previewHeart(event,this,2)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,3)" onmousemove="previewHeart(event,this,3)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,4)" onmousemove="previewHeart(event,this,4)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+          <span class="hw" onclick="setHeartClick(event,this,5)" onmousemove="previewHeart(event,this,5)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
         </div>
       </div>
       <div class="field">
-        <label>Amanda â†’ one thing you loved about Aidan this week</label>
-        <input type="text" id="r-amanda" placeholder="ðŸ’›">
+        <label>Amanda → one thing you loved about Aidan this week</label>
+        <input type="text" id="r-amanda" placeholder="💛">
       </div>
       <div class="field">
-        <label>Aidan â†’ one thing you loved about Amanda this week</label>
-        <input type="text" id="r-aidan" placeholder="ðŸ’›">
+        <label>Aidan → one thing you loved about Amanda this week</label>
+        <input type="text" id="r-aidan" placeholder="💛">
       </div>
       <div class="field">
         <label>Anything else to remember?</label>
@@ -1068,66 +1068,66 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="field">
         <label>Next week's themes (pick up to 2)</label>
         <div class="theme-chips">
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ”‹ Recharging</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ’¸ Financial Reset</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ  House Reset</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŽ‰ Holiday Cheer</div>
-          <div class="theme-chip" onclick="pickTheme(this)">â¤ï¸ Reconnection</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŒ¿ Slow Week</div>
-          <div class="theme-chip" onclick="pickTheme(this)">âœˆï¸ Adventure</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŒ± Fresh Start</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸƒ Active & Moving</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŽ¬ Stay-in Vibes</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŒŸ Big Goal Week</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ’† Self-Care Season</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ½ï¸ Foodie Week</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ§© Quality Time</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ“š Learning Mode</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŽ¨ Creative Energy</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸŒ» Gratitude Focus</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ’ª Grind Mode</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ«¶ Us First</div>
-          <div class="theme-chip" onclick="pickTheme(this)">ðŸ§¹ Reset & Declutter</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🔋 Recharging</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💸 Financial Reset</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🏠 House Reset</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎉 Holiday Cheer</div>
+          <div class="theme-chip" onclick="pickTheme(this)">❤️ Reconnection</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌿 Slow Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">✈️ Adventure</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌱 Fresh Start</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🏃 Active & Moving</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎬 Stay-in Vibes</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌟 Big Goal Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💆 Self-Care Season</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🍽️ Foodie Week</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🧩 Quality Time</div>
+          <div class="theme-chip" onclick="pickTheme(this)">📚 Learning Mode</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🎨 Creative Energy</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🌻 Gratitude Focus</div>
+          <div class="theme-chip" onclick="pickTheme(this)">💪 Grind Mode</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🫶 Us First</div>
+          <div class="theme-chip" onclick="pickTheme(this)">🧹 Reset & Declutter</div>
         </div>
         <input type="text" id="r-theme" placeholder="Or type your own theme...">
       </div>
       <div class="field">
         <label>This week's memory photos <span style="color:var(--text-3);font-weight:400">(optional, up to 4)</span></label>
         <label class="photo-upload-label" style="margin-top:4px" id="r-photo-add-btn">
-          ðŸ“· Add Photo
+          📷 Add Photo
           <input type="file" id="r-photo" accept="image/*" style="display:none" onchange="addReviewPhoto(this.files[0]);this.value=''">
         </label>
         <div id="r-photo-preview"></div>
       </div>
       <div class="step-nav">
-        <button class="btn btn-secondary" onclick="nextStep(0)">â† Back</button>
-        <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">ðŸ’¾ Save This Week's Entry âœ“</button>
+        <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- â”€â”€ TO-DOS â”€â”€ -->
+<!-- ── TO-DOS ── -->
 <div class="page" id="page-todos">
   <div class="page-title">To-Dos & Goals</div>
   <div class="page-sub">Keep the house (and life) running smoothly.</div>
   <div id="todos-container"></div>
 </div>
 
-<!-- â”€â”€ 2026 DATES â”€â”€ -->
+<!-- ── 2026 DATES ── -->
 <div class="page" id="page-dates">
   <div class="page-title" id="dates-page-title">Dates</div>
-  <div class="page-sub">All the good stuff to look forward to. ðŸŽ‰</div>
+  <div class="page-sub">All the good stuff to look forward to. 🎉</div>
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleAddDate()">
-      <div class="card-title" style="margin-bottom:0">Add a Date âœ¨</div>
-      <span id="add-date-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">â–¼</span>
+      <div class="card-title" style="margin-bottom:0">Add a Date ✨</div>
+      <span id="add-date-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">▼</span>
     </div>
     <div id="add-date-form" style="margin-top:12px">
       <div class="add-trip-form" style="margin-top:0;padding-top:0;border-top:none">
-        <input type="text" id="new-trip-dates" placeholder="Dates (e.g. Jun 5â€“7)">
+        <input type="text" id="new-trip-dates" placeholder="Dates (e.g. Jun 5–7)">
         <input type="text" id="new-trip-name" placeholder="Trip or event name">
         <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
       </div>
@@ -1136,53 +1136,53 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div class="card-title" style="margin-bottom:0">Trips & Events âœˆï¸</div>
-      <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px">ðŸ“… Export to Calendar</button>
+      <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
+      <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px">📅 Export to Calendar</button>
     </div>
     <div class="trip-grid" id="trip-grid"></div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Logistics to Figure Out ðŸ“‹</div>
+    <div class="card-title">Logistics to Figure Out 📋</div>
     <div class="list-items" id="logistics-list"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">Bucket List & Ideas ðŸŒŸ</div>
+    <div class="card-title">Bucket List & Ideas 🌟</div>
     <div class="list-items" id="bucket-list"></div>
   </div>
 
   <div class="card" id="past-adventures-card" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togglePastAdventures()">
-      <div class="card-title" style="margin-bottom:0" id="past-adventures-title">âœ… Past Adventures</div>
-      <span id="past-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">â–¶</span>
+      <div class="card-title" style="margin-bottom:0" id="past-adventures-title">✅ Past Adventures</div>
+      <span id="past-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
     </div>
     <div class="trip-grid" id="past-grid" style="display:none;margin-top:12px"></div>
   </div>
 </div>
 
-<!-- â”€â”€ HISTORY â”€â”€ -->
+<!-- ── HISTORY ── -->
 <div class="page" id="page-history">
   <div class="page-title">Our Story</div>
-  <div class="page-sub">Every week, written down. âœ¨</div>
+  <div class="page-sub">Every week, written down. ✨</div>
   <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap">
-    <input type="text" id="history-search" placeholder="ðŸ” Search entries..." oninput="renderHistory()" class="bq-input" style="flex:1;min-width:180px;transition:border-color .15s" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
-    <button class="btn btn-primary" onclick="surpriseMe()">ðŸŽ² Surprise Me!</button>
+    <input type="text" id="history-search" placeholder="🔍 Search entries..." oninput="renderHistory()" class="bq-input" style="flex:1;min-width:180px;transition:border-color .15s" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'">
+    <button class="btn btn-primary" onclick="surpriseMe()">🎲 Surprise Me!</button>
   </div>
   <div id="history-search-meta" style="font-size:12px;color:var(--text-3);margin-bottom:12px;min-height:18px"></div>
   <div id="history-list"></div>
   <div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--border-light)">
-    <button onclick="exportData()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-3);padding:4px 8px;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">ðŸ’¾ export backup</button>
+    <button onclick="exportData()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-3);padding:4px 8px;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">💾 export backup</button>
   </div>
 </div>
 
-<!-- â”€â”€ THIS WEEK PLAN â”€â”€ -->
+<!-- ── THIS WEEK PLAN ── -->
 <div class="page" id="page-plan">
   <div class="page-title">This Week</div>
-  <div class="page-sub" id="plan-week-label">Plan ahead so the week actually happens. ðŸ—“ï¸</div>
+  <div class="page-sub" id="plan-week-label">Plan ahead so the week actually happens. 🗓️</div>
   <div id="plan-theme-banner" style="display:none;text-align:center;margin:-4px 0 20px"></div>
   <div style="text-align:center;margin-bottom:24px">
-    <button class="btn btn-secondary" onclick="clearPlan()">ðŸ—‘ï¸ Clear & Start Fresh</button>
+    <button class="btn btn-secondary" onclick="clearPlan()">🗑️ Clear & Start Fresh</button>
   </div>
 
   <!-- Week Schedule -->
@@ -1194,7 +1194,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <!-- This Week's Focus -->
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div class="card-title" style="margin-bottom:0">This Week's Focus âœ…</div>
+      <div class="card-title" style="margin-bottom:0">This Week's Focus ✅</div>
       <button class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleWeekTodoPicker()">+ Pick To-Dos</button>
     </div>
     <div id="week-todos-list"></div>
@@ -1204,7 +1204,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <!-- Notes -->
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">Notes & Reminders</div>
-    <textarea id="plan-notes" placeholder="Anything else to remember this week â€” errands, calls, ideas..."
+    <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
       style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;background:var(--surface);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text)"
       onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
   </div>
@@ -1213,7 +1213,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleMealPlan()">
       <div class="card-title" style="margin-bottom:0">Meal Plan</div>
-      <span id="meal-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">â–¶</span>
+      <span id="meal-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
     </div>
     <div id="plan-meals-wrap" style="display:none;margin-top:12px">
       <div class="plan-meals" id="plan-meals"></div>
@@ -1221,10 +1221,10 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 </div>
 
-<!-- â”€â”€ BUDGET â”€â”€ -->
+<!-- ── BUDGET ── -->
 <div class="page" id="page-budget">
   <div class="page-title">Budget</div>
-  <div class="page-sub">Track spending, split expenses, and stay on the same page. ðŸ’¸</div>
+  <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
 
   <!-- Period picker -->
   <div class="budget-period-row">
@@ -1245,7 +1245,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <!-- Monthly trend -->
   <div class="card" style="margin-bottom:16px">
     <div class="card-title" style="margin-bottom:2px">Monthly Spending</div>
-    <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Total spent each month â€” click a bar to switch months</div>
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Total spent each month — click a bar to switch months</div>
     <div class="budget-trend" id="budget-trend"></div>
   </div>
 
@@ -1260,7 +1260,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
   <!-- Bulk paste -->
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title" style="margin-bottom:18px">ðŸ“‹ Bulk Paste</div>
+    <div class="card-title" style="margin-bottom:18px">📋 Bulk Paste</div>
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
       <!-- Left: chips -->
       <div id="bulk-cat-chips" style="flex:1;min-width:0"></div>
@@ -1292,7 +1292,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <div id="tx-search-total" style="font-size:12px;font-weight:700;color:var(--amber)"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="b-search" placeholder="ðŸ” Search..." oninput="renderBudget()" class="bq-input" style="width:140px">
+        <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" class="bq-input" style="width:140px">
         <select id="b-filter-cat" onchange="renderBudget()" class="bq-sel">
           <option value="">All Categories</option>
         </select>
@@ -1308,8 +1308,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <!-- Recurring (collapsible, bottom) -->
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleRecurring()">
-      <div class="card-title" style="margin-bottom:0">ðŸ” Recurring Expenses</div>
-      <span id="rec-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">â–¶</span>
+      <div class="card-title" style="margin-bottom:0">🔁 Recurring Expenses</div>
+      <span id="rec-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
     </div>
     <div id="recurring-body" style="display:none;margin-top:12px">
       <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -1331,7 +1331,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div class="card budget-quickadd-card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleQuickAdd()">
       <div class="card-title" style="margin-bottom:0">+ Add Single Expense</div>
-      <span id="quickadd-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">â–¶</span>
+      <span id="quickadd-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
     </div>
     <div id="quickadd-body" style="display:none;margin-top:12px">
       <div class="bqa-row1">
@@ -1380,7 +1380,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
-// â”€â”€â”€ SEASONAL THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SEASONAL THEME ──────────────────────────────────────────────────────────
 (function applySeason() {
   const savedBg = localStorage.getItem('ow-bg');
   if (savedBg && savedBg !== 'default') { document.body.setAttribute('data-bg', savedBg); return; }
@@ -1389,14 +1389,14 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   document.body.classList.add('season-' + s);
 })();
 
-// â”€â”€â”€ TRIP COLOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── TRIP COLOR ───────────────────────────────────────────────────────────────
 function tripColor(id) {
   const palette = ['tc-rose','tc-sage','tc-sky','tc-peach','tc-lavender','tc-gold'];
   const hash = (id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   return palette[hash % palette.length];
 }
 
-// â”€â”€â”€ FIREBASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── FIREBASE ────────────────────────────────────────────────────────────────
 firebase.initializeApp({
   apiKey: "AIzaSyD3iFECQA4IJbqFljJl9zbXLGMRB8FL7OQ",
   authDomain: "our-weekly.firebaseapp.com",
@@ -1410,7 +1410,7 @@ const auth = firebase.auth();
 let storage = null;
 try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage unavailable:', e); }
 
-// â”€â”€ Offline indicator â”€â”€
+// ── Offline indicator ──
 (function() {
   const banner = () => document.getElementById('offline-banner');
   const update = () => banner() && banner().classList.toggle('visible', !navigator.onLine);
@@ -1422,14 +1422,14 @@ try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage 
 // Enable offline persistence so the app works without a connection
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
   if (err.code === 'failed-precondition') {
-    // Multiple tabs open â€” only one tab can use persistence at a time
+    // Multiple tabs open — only one tab can use persistence at a time
     console.warn('Firestore persistence unavailable: multiple tabs open');
   } else if (err.code === 'unimplemented') {
     console.warn('Firestore persistence not supported in this browser');
   }
 });
 
-// â”€â”€â”€ DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DATA ────────────────────────────────────────────────────────────────────
 
 const COFFEE_SHOPS = [
   { name: "Leopold's", area: "Central / Regent Street Area" },
@@ -1458,7 +1458,7 @@ const SEED_ENTRIES = [
   {
     id:"seed-1", date:"2025-11-09",
     well:"Six Flags (fright fest) was fun! Perri's birthday and House on the Rock.",
-    stress:"Amanda's dad in the hospital. No full weekend reset. Stressful week at work for Amanda (SD 5 meeting, catching up from the weekend before). Big conversations about the future and marriage â€” Aidan's weird and has level 1 commitment issues but knows he LOVES Amanda more than the entire WORLD. House on the Rock went a little long.",
+    stress:"Amanda's dad in the hospital. No full weekend reset. Stressful week at work for Amanda (SD 5 meeting, catching up from the weekend before). Big conversations about the future and marriage — Aidan's weird and has level 1 commitment issues but knows he LOVES Amanda more than the entire WORLD. House on the Rock went a little long.",
     adjust:"", budget:"", savings:"", logistics:"", appts:"",
     upcoming:"Tuesday - Amanda has vball. Thrifting at some point (find Thanksgiving gifts). Weekend - nothing much yet (parents going to Devil's lake).",
     theme:"Recharging (this week) / Financial Reset (this meeting)", amanda:"", aidan:"", misc:"", hearts:0
@@ -1522,7 +1522,7 @@ const SEED_ENTRIES = [
   },
   {
     id:"seed-10", date:"2026-01-17",
-    well:"Aidan crushed his Judy meeting! Hosted white elephant â€” people loved our decorations. Good conversation around sex the other day. Rearranged Japan trip + mostly booked. Wonderful!",
+    well:"Aidan crushed his Judy meeting! Hosted white elephant — people loved our decorations. Good conversation around sex the other day. Rearranged Japan trip + mostly booked. Wonderful!",
     stress:"A little sicky. Work was a little stressful with all the exec meetings. Hosting was a little stressful because Aidan was gone for a bit.",
     adjust:"", budget:"", savings:"", logistics:"", appts:"",
     upcoming:"Monday Soccer, Tuesday Vball (8p), weekend with the cousins.",
@@ -1530,7 +1530,7 @@ const SEED_ENTRIES = [
   },
   {
     id:"seed-11", date:"2026-01-25",
-    well:"Chill beginning of the week. Cousins came on Friday â€” played games and had a tea ceremony. Got double brunch (Cafe Hollander and La Brioche) and did karaoke! The weekend went really well. Everyone loves our space and we hosted well as a team.",
+    well:"Chill beginning of the week. Cousins came on Friday — played games and had a tea ceremony. Got double brunch (Cafe Hollander and La Brioche) and did karaoke! The weekend went really well. Everyone loves our space and we hosted well as a team.",
     stress:"Amanda had to see Maddie's play on Thursday (Aidan watched Tick Tick Boom hehehe).",
     adjust:"", budget:"", savings:"", logistics:"", appts:"",
     upcoming:"Monday soccer (7pm), no vball, leave on Friday for Florida.",
@@ -1571,21 +1571,21 @@ const SEED_ENTRIES = [
 ];
 
 const TRIPS_2026 = [
-  { dates:"Apr 3â€“6",       sortDate:"2026-04-03", label:"Erica & Kevin Engagement Party ðŸ’", aidanVacation:1,   aidanWfh:0, aidanPersonal:0, amandaVacation:1,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Apr 9â€“12",      sortDate:"2026-04-09", label:"Ben's Bachelor Party ðŸº",           aidanVacation:1,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Apr 18â€“19",     sortDate:"2026-04-18", label:"Cindy Visiting ðŸ ",                  aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"May 2",         sortDate:"2026-05-02", label:"Trout Fishing Weekend ðŸŽ£",           aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Early May",     sortDate:"2026-05-08", label:"Aidan's Parents Visiting ðŸ‘¨â€ðŸ‘©â€ðŸ‘§",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"May 20",        sortDate:"2026-05-20", label:"Lauv in Chicago ðŸŽµ",                 aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jun 5â€“7",       sortDate:"2026-06-05", label:"Kohler-Andre State Park ðŸ•ï¸",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jun 20",        sortDate:"2026-06-20", label:"Ben's Wedding ðŸŽŠ",                   aidanVacation:1.5, aidanWfh:0, aidanPersonal:0, amandaVacation:1.5, amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jun 27",        sortDate:"2026-06-27", label:"Ed Sheeran in Chicago ðŸŽ¶",           aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jul 25",        sortDate:"2026-07-25", label:"Camping with Corey + Co ðŸ•ï¸",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jul 30 â€“ Aug 2",sortDate:"2026-07-30", label:"Lollapalooza ðŸŽ¸",                    aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Aug 21â€“23",     sortDate:"2026-08-21", label:"Peninsula State Park Camping ðŸŒ²",    aidanVacation:0.5, aidanWfh:0, aidanPersonal:0, amandaVacation:0.5, amandaWfh:0, amandaPersonal:0 },
-  { dates:"Aug 29",        sortDate:"2026-08-29", label:"Patrick's Wedding ðŸ’’",               aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Oct 24 â€“ Nov 8",sortDate:"2026-10-24", label:"JAPAN ðŸ—¾âœ¨",                         aidanVacation:5,   aidanWfh:0, aidanPersonal:0, amandaVacation:13,  amandaWfh:0, amandaPersonal:2 },
-  { dates:"Late Dec",      sortDate:"2026-12-22", label:"Christmas in Missoula ðŸŽ„",           aidanVacation:3,   aidanWfh:0, aidanPersonal:0, amandaVacation:2,   amandaWfh:0, amandaPersonal:1 },
+  { dates:"Apr 3–6",       sortDate:"2026-04-03", label:"Erica & Kevin Engagement Party 💍", aidanVacation:1,   aidanWfh:0, aidanPersonal:0, amandaVacation:1,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Apr 9–12",      sortDate:"2026-04-09", label:"Ben's Bachelor Party 🍺",           aidanVacation:1,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Apr 18–19",     sortDate:"2026-04-18", label:"Cindy Visiting 🏠",                  aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"May 2",         sortDate:"2026-05-02", label:"Trout Fishing Weekend 🎣",           aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Early May",     sortDate:"2026-05-08", label:"Aidan's Parents Visiting 👨‍👩‍👧",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"May 20",        sortDate:"2026-05-20", label:"Lauv in Chicago 🎵",                 aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Jun 5–7",       sortDate:"2026-06-05", label:"Kohler-Andre State Park 🏕️",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Jun 20",        sortDate:"2026-06-20", label:"Ben's Wedding 🎊",                   aidanVacation:1.5, aidanWfh:0, aidanPersonal:0, amandaVacation:1.5, amandaWfh:0, amandaPersonal:0 },
+  { dates:"Jun 27",        sortDate:"2026-06-27", label:"Ed Sheeran in Chicago 🎶",           aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Jul 25",        sortDate:"2026-07-25", label:"Camping with Corey + Co 🏕️",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Jul 30 – Aug 2",sortDate:"2026-07-30", label:"Lollapalooza 🎸",                    aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Aug 21–23",     sortDate:"2026-08-21", label:"Peninsula State Park Camping 🌲",    aidanVacation:0.5, aidanWfh:0, aidanPersonal:0, amandaVacation:0.5, amandaWfh:0, amandaPersonal:0 },
+  { dates:"Aug 29",        sortDate:"2026-08-29", label:"Patrick's Wedding 💒",               aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
+  { dates:"Oct 24 – Nov 8",sortDate:"2026-10-24", label:"JAPAN 🗾✨",                         aidanVacation:5,   aidanWfh:0, aidanPersonal:0, amandaVacation:13,  amandaWfh:0, amandaPersonal:2 },
+  { dates:"Late Dec",      sortDate:"2026-12-22", label:"Christmas in Missoula 🎄",           aidanVacation:3,   aidanWfh:0, aidanPersonal:0, amandaVacation:2,   amandaWfh:0, amandaPersonal:1 },
 ];
 
 const LOGISTICS_LIST = [
@@ -1603,7 +1603,7 @@ const BUCKET_LIST = [
   "Day trips (La Crosse, etc.)",
   "Ski trip? SLC?",
   "Summer Chicago trip again",
-  "Lift tickets â€” Marquette Mountain Resort",
+  "Lift tickets — Marquette Mountain Resort",
   "Meal prep routine",
   "Morning walk ritual",
   "Exercise planning routine",
@@ -1626,13 +1626,13 @@ const DEFAULT_TODOS = [
 ];
 
 let todoCategories = [
-  { id:"todo",       label:"ðŸ“‹ Active To-Dos"      },
-  { id:"projects",   label:"ðŸ”¨ Household Projects"  },
-  { id:"needs",      label:"ðŸ›‹ï¸ Household Needs"    },
-  { id:"priorities", label:"ðŸ’« Priorities"          },
+  { id:"todo",       label:"📋 Active To-Dos"      },
+  { id:"projects",   label:"🔨 Household Projects"  },
+  { id:"needs",      label:"🛋️ Household Needs"    },
+  { id:"priorities", label:"💫 Priorities"          },
 ];
 
-// â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STATE ───────────────────────────────────────────────────────────────────
 let currentStep = 0;
 let heartVal = 0;
 let _reviewPhotos = [];
@@ -1786,14 +1786,14 @@ function initFirestore() {
   });
 }
 
-const _onSaveErr = e => { console.error('Save failed:', e); showToast('âš ï¸ Save failed â€” check your connection'); };
+const _onSaveErr = e => { console.error('Save failed:', e); showToast('⚠️ Save failed — check your connection'); };
 function saveTodos()           { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr); }
 function saveTodoCategories()  { db.collection('state').doc('todoCategories').set({items: todoCategories}).catch(_onSaveErr); }
 function savePhotos() { db.collection('state').doc('photos').set({items:photos}).catch(_onSaveErr); }
 function saveMood()   { db.collection('state').doc('mood').set(mood).catch(_onSaveErr); }
 function saveEntries() {
   const data = {items: newEntries};
-  if (JSON.stringify(data).length > 850000) showToast('âš ï¸ History data is getting large â€” consider removing some photos');
+  if (JSON.stringify(data).length > 850000) showToast('⚠️ History data is getting large — consider removing some photos');
   db.collection('state').doc('entries').set(data).catch(_onSaveErr);
 }
 function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
@@ -1814,7 +1814,7 @@ function savePlan() {
 function saveExpenses()   { db.collection('state').doc('expenses').set({items: expenses}).catch(_onSaveErr);       }
 function saveRecurring()  { db.collection('state').doc('recurring').set({items: recurringItems}).catch(_onSaveErr); }
 
-// â”€â”€â”€ NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function toggleNavMenu() {
   const menu = document.getElementById('nav-menu');
   menu.classList.toggle('open');
@@ -1871,7 +1871,7 @@ function showPage(name) {
   }
 }
 
-// â”€â”€â”€ HOME HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── HOME HELPERS ────────────────────────────────────────────────────────────
 function countUp(el, target, prefix = '', suffix = '') {
   if (!el || isNaN(target)) return;
   el.classList.remove('stat-popping');
@@ -1896,10 +1896,10 @@ function spawnBannerParticles() {
   pc.innerHTML = '';
   const season = [...document.body.classList].find(c => c.startsWith('season-'))?.replace('season-','') || 'fall';
   const sets = {
-    spring: ['ðŸŒ¸','ðŸŒ·','ðŸŒº','ðŸŒ¼','ðŸ¦‹','âœ¨','ðŸ’','ðŸŒ¿','ðŸŒ±','ðŸ«§','ðŸŒ¸','ðŸŒ·'],
-    summer: ['â˜€ï¸','ðŸŒ»','ðŸŒŸ','ðŸ‹','ðŸŒˆ','âœ¨','ðŸŒ´','ðŸ¦','â­','ðŸŒŠ','ðŸŒ»','â˜€ï¸'],
-    fall:   ['ðŸ‚','ðŸ','ðŸŒŸ','ðŸ„','ðŸŒ¾','âœ¨','ðŸŠ','â­','ðŸŒ°','ðŸ‚','ðŸ','ðŸŒ¾'],
-    winter: ['â„ï¸','â­','âœ¨','ðŸŒ™','ðŸ’«','ðŸŒ¨ï¸','â„ï¸','ðŸ•¯ï¸','â­','âœ¨','ðŸŒ™','â„ï¸']
+    spring: ['🌸','🌷','🌺','🌼','🦋','✨','💐','🌿','🌱','🫧','🌸','🌷'],
+    summer: ['☀️','🌻','🌟','🍋','🌈','✨','🌴','🍦','⭐','🌊','🌻','☀️'],
+    fall:   ['🍂','🍁','🌟','🍄','🌾','✨','🍊','⭐','🌰','🍂','🍁','🌾'],
+    winter: ['❄️','⭐','✨','🌙','💫','🌨️','❄️','🕯️','⭐','✨','🌙','❄️']
   };
   const icons = sets[season] || sets.fall;
   const count = 10;
@@ -1921,13 +1921,13 @@ function spawnBannerParticles() {
   }
 }
 
-// â”€â”€â”€ HOME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── HOME ────────────────────────────────────────────────────────────────────
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MONTHS_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAY_GREETINGS = [
-  'ðŸŒ¸ Happy Sunday,', 'â˜€ï¸ Hello Monday,', 'âœ¨ Happy Tuesday,',
-  'ðŸŒ¿ Midweek Wednesday,', 'ðŸ’« Almost Friday,', 'ðŸŽ‰ Happy Friday,', 'ðŸ›‹ï¸ Cozy Saturday,'
+  '🌸 Happy Sunday,', '☀️ Hello Monday,', '✨ Happy Tuesday,',
+  '🌿 Midweek Wednesday,', '💫 Almost Friday,', '🎉 Happy Friday,', '🛋️ Cozy Saturday,'
 ];
 
 function homeNavBtn() {
@@ -1952,8 +1952,8 @@ function renderHome() {
   const isWeekend = now.getDay() === 0 || now.getDay() === 6;
   const reviewBtn = document.getElementById('home-review-btn');
   if (reviewBtn) reviewBtn.innerHTML = isWeekend
-    ? '<div style="line-height:1.2">â˜• It\'s Review Day!<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">Grab a coffee and let\'s do this.</div></div>'
-    : 'ðŸ—“ï¸ See This Week â†’';
+    ? '<div style="line-height:1.2">☕ It\'s Review Day!<div style="font-size:11px;font-weight:400;opacity:.8;margin-top:3px">Grab a coffee and let\'s do this.</div></div>'
+    : '🗓️ See This Week →';
 
   spawnBannerParticles();
 
@@ -1969,7 +1969,7 @@ function renderHome() {
     const d = new Date(all[0].date + 'T12:00:00');
     document.getElementById('stat-last-entry').textContent = `${MONTHS_S[d.getMonth()]} ${d.getDate()}`;
   } else {
-    document.getElementById('stat-last-entry').textContent = 'â€”';
+    document.getElementById('stat-last-entry').textContent = '—';
   }
 
   const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
@@ -1979,11 +1979,11 @@ function renderHome() {
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates.replace(/\b[a-z]/g, c => c.toUpperCase())}</div>
       <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
     </div>
-  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates â†—</div>`
+  `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates ↗</div>`
     : `<div style="text-align:center;padding:20px 0">
-        <div style="font-size:32px;margin-bottom:8px">ðŸ—ºï¸</div>
+        <div style="font-size:32px;margin-bottom:8px">🗺️</div>
         <div style="font-size:14px;font-weight:600;color:var(--text-2);margin-bottom:4px">No adventures planned yet</div>
-        <div style="font-size:12px;color:var(--text-3)">Add some trips in the <span onclick="showPage('dates')" style="color:var(--amber);cursor:pointer;font-weight:600">Dates tab â†—</span></div>
+        <div style="font-size:12px;color:var(--text-3)">Add some trips in the <span onclick="showPage('dates')" style="color:var(--amber);cursor:pointer;font-weight:600">Dates tab ↗</span></div>
       </div>`;
   // Streak
   const streak = getStreak();
@@ -1996,7 +1996,7 @@ function renderHome() {
     .reduce((s, e) => s + e.amount, 0);
   const _budgetEl = document.getElementById('stat-budget');
   if (_budgetEl && _monthSpend > 0) countUp(_budgetEl, Math.round(_monthSpend), '$');
-  else if (_budgetEl) _budgetEl.textContent = 'â€”';
+  else if (_budgetEl) _budgetEl.textContent = '—';
 
   renderPhotoWidget();
   renderMoodWidget();
@@ -2005,14 +2005,14 @@ function renderHome() {
   renderCustomCountdowns();
 }
 
-// â”€â”€â”€ COFFEE ROULETTE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── COFFEE ROULETTE ─────────────────────────────────────────────────────────
 let spinning = false;
 
 function spinCoffee() {
   if (spinning) return;
   spinning = true;
   const btn = document.getElementById('spin-btn');
-  btn.textContent = 'âœ¨ Spinning...';
+  btn.textContent = '✨ Spinning...';
   btn.disabled = true;
   const nameEl = document.getElementById('coffee-name');
   const areaEl = document.getElementById('coffee-area');
@@ -2027,10 +2027,10 @@ function spinCoffee() {
       clearInterval(interval);
       const final = COFFEE_SHOPS[Math.floor(Math.random() * COFFEE_SHOPS.length)];
       nameEl.textContent = final.name;
-      areaEl.textContent = 'ðŸ“ ' + final.area;
+      areaEl.textContent = '📍 ' + final.area;
       nameEl.classList.remove('spinning');
       spinning = false;
-      btn.textContent = 'â˜• Spin Again!';
+      btn.textContent = '☕ Spin Again!';
       btn.disabled = false;
       const card = document.querySelector('.coffee-card');
       const r = card ? card.getBoundingClientRect() : null;
@@ -2039,7 +2039,7 @@ function spinCoffee() {
   }, 75);
 }
 
-// â”€â”€â”€ REVIEW FLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── REVIEW FLOW ─────────────────────────────────────────────────────────────
 function nextStep(n) {
   document.getElementById('step-' + currentStep).classList.remove('active');
   currentStep = n;
@@ -2073,7 +2073,7 @@ function renderHeartsHtml(val) {
   return Array.from({length:5}, (_,i) => {
     const pos = i + 1;
     const pct = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
-    return `<span class="hw"><span class="hbg">â¤ï¸</span><span class="hfill" style="width:${pct}">â¤ï¸</span></span>`;
+    return `<span class="hw"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
   }).join('');
 }
 function setHeartClick(e, el, n) {
@@ -2102,7 +2102,7 @@ function clearHeartPreview() {
   });
 }
 
-// â”€â”€ Review photos â”€â”€
+// ── Review photos ──
 function addReviewPhoto(file) {
   if (!file || _reviewPhotos.length >= 4) return;
   _reviewPhotos.push(file);
@@ -2124,15 +2124,15 @@ function renderReviewPhotos() {
   }
   preview.style.display = 'block';
   preview.innerHTML = `<div class="review-photo-list">${
-    _reviewPhotos.map((f, i) => `<div class="review-photo-thumb"><img src="${URL.createObjectURL(f)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">âœ•</button></div>`).join('')
+    _reviewPhotos.map((f, i) => `<div class="review-photo-thumb"><img src="${URL.createObjectURL(f)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`).join('')
   }</div>`;
   if (addBtn) addBtn.style.display = _reviewPhotos.length >= 4 ? 'none' : '';
 }
 
-// â”€â”€ Edit-mode photo helpers â”€â”€
+// ── Edit-mode photo helpers ──
 function editPhotoThumbsHtml(id, urls) {
   return urls.map((url, i) =>
-    `<div class="review-photo-thumb"><img src="${url}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeEditPhoto(event,'${id}',${i})">âœ•</button></div>`
+    `<div class="review-photo-thumb"><img src="${url}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeEditPhoto(event,'${id}',${i})">✕</button></div>`
   ).join('');
 }
 function renderEditPhotos(id) {
@@ -2150,7 +2150,7 @@ function addEditPhoto(id, file) {
   if (!entry) return;
   const urls = getEntryPhotoUrls(entry);
   if (urls.length >= 4) return;
-  if (storage) showToast('ðŸ“¸ Uploading photoâ€¦');
+  if (storage) showToast('📸 Uploading photo…');
   uploadPhoto(file, entry.id, urls.length, 800, 0.65).then(url => {
     entry.photoUrls = [...getEntryPhotoUrls(entry), url];
     delete entry.photoUrl;
@@ -2170,7 +2170,7 @@ function removeEditPhoto(event, id, idx) {
   renderEditPhotos(id);
 }
 
-// â”€â”€ Photo lightbox â”€â”€
+// ── Photo lightbox ──
 function openLightbox(src) {
   document.getElementById('lightbox-img').src = src;
   document.getElementById('photo-lightbox').classList.add('open');
@@ -2182,7 +2182,7 @@ function closeLightbox() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
-// â”€â”€ History photo helpers â”€â”€
+// ── History photo helpers ──
 function getEntryPhotoUrls(e) {
   if (e.photoUrls && e.photoUrls.length) return e.photoUrls;
   if (e.photoUrl) return [e.photoUrl];
@@ -2234,14 +2234,14 @@ function saveEntry() {
     misc:     get('r-misc'),
     hearts:   heartVal,
   };
-  // Handle optional photos: resize to â‰¤900px wide, store as base64 array in Firestore
+  // Handle optional photos: resize to ≤900px wide, store as base64 array in Firestore
   const finishSave = (urls) => {
     if (urls.length) entry.photoUrls = urls;
     newEntries.unshift(entry);
     saveEntries();
   };
   if (_reviewPhotos.length) {
-    if (storage) showToast('ðŸ“¸ Uploading photosâ€¦');
+    if (storage) showToast('📸 Uploading photos…');
     Promise.all(_reviewPhotos.map((f, i) => uploadPhoto(f, entry.id, i, 900, 0.75).catch(() => null)))
       .then(urls => finishSave(urls.filter(Boolean)));
   } else {
@@ -2257,12 +2257,12 @@ function saveEntry() {
   setHeart(0);
   document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
   nextStep(0);
-  showToast('Entry saved! ðŸ’•');
+  showToast('Entry saved! 💕');
   burstReview();
   showPage('plan');
 }
 
-// â”€â”€â”€ TO-DOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── TO-DOS ──────────────────────────────────────────────────────────────────
 function renderTodos() {
   const activeHtml = todoCategories.map((cat, idx) => {
     const pOrder = {critical:0,urgent:1};
@@ -2273,7 +2273,7 @@ function renderTodos() {
         <div class="todo-cat-title">
           <span style="flex:1;cursor:pointer" title="Click to rename" onclick="editTodoSection('${cat.id}')">${escHtml(cat.label)}</span>
           <span style="display:flex;gap:4px;margin-left:8px">
-            <button onclick="deleteTodoSection('${cat.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-3);padding:0 3px" title="Delete section">Ã—</button>
+            <button onclick="deleteTodoSection('${cat.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-3);padding:0 3px" title="Delete section">×</button>
           </span>
         </div>
         <div class="todo-items">${items.length ? items.map(renderTodoItem).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">Nothing here yet!</div>'}</div>
@@ -2289,10 +2289,10 @@ function renderTodos() {
   const doneHtml = done.length ? `
     <div class="card todo-category">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleDone()">
-        <div class="card-title" style="margin-bottom:0">âœ… Completed (${done.length})</div>
+        <div class="card-title" style="margin-bottom:0">✅ Completed (${done.length})</div>
         <div style="display:flex;align-items:center;gap:8px">
           <button onclick="clearCompletedTodos();event.stopPropagation()" style="font-size:11px;font-weight:600;color:var(--text-3);background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer;line-height:1.4" title="Remove all completed items">Clear all</button>
-          <span id="done-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">${doneCollapsed ? 'â–¶' : 'â–¼'}</span>
+          <span id="done-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">${doneCollapsed ? '▶' : '▼'}</span>
         </div>
       </div>
       <div class="todo-items" id="done-items-list" style="display:${doneCollapsed?'none':''};margin-top:12px">${done.map(renderTodoItem).join('')}</div>
@@ -2314,16 +2314,16 @@ function renderTodos() {
 
 function renderTodoItem(t) {
   const pClass = t.priority === 'critical' ? ' priority-critical' : t.priority === 'urgent' ? ' priority-urgent' : '';
-  const pIcon  = t.priority === 'critical' ? 'ðŸ”´' : t.priority === 'urgent' ? 'ðŸŸ¡' : 'â—‹';
+  const pIcon  = t.priority === 'critical' ? '🔴' : t.priority === 'urgent' ? '🟡' : '○';
   return `
     <div class="todo-item${t.done?' done':''}${pClass}" id="todo-${t.id}" draggable="true" data-id="${t.id}" data-cat="${t.cat}" onclick="editTodo('${t.id}')" style="cursor:pointer">
-      <div class="todo-cb" onclick="toggleTodo('${t.id}');event.stopPropagation()">${t.done ? 'âœ“' : ''}</div>
+      <div class="todo-cb" onclick="toggleTodo('${t.id}');event.stopPropagation()">${t.done ? '✓' : ''}</div>
       <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0">
         <span class="todo-text" style="flex:none">${escHtml(t.text)}</span>
-        <button class="todo-priority-btn" onclick="cycleTodoPriority('${t.id}');event.stopPropagation()" title="Set priority (â—‹ â†’ urgent â†’ critical)">${pIcon}</button>
+        <button class="todo-priority-btn" onclick="cycleTodoPriority('${t.id}');event.stopPropagation()" title="Set priority (○ → urgent → critical)">${pIcon}</button>
       </span>
-      <span class="todo-drag-handle" onclick="event.stopPropagation()">â ¿</span>
-      <span class="todo-del" onclick="deleteTodo('${t.id}');event.stopPropagation()">Ã—</span>
+      <span class="todo-drag-handle" onclick="event.stopPropagation()">⠿</span>
+      <span class="todo-del" onclick="deleteTodo('${t.id}');event.stopPropagation()">×</span>
     </div>`;
 }
 
@@ -2452,7 +2452,7 @@ function addTodo(cat) {
   if (!text) return;
   const item = { id:'td-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text, cat, done:false };
   todos.push(item);
-  // Atomic add â€” safe if both people add simultaneously
+  // Atomic add — safe if both people add simultaneously
   db.collection('state').doc('todos').update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
   input.value = '';
   renderTodos();
@@ -2552,7 +2552,7 @@ function addCategoryDragListeners() {
   });
 }
 
-// â”€â”€â”€ DATES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DATES ───────────────────────────────────────────────────────────────────
 function _setDatesYear(y) { _datesYear = y; renderDates(); }
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2600,7 +2600,7 @@ function renderDates() {
     if (!done && t.sortDate) {
       const ms = new Date(t.sortDate + 'T00:00:00') - today;
       const days = Math.ceil(ms / 864e5);
-      if (days === 0) badge = `<div class="trip-countdown very-soon">today! ðŸŽ‰</div>`;
+      if (days === 0) badge = `<div class="trip-countdown very-soon">today! 🎉</div>`;
       else if (days === 1) badge = `<div class="trip-countdown very-soon">tomorrow!</div>`;
       else if (days <= 14) badge = `<div class="trip-countdown soon">in ${days} days</div>`;
       else badge = `<div class="trip-countdown">in ${days} days</div>`;
@@ -2608,8 +2608,8 @@ function renderDates() {
     }
     const colorCls = done || overlapping.has(t.id) ? '' : ' ' + tripColor(t.id);
     return `<div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}${colorCls}${pulse}" data-id="${t.id}" onclick="editTripInline('${t.id}')" style="cursor:pointer">
-      <button class="trip-del" onclick="deleteTrip('${t.id}');event.stopPropagation()">Ã—</button>
-      <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' âš ï¸' : ''}</div>
+      <button class="trip-del" onclick="deleteTrip('${t.id}');event.stopPropagation()">×</button>
+      <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
       ${badge}
     </div>`;
@@ -2622,7 +2622,7 @@ function renderDates() {
   const pastTitle = document.getElementById('past-adventures-title');
   if (past.length) {
     pastCard.style.display = '';
-    pastTitle.textContent = `âœ… Past Adventures (${past.length})`;
+    pastTitle.textContent = `✅ Past Adventures (${past.length})`;
     pastGrid.innerHTML = past.map(t => tripCardHtml(t, true)).join('');
   } else {
     pastCard.style.display = 'none';
@@ -2631,15 +2631,15 @@ function renderDates() {
 
   const listItemHtml = (item, type, editFn) => {
     const pClass = item.priority === 'critical' ? ' priority-critical' : item.priority === 'urgent' ? ' priority-urgent' : '';
-    const pIcon  = item.priority === 'critical' ? 'ðŸ”´' : item.priority === 'urgent' ? 'ðŸŸ¡' : 'â—‹';
+    const pIcon  = item.priority === 'critical' ? '🔴' : item.priority === 'urgent' ? '🟡' : '○';
     return `
       <div class="list-item${pClass}" id="list-item-${item.id}" draggable="true" data-id="${item.id}" data-type="${type}" onclick="${editFn}('${item.id}')" style="cursor:pointer">
         <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0">
           <span style="flex:none">${escHtml(item.text)}</span>
           <button class="list-priority-btn" onclick="cycleListPriority('${type}','${item.id}');event.stopPropagation()" title="Set priority">${pIcon}</button>
         </span>
-        <span class="list-drag-handle" onclick="event.stopPropagation()">â ¿</span>
-        <button class="list-del" onclick="deleteListItem('${type}','${item.id}');event.stopPropagation()">Ã—</button>
+        <span class="list-drag-handle" onclick="event.stopPropagation()">⠿</span>
+        <button class="list-del" onclick="deleteListItem('${type}','${item.id}');event.stopPropagation()">×</button>
       </div>`;
   };
 
@@ -2712,7 +2712,7 @@ function addListDragListeners() {
   });
 }
 
-// â”€â”€â”€ REVIEW DRAFT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── REVIEW DRAFT ────────────────────────────────────────────────────────────
 const _REVIEW_DRAFT_IDS = ['r-well','r-stress','r-adjust','r-misc','r-amanda','r-aidan','r-theme'];
 function loadReviewDraft() {
   try {
@@ -2726,7 +2726,7 @@ function loadReviewDraft() {
       const preview = document.getElementById('r-photo-preview');
       if (preview) {
         preview.style.display = 'block';
-        preview.innerHTML = `<div style="font-size:12px;color:var(--amber-dark);margin-top:6px;padding:8px 12px;background:var(--amber-bg);border-radius:8px;border:1px solid var(--amber)">ðŸ“· You had ${draft.photoCount} photo${draft.photoCount > 1 ? 's' : ''} â€” re-add if needed</div>`;
+        preview.innerHTML = `<div style="font-size:12px;color:var(--amber-dark);margin-top:6px;padding:8px 12px;background:var(--amber-bg);border-radius:8px;border:1px solid var(--amber)">📷 You had ${draft.photoCount} photo${draft.photoCount > 1 ? 's' : ''} — re-add if needed</div>`;
       }
     }
   } catch(e) {}
@@ -2762,7 +2762,7 @@ function _saveReviewDraft() {
   localStorage.setItem('ow-review-draft', JSON.stringify(draft));
 }
 
-// â”€â”€â”€ PLAN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PLAN ────────────────────────────────────────────────────────────────────
 function _growNotes(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 320) + 'px';
@@ -2780,7 +2780,7 @@ function _applyMealCollapse() {
   const wrap = document.getElementById('plan-meals-wrap');
   const chevron = document.getElementById('meal-chevron');
   if (wrap) wrap.style.display = _mealExpanded ? '' : 'none';
-  if (chevron) chevron.textContent = _mealExpanded ? 'â–¼' : 'â–¶';
+  if (chevron) chevron.textContent = _mealExpanded ? '▼' : '▶';
 }
 
 const PLAN_DAYS = [
@@ -2802,17 +2802,17 @@ function getReviewWeekLabel() {
   const today = new Date();
   const dow = today.getDay();
   const mon = new Date(today);
-  if (dow === 0) {        // Sunday â€” review this week (Mon was 6 days ago)
+  if (dow === 0) {        // Sunday — review this week (Mon was 6 days ago)
     mon.setDate(today.getDate() - 6);
-  } else if (dow === 6) { // Saturday â€” review this week (Mon was 5 days ago)
+  } else if (dow === 6) { // Saturday — review this week (Mon was 5 days ago)
     mon.setDate(today.getDate() - 5);
-  } else {                // Monâ€“Fri â€” review last week
+  } else {                // Mon–Fri — review last week
     mon.setDate(today.getDate() - (dow - 1) - 7);
   }
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
-  return fmt(mon) + ' â€“ ' + fmt(sun);
+  return fmt(mon) + ' – ' + fmt(sun);
 }
 
 function formatPlanLabel() {
@@ -2829,7 +2829,7 @@ function formatPlanLabel() {
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
-  return fmt(mon) + ' â€“ ' + fmt(sun);
+  return fmt(mon) + ' – ' + fmt(sun);
 }
 
 function renderPlan() {
@@ -2838,7 +2838,7 @@ function renderPlan() {
   if (weekPlan._weekKey && weekPlan._weekKey !== _currentWeekKey) {
     weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: _currentWeekKey };
     savePlan();
-    showToast('âœ¨ Fresh week â€” schedule cleared');
+    showToast('✨ Fresh week — schedule cleared');
   } else if (!weekPlan._weekKey) {
     weekPlan._weekKey = _currentWeekKey;
   }
@@ -2899,13 +2899,13 @@ function renderPlan() {
       <div class="plan-day-label"><span class="day-full">${full}</span><span class="day-short">${label}</span></div>
       <div class="plan-day-slots">
         <div class="plan-slot">
-          <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">ðŸ’ª Gym</span>
-          <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">ðŸŒ™ Night Together</span>
-          <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">ðŸ‘« Friends</span>
+          <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
+          <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
+          <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
           ${autoTrips.map(t => `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`).join('')}
           ${(d.events || (d.notesList?.length ? d.notesList : d.notes ? [d.notes] : [])).map((evt, i) => `
-            <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['â­','ðŸŒ¿','ðŸŽ‰','ðŸ’œ','ðŸ”¥'][i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">Ã—</span></div>`).join('')}
-          <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add eventâ€¦" style="display:none"
+            <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
+          <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event…" style="display:none"
             onkeydown="handleEventKey(event,'${key}')" onblur="commitEvent('${key}')">
           <button class="plan-add-event-btn" id="add-btn-${key}" onclick="showAddEvent('${key}')">+</button>
         </div>
@@ -2913,7 +2913,7 @@ function renderPlan() {
     </div>`;
   }).join('');
 
-  // Meals â€” weekdays: dinner only; weekends: all three
+  // Meals — weekdays: dinner only; weekends: all three
   const WEEKEND_DAYS = new Set(['sat','sun']);
   document.getElementById('plan-meals').innerHTML = MEAL_DAYS.map(({short, full}) => {
     const k = short.toLowerCase();
@@ -2949,14 +2949,14 @@ function clearPlan() {
   }, 'Clear');
 }
 
-// â”€â”€ This Week's Focus (pinned to-dos) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── This Week's Focus (pinned to-dos) ────────────────────────────────────────
 function renderWeekTodos() {
   const listEl   = document.getElementById('week-todos-list');
   const pickerEl = document.getElementById('week-todo-picker');
   if (!listEl) return;
   const pinned = weekPlan._pinnedTodos || [];
   if (!pinned.length) {
-    listEl.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:4px 0">No to-dos selected â€” pick some with the button above.</div>';
+    listEl.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:4px 0">No to-dos selected — pick some with the button above.</div>';
   } else {
     listEl.innerHTML = pinned.map(id => {
       const t = todos.find(x => x.id === id);
@@ -2964,10 +2964,10 @@ function renderWeekTodos() {
       const cat = todoCategories.find(c => c.id === t.cat);
       const isDone = t.done;
       return `<div class="week-todo-item${isDone ? ' done-item' : ''}">
-        <div class="week-todo-cb" onclick="checkWeekTodo('${id}')">${isDone ? 'âœ“' : ''}</div>
+        <div class="week-todo-cb" onclick="checkWeekTodo('${id}')">${isDone ? '✓' : ''}</div>
         <span class="week-todo-text">${escHtml(t.text)}</span>
         <span class="week-todo-cat">${escHtml(cat?.label||'')}</span>
-        <button class="week-todo-unpin" onclick="unpinTodo('${id}')" title="Remove from this week">Ã—</button>
+        <button class="week-todo-unpin" onclick="unpinTodo('${id}')" title="Remove from this week">×</button>
       </div>`;
     }).filter(Boolean).join('');
   }
@@ -3065,7 +3065,7 @@ function handleEventKey(e, key) {
 
 function commitEvent(key) {
   const input = document.getElementById('add-input-' + key);
-  // Guard: if already hidden, blur fired after we already committed â€” ignore
+  // Guard: if already hidden, blur fired after we already committed — ignore
   if (!input || input.style.display === 'none') return;
   const val = input.value.trim();
   // Hide first so the blur this triggers finds display:none and returns
@@ -3144,13 +3144,13 @@ function renderDayEvents(key) {
   slot.querySelectorAll('.plan-slot-event').forEach(e => e.remove());
   const events = weekPlan[key]?.events || [];
   const addInput = document.getElementById('add-input-' + key);
-  const EVT_EMOJIS = ['â­','ðŸŒ¿','ðŸŽ‰','ðŸ’œ','ðŸ”¥'];
+  const EVT_EMOJIS = ['⭐','🌿','🎉','💜','🔥'];
   events.forEach((evt, i) => {
     const chip = document.createElement('div');
     chip.className = `plan-slot-event ec${i%5}`;
     chip.id = 'evt-' + key + '-' + i;
     chip.setAttribute('onclick', `editEvent('${key}',${i})`);
-    chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">Ã—</span>`;
+    chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
     slot.insertBefore(chip, addInput);
   });
 }
@@ -3178,32 +3178,32 @@ document.addEventListener('input', e => {
 });
 
 const TRIP_EMOJIS = [
-  [/\bjapan\b/i,           'ðŸ—¾'],
-  [/\bcamping|camp\b/i,    'ðŸ•ï¸'],
-  [/\bwedding\b/i,         'ðŸ’’'],
-  [/\bbachelor\b/i,        'ðŸº'],
-  [/\bbachelorette\b/i,    'ðŸ‘¯'],
-  [/\bengagement\b/i,      'ðŸ’'],
-  [/\bconcert|music|lollapalooza\b/i, 'ðŸŽµ'],
-  [/\bchicago\b/i,         'ðŸŒ†'],
-  [/\bfishing\b/i,         'ðŸŽ£'],
-  [/\bski|skiing|snowboard\b/i, 'â›·ï¸'],
-  [/\bbeach\b/i,           'ðŸ–ï¸'],
-  [/\bhike|hiking\b/i,     'ðŸ¥¾'],
-  [/\bchristmas|holiday\b/i, 'ðŸŽ„'],
-  [/\bbirthday\b/i,        'ðŸŽ‚'],
-  [/\bvisiting|visit\b/i,  'ðŸ '],
-  [/\bparents|family\b/i,  'ðŸ‘¨â€ðŸ‘©â€ðŸ‘§'],
-  [/\btrip|travel|flight\b/i, 'âœˆï¸'],
-  [/\bspa\b/i,             'ðŸ’†'],
-  [/\bstate park|park\b/i, 'ðŸŒ²'],
+  [/\bjapan\b/i,           '🗾'],
+  [/\bcamping|camp\b/i,    '🏕️'],
+  [/\bwedding\b/i,         '💒'],
+  [/\bbachelor\b/i,        '🍺'],
+  [/\bbachelorette\b/i,    '👯'],
+  [/\bengagement\b/i,      '💍'],
+  [/\bconcert|music|lollapalooza\b/i, '🎵'],
+  [/\bchicago\b/i,         '🌆'],
+  [/\bfishing\b/i,         '🎣'],
+  [/\bski|skiing|snowboard\b/i, '⛷️'],
+  [/\bbeach\b/i,           '🏖️'],
+  [/\bhike|hiking\b/i,     '🥾'],
+  [/\bchristmas|holiday\b/i, '🎄'],
+  [/\bbirthday\b/i,        '🎂'],
+  [/\bvisiting|visit\b/i,  '🏠'],
+  [/\bparents|family\b/i,  '👨‍👩‍👧'],
+  [/\btrip|travel|flight\b/i, '✈️'],
+  [/\bspa\b/i,             '💆'],
+  [/\bstate park|park\b/i, '🌲'],
 ];
 
 function tripEmoji(label) {
   for (const [re, emoji] of TRIP_EMOJIS) {
     if (re.test(label)) return emoji;
   }
-  return 'âœ¨';
+  return '✨';
 }
 
 function parseICSEndDate(datesStr, sortDate) {
@@ -3212,8 +3212,8 @@ function parseICSEndDate(datesStr, sortDate) {
   if (!datesStr || !sortDate) return addOne(sortDate);
   const year = parseInt(sortDate.slice(0, 4));
   const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-  // Match end of range: "Apr 3â€“6", "Oct 24 â€“ Nov 8", "Jul 30 â€“ Aug 2"
-  const rangeMatch = datesStr.match(/[â€“â€”\-]\s*(?:([A-Za-z]+)\s+)?(\d+)/);
+  // Match end of range: "Apr 3–6", "Oct 24 – Nov 8", "Jul 30 – Aug 2"
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d+)/);
   if (rangeMatch) {
     const endDay = parseInt(rangeMatch[2]);
     let endMonth;
@@ -3280,7 +3280,7 @@ function exportToCalendar() {
       `UID:our-weekly-reminder-${t.id}@ourweekly`,
       `DTSTART;VALUE=DATE:${monday}`,
       `DTEND;VALUE=DATE:${nextDay}`,
-      `SUMMARY:ðŸ“… This week: ${esc(t.label)} (${esc(t.dates)})`,
+      `SUMMARY:📅 This week: ${esc(t.label)} (${esc(t.dates)})`,
       'CLASS:PRIVATE',
       'TRANSP:TRANSPARENT',
       'CATEGORIES:Our Weekly',
@@ -3304,7 +3304,7 @@ function exportToCalendar() {
 
 function parseSortDate(dateStr) {
   if (!dateStr) return null;
-  const first = dateStr.replace(/[â€“â€”\-].*/, '').trim();
+  const first = dateStr.replace(/[–—\-].*/, '').trim();
   const today = new Date(); today.setHours(0,0,0,0);
   let year = today.getFullYear();
   let d = new Date(`${first} ${year}`);
@@ -3355,7 +3355,7 @@ function editTripInline(id) {
   _tripSaved = false;
   card.innerHTML = `
     <div class="trip-edit-form">
-      <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5â€“7)"
+      <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)"
         onclick="event.stopPropagation()"
         onkeydown="if(event.key==='Enter'){saveTripEdit('${id}');event.preventDefault()}if(event.key==='Escape'){renderDates();event.stopPropagation()}"
         onblur="setTimeout(()=>saveTripEditIfActive('${id}'),120)">
@@ -3452,7 +3452,7 @@ function deleteListItem(type, id) {
   });
 }
 
-// â”€â”€â”€ HISTORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── HISTORY ─────────────────────────────────────────────────────────────────
 function getAllEntries() {
   return [...newEntries, ...SEED_ENTRIES].sort((a,b) => b.date.localeCompare(a.date));
 }
@@ -3464,8 +3464,8 @@ function buildHistoryBodyHtml(e) {
     e.stress   && {lbl:'What was stressful',val:e.stress},
     e.adjust   && {lbl:'Adjustments',       val:e.adjust},
     e.theme    && {lbl:'Theme',             val:e.theme},
-    e.amanda   && {lbl:'Amanda â™¥ Aidan',   val:e.amanda},
-    e.aidan    && {lbl:'Aidan â™¥ Amanda',   val:e.aidan},
+    e.amanda   && {lbl:'Amanda ♥ Aidan',   val:e.amanda},
+    e.aidan    && {lbl:'Aidan ♥ Amanda',   val:e.aidan},
     e.misc     && {lbl:'Notes',             val:e.misc},
   ].filter(Boolean);
   return `
@@ -3480,7 +3480,7 @@ function buildHistoryBodyHtml(e) {
         ${!sections.length ? '<div style="color:var(--text-3);font-size:13px">No notes for this entry.</div>' : ''}
       </div>
     </div>
-    ${isNew ? `<div class="history-edit-btn-row"><button class="history-del-btn" onclick="deleteEntry('${e.id}');event.stopPropagation()">ðŸ—‘ï¸ Delete</button><button class="history-edit-btn" onclick="editHistoryEntry('${e.id}');event.stopPropagation()">âœï¸ Edit</button></div>` : ''}`;
+    ${isNew ? `<div class="history-edit-btn-row"><button class="history-del-btn" onclick="deleteEntry('${e.id}');event.stopPropagation()">🗑️ Delete</button><button class="history-edit-btn" onclick="editHistoryEntry('${e.id}');event.stopPropagation()">✏️ Edit</button></div>` : ''}`;
 }
 
 function renderHistory() {
@@ -3501,16 +3501,16 @@ function renderHistory() {
       <div class="history-entry">
         <div class="history-header" id="hh-${e.id}" onclick="toggleHistory('${e.id}')">
           <div class="history-date-badge">${dateLabel}</div>
-          <div class="history-preview">${escHtml(preview) || 'â€”'}</div>
+          <div class="history-preview">${escHtml(preview) || '—'}</div>
           ${e.theme ? e.theme.split(',').map(t=>t.trim()).filter(Boolean).slice(0,2).map(t=>`<div class="history-theme">${escHtml(t.replace(/^[\p{Emoji}\s]+/u,'').split('(')[0].trim())}</div>`).join('') : ''}
           ${heartsHtml ? `<div class="history-hearts">${heartsHtml}</div>` : ''}
-          <div class="history-chevron">â–¼</div>
+          <div class="history-chevron">▼</div>
         </div>
         <div class="history-body" id="hb-${e.id}">
           ${buildHistoryBodyHtml(e)}
         </div>
       </div>`;
-  }).join('') || '<div class="empty-state">No entries yet. Start your first weekly review! âœ¨</div>';
+  }).join('') || '<div class="empty-state">No entries yet. Start your first weekly review! ✨</div>';
 }
 
 function deleteEntry(id) {
@@ -3563,8 +3563,8 @@ function editHistoryEntry(id) {
     {key:'stress', lbl:'What was stressful', multi:true},
     {key:'adjust', lbl:'Adjustments',        multi:true},
     {key:'theme',  lbl:'Theme',              multi:false},
-    {key:'amanda', lbl:'Amanda â™¥ Aidan',     multi:false},
-    {key:'aidan',  lbl:'Aidan â™¥ Amanda',     multi:false},
+    {key:'amanda', lbl:'Amanda ♥ Aidan',     multi:false},
+    {key:'aidan',  lbl:'Aidan ♥ Amanda',     multi:false},
     {key:'misc',   lbl:'Notes',              multi:true},
   ];
   const v0 = entry.hearts || 0;
@@ -3572,7 +3572,7 @@ function editHistoryEntry(id) {
   const heartsHtml = Array.from({length:5}, (_,i) => {
     const pos = i + 1;
     const pct = v0 >= pos ? '100%' : v0 >= pos - 0.5 ? '50%' : '0%';
-    return `<span class="hw" onclick="setEditHeartClick(event,this,'${id}',${pos})" onmousemove="previewEditHeart(event,this,'${id}',${pos})"><span class="hbg">â¤ï¸</span><span class="hfill" style="width:${pct}">â¤ï¸</span></span>`;
+    return `<span class="hw" onclick="setEditHeartClick(event,this,'${id}',${pos})" onmousemove="previewEditHeart(event,this,'${id}',${pos})"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
   }).join('');
   setTimeout(() => {
     body.innerHTML = `
@@ -3599,12 +3599,12 @@ function editHistoryEntry(id) {
           <div class="history-section-lbl">Photos</div>
           <div class="review-photo-list" id="hef-photo-list-${id}">${editPhotoThumbsHtml(id, urls0)}</div>
           <label class="photo-upload-label" style="margin-top:8px;font-size:12px;padding:6px 12px${urls0.length >= 4 ? ';display:none' : ''}" id="hef-photo-add-${id}">
-            ðŸ“· Add Photo
+            📷 Add Photo
             <input type="file" accept="image/*" style="display:none" onchange="addEditPhoto('${id}',this.files[0]);this.value=''">
           </label>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:6px">
-          <button class="history-edit-done-btn" onclick="doneEditingHistory('${id}')">âœ“ Done</button>
+          <button class="history-edit-done-btn" onclick="doneEditingHistory('${id}')">✓ Done</button>
         </div>
       </div>`;
     body.style.opacity = '0';
@@ -3673,7 +3673,7 @@ function doneEditingHistory(id) {
       if (header) {
         const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
         const previewEl = header.querySelector('.history-preview');
-        if (previewEl) previewEl.textContent = preview || 'â€”';
+        if (previewEl) previewEl.textContent = preview || '—';
         const heartsEl = header.querySelector('.history-hearts');
         if (heartsEl) heartsEl.innerHTML = e.hearts > 0 ? renderHeartsHtml(e.hearts) : '';
         header.querySelectorAll('.history-theme').forEach(el => el.remove());
@@ -3688,7 +3688,7 @@ function doneEditingHistory(id) {
   }, 150);
 }
 
-// â”€â”€â”€ DARK MODE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DARK MODE ────────────────────────────────────────────────────────────────
 function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const next = isDark ? 'light' : 'dark';
@@ -3696,7 +3696,7 @@ function toggleDarkMode() {
   localStorage.setItem('ow-theme', next);
   document.getElementById('dark-toggle').classList.toggle('active', next === 'dark');
   const mi = document.getElementById('menu-dark-item');
-  if (mi) mi.textContent = next === 'dark' ? 'â˜€ï¸ Light mode' : 'ðŸŒ™ Dark mode';
+  if (mi) mi.textContent = next === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
   updateBgSwatchColors();
 }
 const ACCENT_NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',pink:'Pink',plum:'Plum',berry:'Berry',blue:'Blue',teal:'Teal',forest:'Forest',sage:'Sage',gold:'Gold'};
@@ -3772,10 +3772,10 @@ function setBackground(name) {
   const btn = document.getElementById('dark-toggle');
   if (t && btn) btn.classList.toggle('active', t === 'dark');
   const mi = document.getElementById('menu-dark-item');
-  if (mi && t === 'dark') mi.textContent = 'â˜€ï¸ Light mode';
+  if (mi && t === 'dark') mi.textContent = '☀️ Light mode';
 })();
 
-// â”€â”€â”€ PHOTO WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PHOTO WIDGET ─────────────────────────────────────────────────────────────
 function renderPhotoWidget() {
   const wrap = document.getElementById('photo-widget-wrap');
   const img  = document.getElementById('photo-widget-img');
@@ -3833,7 +3833,7 @@ function removeBrokenPhoto(img) {
   if (idx !== -1) {
     photos.splice(idx, 1);
     savePhotos();
-    showToast('âš ï¸ Photo URL broken â€” removed. Use a direct image link.');
+    showToast('⚠️ Photo URL broken — removed. Use a direct image link.');
     photoIdx = 0;
     renderPhotoWidget();
   }
@@ -3843,7 +3843,7 @@ function addPhotoFromUrl() {
   const input = document.getElementById('photo-url-input');
   const url = input.value.trim();
   if (!url) return;
-  showToast('Checking imageâ€¦');
+  showToast('Checking image…');
   const test = new Image();
   test.onload = () => {
     const id = 'photo-' + Date.now();
@@ -3853,10 +3853,10 @@ function addPhotoFromUrl() {
     input.value = '';
     document.getElementById('photo-url-row').style.display = 'none';
     renderPhotoWidget();
-    showToast('Photo added! ðŸ’•');
+    showToast('Photo added! 💕');
   };
   test.onerror = () => {
-    showToast('âš ï¸ That URL didn\'t load. In Google Photos: open the photo, tap â‹® â†’ Share â†’ Copy link won\'t work â€” instead long-press the photo itself â†’ Copy image.');
+    showToast('⚠️ That URL didn\'t load. In Google Photos: open the photo, tap ⋮ → Share → Copy link won\'t work — instead long-press the photo itself → Copy image.');
   };
   test.src = url;
 }
@@ -3871,12 +3871,12 @@ function deleteCurrentPhoto() {
   });
 }
 
-// â”€â”€â”€ MOOD OF THE WEEK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── MOOD OF THE WEEK ─────────────────────────────────────────────────────────
 const MOOD_EMOJIS = [
-  'ðŸ˜Š','ðŸ˜','ðŸ¥°','ðŸ˜„','ðŸ¤©','ðŸ˜Ž','ðŸ¥³','ðŸ˜œ','ðŸ¤ª','ðŸ˜‚',
-  'ðŸ« ','ðŸ˜Œ','ðŸ˜´','ðŸ¥º','ðŸ˜¤','ðŸ«¶','ðŸ’ª','ðŸŒŸ','ðŸ’•','ðŸŽ‰',
-  'ðŸŒ¸','âœ¨','ðŸŒˆ','ðŸ™Œ','ðŸ•','ðŸ§ƒ','ðŸ«§','ðŸ¸','ðŸ¦‹','ðŸŒ™',
-  'ðŸ”¥','ðŸ’…','ðŸ«£','ðŸ˜µâ€ðŸ’«','ðŸ¤Œ','ðŸ«‚','ðŸ¥¹','ðŸ˜¬','ðŸ¤¯','ðŸ«€'
+  '😊','😍','🥰','😄','🤩','😎','🥳','😜','🤪','😂',
+  '🫠','😌','😴','🥺','😤','🫶','💪','🌟','💕','🎉',
+  '🌸','✨','🌈','🙌','🍕','🧃','🫧','🐸','🦋','🌙',
+  '🔥','💅','🫣','😵‍💫','🤌','🫂','🥹','😬','🤯','🫀'
 ];
 
 function getISOWeek() {
@@ -3908,7 +3908,7 @@ function renderMoodWidget() {
         : `<button class="mood-set-btn" onclick="openEmojiPicker(event,'aidan')">+ Set mood</button>`}
     </div>
     <div style="grid-column:1/-1;margin-top:8px">
-      <button class="spin-btn" onclick="spinMood()">âœ¨ Surprise</button>
+      <button class="spin-btn" onclick="spinMood()">✨ Surprise</button>
     </div>`;
 }
 
@@ -3957,7 +3957,7 @@ function spinMood(person) {
   }
 }
 
-// â”€â”€â”€ STREAK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STREAK ───────────────────────────────────────────────────────────────────
 function getStreak() {
   const entries = newEntries; // only real entries, not seeds
   if (!entries.length) return 0;
@@ -3979,7 +3979,7 @@ function getStreak() {
   return streak;
 }
 
-// â”€â”€â”€ REVIEW PHOTO HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── REVIEW PHOTO HELPERS ─────────────────────────────────────────────────────
 // Uploads a resized photo to Firebase Storage and returns a download URL.
 // Falls back to base64 if Storage isn't available.
 async function uploadPhoto(file, entryId, idx, maxPx, quality) {
@@ -4029,7 +4029,7 @@ function previewReviewPhoto(file) {
   reader.readAsDataURL(file);
 }
 
-// â”€â”€â”€ SWIPE TO DELETE (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SWIPE TO DELETE (mobile) ─────────────────────────────────────────────────
 function addSwipeToDelete() {
   document.querySelectorAll('.todo-item:not(.done)').forEach(el => {
     if (el.dataset.swipe) return; // already initialized
@@ -4056,7 +4056,7 @@ function addSwipeToDelete() {
   });
 }
 
-// â”€â”€â”€ EXPORT / BACKUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── EXPORT / BACKUP ─────────────────────────────────────────────────────────
 function exportData() {
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -4082,10 +4082,10 @@ function exportData() {
   a.download = `our-weekly-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('âœ… Backup downloaded!');
+  showToast('✅ Backup downloaded!');
 }
 
-// â”€â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── UTILS ───────────────────────────────────────────────────────────────────
 function escHtml(str) {
   if (!str) return '';
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -4180,7 +4180,7 @@ function burst() {
 function burstReview() {
   const wrap = document.getElementById('confetti-wrap');
   const colors = ['#f5c27a','#e8735a','#6b8f71','#4472a8','#f9a8d4','#fcd34d','#a78bfa','#fb923c','#34d399','#f472b6'];
-  const shapes = ['ðŸ’•','â­','âœ¨','ðŸŒ¸','ðŸ’›','ðŸ’œ','ðŸ§¡','ðŸ’™','ðŸŽ‰','ðŸŒŸ','ðŸ’–','ðŸŽŠ'];
+  const shapes = ['💕','⭐','✨','🌸','💛','💜','🧡','💙','🎉','🌟','💖','🎊'];
   wrap.innerHTML = '';
   const count = 160;
   const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
@@ -4207,7 +4207,7 @@ function burstReview() {
   setTimeout(() => wrap.innerHTML = '', 3800);
 }
 
-// â”€â”€â”€ NEXT TRIP COUNTDOWN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
 function renderNextTrip() {
   const today = new Date(); today.setHours(0,0,0,0);
   const next = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate))
@@ -4215,13 +4215,13 @@ function renderNextTrip() {
   const card = document.getElementById('next-trip-card');
   if (!next) { card.style.display = 'none'; return; }
   card.style.display = '';
-  document.getElementById('next-trip-name').textContent = `${next.dates.replace(/\b[a-z]/g, c => c.toUpperCase())} â€” ${next.label}`;
+  document.getElementById('next-trip-name').textContent = `${next.dates.replace(/\b[a-z]/g, c => c.toUpperCase())} — ${next.label}`;
   const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
   document.getElementById('next-trip-days').textContent = days || 'Today!';
   document.getElementById('next-trip-label').style.visibility = days ? '' : 'hidden';
 }
 
-// â”€â”€â”€ CUSTOM COUNTDOWNS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CUSTOM COUNTDOWNS ───────────────────────────────────────────────────────
 let customCountdowns = [];
 function saveCustomCountdowns() {
   db.collection('state').doc('countdowns').set({items: customCountdowns}).catch(_onSaveErr);
@@ -4231,16 +4231,16 @@ function renderCustomCountdowns() {
   if (!list) return;
   const today = new Date(); today.setHours(0,0,0,0);
   if (!customCountdowns.length) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px 0 4px">No countdowns yet â€” add one below!</div>';
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px 0 4px">No countdowns yet — add one below!</div>';
     return;
   }
   const cards = customCountdowns.slice().sort((a,b) => a.date.localeCompare(b.date)).map(cd => {
     const d = new Date(cd.date + 'T00:00:00');
     const days = Math.ceil((d - today) / 864e5);
-    const num  = days > 0 ? days : days === 0 ? 'ðŸŽ‰' : Math.abs(days);
+    const num  = days > 0 ? days : days === 0 ? '🎉' : Math.abs(days);
     const lbl  = days > 0 ? 'days away' : days === 0 ? 'today!' : 'days ago';
     return `<div class="custom-cd-widget">
-      <button class="custom-cd-widget-del" onclick="deleteCustomCountdown('${cd.id}')" title="Delete">âœ•</button>
+      <button class="custom-cd-widget-del" onclick="deleteCustomCountdown('${cd.id}')" title="Delete">✕</button>
       <div class="custom-cd-widget-name">${escHtml(cd.name)}</div>
       <div class="custom-cd-widget-num">${num}</div>
       <div class="custom-cd-widget-lbl">${lbl}</div>
@@ -4265,7 +4265,7 @@ function deleteCustomCountdown(id) {
   renderCustomCountdowns();
 }
 
-// â”€â”€â”€ CUSTOM COLOR PICKER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CUSTOM COLOR PICKER ─────────────────────────────────────────────────────
 function triggerColorPicker() {
   const input = document.getElementById('accent-color-input');
   const saved = localStorage.getItem('ow-accent-custom');
@@ -4292,7 +4292,7 @@ function applyCustomAccent(hex) {
   if (lbl) lbl.textContent = 'Custom';
 }
 
-// â”€â”€â”€ DRAG & DROP WIDGETS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DRAG & DROP WIDGETS ──────────────────────────────────────────────────────
 const DEFAULT_WIDGET_ORDER = ['stats','countdowns','japan','coffee-mood','coming-up','custom-countdowns','customize'];
 let _draggingWidget = null;
 let _editMode = false;
@@ -4306,7 +4306,7 @@ function toggleEditMode() {
     w.setAttribute('draggable', _editMode ? 'true' : 'false'));
   const btn = document.getElementById('edit-layout-btn');
   if (btn) {
-    btn.textContent = _editMode ? 'âœ“ Done' : 'â ¿ Edit Layout';
+    btn.textContent = _editMode ? '✓ Done' : '⠿ Edit Layout';
     btn.style.background = _editMode ? 'var(--amber)' : '';
     btn.style.color = _editMode ? 'white' : '';
     btn.style.borderColor = _editMode ? 'var(--amber)' : '';
@@ -4374,17 +4374,17 @@ function initWidgetDrag() {
   });
 }
 
-// â”€â”€â”€ ANNIVERSARY COUNTDOWN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ANNIVERSARY COUNTDOWN ────────────────────────────────────────────────────
 function renderAnniversary() {
   const today = new Date(); today.setHours(0,0,0,0);
   let anniv = new Date(today.getFullYear(), 9, 1); // Oct 1
   if (anniv < today) anniv = new Date(today.getFullYear() + 1, 9, 1);
   const days = Math.ceil((anniv - today) / 864e5);
-  document.getElementById('anniv-days').textContent = days || 'ðŸŽ‰ Today!';
+  document.getElementById('anniv-days').textContent = days || '🎉 Today!';
   document.getElementById('anniv-label').style.visibility = days ? '' : 'hidden';
 }
 
-// â”€â”€â”€ JAPAN COUNTDOWN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── JAPAN COUNTDOWN ─────────────────────────────────────────────────────────
 let _japanInterval = null;
 function tickJapan() {
   const diff = new Date('2026-10-24T00:00:00') - new Date();
@@ -4392,8 +4392,8 @@ function tickJapan() {
     if (_japanInterval) { clearInterval(_japanInterval); _japanInterval = null; }
     const card = document.querySelector('.japan-card');
     if (card) card.innerHTML = `
-      <div class="japan-card-label" style="font-size:20px;margin-bottom:6px">ðŸŽŒ We made it to Japan!</div>
-      <div class="japan-card-sub">Oct 24 â€“ Nov 8, 2026 Â· æ¥½ã—ã‚“ã§ ðŸŒ¸</div>`;
+      <div class="japan-card-label" style="font-size:20px;margin-bottom:6px">🎌 We made it to Japan!</div>
+      <div class="japan-card-sub">Oct 24 – Nov 8, 2026 · 楽しんで 🌸</div>`;
     return;
   }
   const pad = n => String(n).padStart(2,'0');
@@ -4405,7 +4405,7 @@ function tickJapan() {
 tickJapan();
 _japanInterval = setInterval(tickJapan, 1000);
 
-// â”€â”€â”€ BUDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── BUDGET ──────────────────────────────────────────────────────────────────
 
 
 const EXPENSE_CATS_EXCL = new Set(['Income','Savings','Investments']);
@@ -4427,7 +4427,7 @@ function calcOwes(txList) {
 
 const MONTHS_LIST = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const CAT_COLORS = {Dining:'#d96a52',Groceries:'#5c7a62',Shopping:'#bf7c36',Entertainment:'#4472a8',Transportation:'#9b6fa8',Housing:'#6b5c47',Travel:'#3a9ea5',Utilities:'#e0a030',Pet:'#e07a5f',Subscriptions:'#81b29a',Insurance:'#b5838d',Savings:'#4a7c59',Investments:'#2d6a4f',Income:'#52b788',Misc:'#aaa'};
-const CAT_EMOJIS = {Dining:'ðŸ½ï¸',Groceries:'ðŸ›’',Shopping:'ðŸ›ï¸',Entertainment:'ðŸŽ¬',Transportation:'ðŸš—',Housing:'ðŸ ',Travel:'âœˆï¸',Utilities:'ðŸ’¡',Pet:'ðŸ¾',Subscriptions:'ðŸ“±',Insurance:'ðŸ›¡ï¸',Savings:'ðŸ¦',Investments:'ðŸ“ˆ',Income:'ðŸ’°',Misc:'ðŸ“¦'};
+const CAT_EMOJIS = {Dining:'🍽️',Groceries:'🛒',Shopping:'🛍️',Entertainment:'🎬',Transportation:'🚗',Housing:'🏠',Travel:'✈️',Utilities:'💡',Pet:'🐾',Subscriptions:'📱',Insurance:'🛡️',Savings:'🏦',Investments:'📈',Income:'💰',Misc:'📦'};
 
 let _datesYear = new Date().getFullYear();
 let budgetTargets = {};
@@ -4441,7 +4441,7 @@ function renderBudget() {
   _cleanExpEdit(); // cancel any open inline edit before re-rendering
   const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const curYear = new Date().getFullYear().toString();
-  // Dynamic year selector â€” always shows current year + all years with data
+  // Dynamic year selector — always shows current year + all years with data
   const yearSel = document.getElementById('b-filter-year');
   if (yearSel) {
     const prevVal = yearSel.value || curYear;
@@ -4510,7 +4510,7 @@ function renderBudget() {
     const isFiltered = searchQ || filterCat || filterPerson;
     if (isFiltered && filtered.length) {
       const total = filtered.reduce((s, e) => s + e.amount, 0);
-      totalEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} Â· $${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      totalEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} · $${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     } else {
       totalEl.textContent = '';
     }
@@ -4523,7 +4523,7 @@ function renderBudget() {
   const net_      = income - spending - saved;
   const owes = calcOwes(monthTx);
   const diff = owes.Aidan - owes.Amanda;
-  const settleStr = Math.abs(diff) < 0.01 ? 'All square âœ…' : `${diff>0?'Amanda':'Aidan'} owes ${diff>0?'Aidan':'Amanda'} ${fmt(Math.abs(diff))}`;
+  const settleStr = Math.abs(diff) < 0.01 ? 'All square ✅' : `${diff>0?'Amanda':'Aidan'} owes ${diff>0?'Aidan':'Amanda'} ${fmt(Math.abs(diff))}`;
   const settleColor = Math.abs(diff) < 0.01 ? 'var(--sage)' : 'var(--amber)';
   document.getElementById('budget-snapshot').innerHTML = `
     <div class="bsnap"><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
@@ -4558,8 +4558,8 @@ function renderBudget() {
   for (const e of monthTx) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
     catTotals[e.category] = (catTotals[e.category]||0) + e.amount;
-    catAidan[e.category]   = (catAidan[e.category]||0)   + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0);
-    catAmanda[e.category]  = (catAmanda[e.category]||0)  + (e.shared ? e.amount/2 : e.person==='Amanda' ? e.amount : 0);
+    catAidan[e.category]  = (catAidan[e.category]||0)  + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0);
+    catAmanda[e.category] = (catAmanda[e.category]||0) + (e.shared ? e.amount/2 : e.person==='Amanda' ? e.amount : 0);
   }
   const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxCat = catSorted[0]?.[1] || 1;
@@ -4567,18 +4567,18 @@ function renderBudget() {
   if (bannerEl) {
     const over = catSorted.filter(([c,t]) => budgetTargets[c]>0 && t>budgetTargets[c]);
     bannerEl.innerHTML = over.length
-      ? `<div style="padding:10px 16px;background:var(--coral-bg);border:1px solid var(--coral);border-radius:10px;font-size:12px;color:var(--coral);font-weight:600">âš ï¸ Over budget: ${over.map(([c,t])=>`${CAT_EMOJIS[c]||'ðŸ“¦'} ${c} <span style="font-weight:400">(+${fmt(t-budgetTargets[c])})</span>`).join(' &nbsp;Â·&nbsp; ')}</div>`
+      ? `<div style="padding:10px 16px;background:var(--coral-bg);border:1px solid var(--coral);border-radius:10px;font-size:12px;color:var(--coral);font-weight:600">⚠️ Over budget: ${over.map(([c,t])=>`${CAT_EMOJIS[c]||'📦'} ${c} <span style="font-weight:400">(+${fmt(t-budgetTargets[c])})</span>`).join(' &nbsp;·&nbsp; ')}</div>`
       : '';
   }
   document.getElementById('budget-cats').innerHTML = catSorted.length ? catSorted.map(([cat, total]) => {
     const aidanAmt  = catAidan[cat]  || 0;
     const amandaAmt = catAmanda[cat] || 0;
     const color = CAT_COLORS[cat] || 'var(--amber)';
-    const emoji = CAT_EMOJIS[cat] || 'ðŸ“¦';
+    const emoji = CAT_EMOJIS[cat] || '📦';
     const target = budgetTargets[cat] || 0;
     const barPct = target > 0 ? Math.min(100, Math.round(total/target*100)) : Math.round(total/maxCat*100);
     const barColor = target > 0 && total > target ? 'var(--coral)' : color;
-    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' âš ï¸':''}</span>` : `<span class="bcat-set-target" data-cat="${escHtml(cat)}" onclick="promptTarget(this.dataset.cat);event.stopPropagation()" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
+    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : `<span class="bcat-set-target" data-cat="${escHtml(cat)}" onclick="promptTarget(this.dataset.cat);event.stopPropagation()" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
     return `<div class="budget-cat-row" data-cat="${escHtml(cat)}" onclick="filterByCat(this.dataset.cat)" style="cursor:pointer" title="Filter transactions by ${cat}">
       <div class="budget-cat-name">${emoji} ${cat}</div>
       <div class="budget-cat-bars">
@@ -4612,7 +4612,7 @@ function renderBudget() {
             <div class="budget-tx-right">
               ${e.shared?`<span class="budget-tx-shared">50/50</span>`:''}
               <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
-              <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">Ã—</button>
+              <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
             </div>
           </div>`;
     const byDate = {};
@@ -4624,8 +4624,8 @@ function renderBudget() {
           ${txs.map(txRow).join('')}
         </div>`).join('') + `</div>`;
     const moreHtml = !showAll
-      ? `<button onclick="_txShowAll=true;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions â†“</button>`
-      : sorted.length > PREVIEW ? `<button onclick="_txShowAll=false;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less â†‘</button>` : '';
+      ? `<button onclick="_txShowAll=true;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions ↓</button>`
+      : sorted.length > PREVIEW ? `<button onclick="_txShowAll=false;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less ↑</button>` : '';
     document.getElementById('budget-transactions').innerHTML = listHtml + moreHtml;
   }
 
@@ -4664,7 +4664,7 @@ function toggleDone() {
   const chev = document.getElementById('done-chevron');
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
-  if (chev) chev.textContent = open ? 'â–¼' : 'â–¶';
+  if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
 function toggleQuickAdd() {
@@ -4672,7 +4672,7 @@ function toggleQuickAdd() {
   const chev = document.getElementById('quickadd-chevron');
   const open = body.style.display === 'none';
   body.style.display = open ? 'block' : 'none';
-  if (chev) chev.textContent = open ? 'â–¼' : 'â–¶';
+  if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
 function toggleRecurring() {
@@ -4680,7 +4680,7 @@ function toggleRecurring() {
   const chev = document.getElementById('rec-chevron');
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
-  if (chev) chev.textContent = open ? 'â–¼' : 'â–¶';
+  if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
 function toggleAddDate() {
@@ -4688,7 +4688,7 @@ function toggleAddDate() {
   const chev = document.getElementById('add-date-chev');
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
-  if (chev) chev.textContent = open ? 'â–¼' : 'â–¶';
+  if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
 function togglePastAdventures() {
@@ -4696,7 +4696,7 @@ function togglePastAdventures() {
   const chev = document.getElementById('past-chev');
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
-  if (chev) chev.textContent = open ? 'â–¼' : 'â–¶';
+  if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
 
@@ -4712,7 +4712,7 @@ function addExpense() {
   const month = monthName(new Date(date + 'T12:00:00'));
   const newItem = {id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared};
   expenses.push(newItem);
-  // arrayUnion appends atomically â€” safe if both people add at the same time
+  // arrayUnion appends atomically — safe if both people add at the same time
   db.collection('state').doc('expenses').update({
     items: firebase.firestore.FieldValue.arrayUnion(newItem)
   }).catch(_onSaveErr);
@@ -4803,7 +4803,7 @@ function saveExpenseEdit(id) {
   const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value ?? '');
   const date    = document.getElementById('txe-date-'   + id)?.value;
   const shared  = document.getElementById('txe-shared-' + id)?.checked ?? false;
-  if (!desc || isNaN(amt)) return; // form gone or invalid â€” silently bail
+  if (!desc || isNaN(amt)) return; // form gone or invalid — silently bail
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
@@ -4817,7 +4817,7 @@ function saveExpenseEdit(id) {
   renderBudget();
 }
 
-// â”€â”€â”€ RECURRING & BULK â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── RECURRING & BULK ────────────────────────────────────────────────────────
 const DEFAULT_RECURRING = [
   {id:'rec-0', person:'Aidan',  category:'Housing',       description:'Mortgage',         amount:1833.00, shared:false},
   {id:'rec-1', person:'Amanda', category:'Housing',       description:'Mortgage',         amount:1833.00, shared:false},
@@ -4854,7 +4854,7 @@ function renderRecurring() {
     const allLoaded = recurringItems.every(r =>
       expenses.some(e => e.person === r.person && e.description === r.description && e.month === month && e.date.startsWith(year))
     );
-    loadBtn.textContent  = allLoaded ? `âœ“ ${month} loaded` : 'Load This Month';
+    loadBtn.textContent  = allLoaded ? `✓ ${month} loaded` : 'Load This Month';
     loadBtn.disabled     = allLoaded;
     loadBtn.style.background  = allLoaded ? 'var(--sage)' : '';
     loadBtn.style.cursor      = allLoaded ? 'default' : '';
@@ -4878,8 +4878,8 @@ function renderRecurring() {
         ${r.description?`<div class="rec-meta">${escHtml(r.description)}</div>`:''}
       </div>
       <span class="rec-amt">${fmt(r.amount)}</span>
-      <button class="rec-load-one" title="${loaded?'Already loaded this month':'Add to this month'}" onclick="loadSingleRecurring('${r.id}');event.stopPropagation()" ${loaded?'disabled':''} style="background:none;border:none;cursor:${loaded?'default':'pointer'};font-size:15px;padding:0 3px;line-height:1;opacity:${loaded?'0.5':'1'};color:${loaded?'var(--sage)':'var(--text-3)'};">${loaded?'âœ“':'ï¼‹'}</button>
-      <button class="rec-del" onclick="deleteRecurring('${r.id}');event.stopPropagation()">Ã—</button>
+      <button class="rec-load-one" title="${loaded?'Already loaded this month':'Add to this month'}" onclick="loadSingleRecurring('${r.id}');event.stopPropagation()" ${loaded?'disabled':''} style="background:none;border:none;cursor:${loaded?'default':'pointer'};font-size:15px;padding:0 3px;line-height:1;opacity:${loaded?'0.5':'1'};color:${loaded?'var(--sage)':'var(--text-3)'};">${loaded?'✓':'＋'}</button>
+      <button class="rec-del" onclick="deleteRecurring('${r.id}');event.stopPropagation()">×</button>
     </div>`;
   }).join('');
 }
@@ -4970,8 +4970,8 @@ function checkRecurringReminder() {
   el.innerHTML = missing.map(({ year, month }) => `
     <div class="card" style="border-color:var(--amber);background:var(--amber-bg);margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:700;color:var(--amber-dark)">ðŸ’³ Recurring expenses not loaded for <strong>${month} ${year}</strong></div>
-        <button onclick="dismissRecurringReminder('${month}-${year}')" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">Ã—</button>
+        <div style="font-size:13px;font-weight:700;color:var(--amber-dark)">💳 Recurring expenses not loaded for <strong>${month} ${year}</strong></div>
+        <button onclick="dismissRecurringReminder('${month}-${year}')" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
       </div>
       <div id="rec-reminder-form-${month}-${year}">
         ${recurringItems.map(r => {
@@ -5017,7 +5017,7 @@ function loadRecurringForMonth(year, month) {
   }).catch(_onSaveErr);
   renderBudget();
   checkRecurringReminder();
-  showToast(`âœ… Loaded ${added.length} recurring for ${month} ${year}`);
+  showToast(`✅ Loaded ${added.length} recurring for ${month} ${year}`);
 }
 
 let _dismissedRecurring = new Set(JSON.parse(localStorage.getItem('ow-rec-dismissed') || '[]'));
@@ -5052,7 +5052,7 @@ function loadRecurring() {
       items: firebase.firestore.FieldValue.arrayUnion(...newItems)
     }).catch(_onSaveErr);
     renderBudget();
-    showToast(`âœ… Loaded ${added} recurring expense${added>1?'s':''}`);
+    showToast(`✅ Loaded ${added} recurring expense${added>1?'s':''}`);
   } else {
     showToast('Already loaded this month!');
   }
@@ -5078,7 +5078,7 @@ function loadSingleRecurring(id) {
   }).catch(_onSaveErr);
   renderBudget();
   renderRecurring();
-  showToast(`âœ… Added ${r.description}`);
+  showToast(`✅ Added ${r.description}`);
 }
 
 function _evalAmount(str) {
@@ -5105,7 +5105,7 @@ const _BULK_CATS = ['Dining','Entertainment','Groceries','Housing','Income','Ins
 
 function _parseBulkLine(line, fallback) {
   const parts = line.split(',').map(p => p.trim());
-  if (parts.length < 2) return {error: 'too few fields â€” need at least: Category, amount, y/n'};
+  if (parts.length < 2) return {error: 'too few fields — need at least: Category, amount, y/n'};
   let date = fallback, offset = 0;
   const maybeDate = _parseBulkDate(parts[0]);
   if (maybeDate) { date = maybeDate; offset = 1; }
@@ -5130,16 +5130,16 @@ function renderBulkPreview() {
   if (!text) { el.style.display = 'none'; return; }
   const fallback = new Date().toISOString().slice(0, 10);
   const lines = text.split('\n').filter(l => l.trim());
-  const fmtDate = d => { if (!d) return 'â€”'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
+  const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
   const rowsHtml = lines.map(line => {
     const r = _parseBulkLine(line, fallback);
-    if (r.error) return `<tr style="background:var(--coral-bg)"><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">â€” ${r.error}</span></td></tr>`;
+    if (r.error) return `<tr style="background:var(--coral-bg)"><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
     const bg = r.warnMisc ? 'var(--amber-bg)' : '';
     const catCell = r.warnMisc ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" unrecognized)</span>` : r.category;
     return `<tr style="background:${bg};border-top:1px solid var(--border-light)">
       <td style="padding:6px 12px;color:var(--text-3);white-space:nowrap">${fmtDate(r.date)}</td>
       <td style="padding:6px 12px">${catCell}</td>
-      <td style="padding:6px 12px;color:var(--text-2)">${r.description || '<span style="color:var(--text-3)">â€”</span>'}</td>
+      <td style="padding:6px 12px;color:var(--text-2)">${r.description || '<span style="color:var(--text-3)">—</span>'}</td>
       <td style="padding:6px 12px;font-weight:600;white-space:nowrap">$${r.amount.toFixed(2)}</td>
       <td style="padding:6px 12px;color:var(--text-3)">${r.shared ? 'shared' : 'solo'}</td>
     </tr>`;
@@ -5213,12 +5213,12 @@ function _executeBulkImport() {
   const hasProblems = errorLines.length || miscWarns.length;
   resultEl.style.color = !added && errorLines.length ? 'var(--coral)' : miscWarns.length ? 'var(--amber)' : 'var(--sage)';
   resultEl.textContent = added
-    ? `âœ“ Added ${added}${errorLines.length ? ' (' + errorLines.length + ' skipped)' : ''}${miscWarns.length ? ' Â· ' + miscWarns.length + ' â†’ Misc' : ''}`
+    ? `✓ Added ${added}${errorLines.length ? ' (' + errorLines.length + ' skipped)' : ''}${miscWarns.length ? ' · ' + miscWarns.length + ' → Misc' : ''}`
     : `Could not parse any lines`;
   const errEl = document.getElementById('bulk-errors');
   const allProblems = [
     ...errorLines.map(({line, reason}) => ({line, reason, type:'error'})),
-    ...miscWarns.map(raw => ({line: null, reason: `"${raw}" didn't match any category â€” saved as Misc`, type:'warn'}))
+    ...miscWarns.map(raw => ({line: null, reason: `"${raw}" didn't match any category — saved as Misc`, type:'warn'}))
   ];
   if (allProblems.length) {
     errEl.style.display = 'block';
@@ -5261,7 +5261,7 @@ function insertBulkCat(cat) {
   ta.focus();
 }
 
-// â”€â”€â”€ AUTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── AUTH ────────────────────────────────────────────────────────────────────
 function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -5269,7 +5269,7 @@ function doLogin() {
   const btn = document.getElementById('login-btn');
   errEl.textContent = '';
   btn.disabled = true;
-  btn.textContent = 'Signing inâ€¦';
+  btn.textContent = 'Signing in…';
   auth.signInWithEmailAndPassword(email, password)
     .catch(err => {
       errEl.textContent = 'Incorrect email or password.';
@@ -5282,7 +5282,7 @@ document.getElementById('login-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
 
-// â”€â”€â”€ SWIPE NAV (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SWIPE NAV (mobile) ──────────────────────────────────────────────────────
 (function initSwipeNav() {
   const PAGES = ['home','review','plan','todos','dates','budget','history'];
   let sx = null, sy = null;
@@ -5303,7 +5303,7 @@ document.getElementById('login-password').addEventListener('keydown', e => {
   }, {passive:true});
 })();
 
-// â”€â”€â”€ DRAG SCROLL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DRAG SCROLL ─────────────────────────────────────────────────────────────
 (function initDragScroll() {
   const ZONE = 80, SPEED = 12;
   let raf = null, lastY = 0;
@@ -5322,7 +5322,7 @@ document.getElementById('login-password').addEventListener('keydown', e => {
   document.addEventListener('drop',    () => { if (raf) { cancelAnimationFrame(raf); raf = null; } });
 })();
 
-// â”€â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── INIT ────────────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
   if (user) {
     localStorage.setItem('ow-was-authed', '1');
@@ -5347,15 +5347,15 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/our-weekly-3613/sw.js');
 }
 </script>
-<!-- â”€â”€ Bottom Nav (mobile) â”€â”€ -->
+<!-- ── Bottom Nav (mobile) ── -->
 <nav id="bottom-nav">
-  <div class="bnav-item active" id="bnav-home"   onclick="showPage('home')">ðŸ <span>Home</span></div>
-  <div class="bnav-item" id="bnav-review" onclick="showPage('review')">âœï¸<span>Review</span></div>
-  <div class="bnav-item" id="bnav-plan"   onclick="showPage('plan')">ðŸ—“ï¸<span>Plan</span></div>
-  <div class="bnav-item" id="bnav-todos"  onclick="showPage('todos')">âœ…<span>To-Dos</span></div>
-  <div class="bnav-item" id="bnav-more"   onclick="toggleNavMenu()">â˜°<span>More</span></div>
+  <div class="bnav-item active" id="bnav-home"   onclick="showPage('home')">🏠<span>Home</span></div>
+  <div class="bnav-item" id="bnav-review" onclick="showPage('review')">✏️<span>Review</span></div>
+  <div class="bnav-item" id="bnav-plan"   onclick="showPage('plan')">🗓️<span>Plan</span></div>
+  <div class="bnav-item" id="bnav-todos"  onclick="showPage('todos')">✅<span>To-Dos</span></div>
+  <div class="bnav-item" id="bnav-more"   onclick="toggleNavMenu()">☰<span>More</span></div>
 </nav>
-<!-- â”€â”€ FABs â”€â”€ -->
+<!-- ── FABs ── -->
 <button class="fab" id="fab-budget" style="display:none" onclick="fabBudget()" title="Add expense" aria-label="Add expense">+</button>
 </body>
 </html>
