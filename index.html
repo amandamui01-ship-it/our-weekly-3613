@@ -644,10 +644,11 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 #home-widgets{display:flex;flex-direction:column;gap:14px}
 .home-widget{position:relative}
 .home-widget>*{margin-bottom:0!important}
-.home-widget-handle{position:absolute;top:10px;right:10px;font-size:13px;color:var(--text-3);cursor:grab;opacity:0;transition:opacity .15s;z-index:5;user-select:none;line-height:1;padding:3px 4px;border-radius:4px;background:var(--surface)}
-.home-widget:hover .home-widget-handle{opacity:.7}
-.home-widget-handle:hover{opacity:1!important;background:var(--border)}
-.home-widget.dragging{opacity:.35;cursor:grabbing}
+.home-widget-handle{position:absolute;top:10px;right:10px;font-size:13px;color:var(--text-3);cursor:grab;opacity:0;pointer-events:none;transition:opacity .15s;z-index:5;user-select:none;line-height:1;padding:3px 4px;border-radius:4px;background:var(--surface)}
+#home-widgets.edit-mode .home-widget-handle{opacity:.75;pointer-events:auto}
+#home-widgets.edit-mode .home-widget-handle:hover{opacity:1;background:var(--border)}
+#home-widgets.edit-mode .home-widget{outline:1.5px dashed var(--border);outline-offset:3px;border-radius:var(--radius)}
+.home-widget.dragging{opacity:.35}
 .home-widget.drag-before{padding-top:6px}
 .home-widget.drag-before::before{content:'';display:block;height:3px;background:var(--amber);border-radius:2px;margin-bottom:6px}
 .home-widget.drag-after::after{content:'';display:block;height:3px;background:var(--amber);border-radius:2px;margin-top:6px}
@@ -959,7 +960,10 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div class="home-widget" data-widget="customize">
     <div class="home-widget-handle" title="Drag to reorder">⠿</div>
     <div class="card">
-      <div class="card-title" style="margin-bottom:14px">Customize 🎨</div>
+      <div class="card-title" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+        <span>Customize 🎨</span>
+        <button id="edit-layout-btn" onclick="toggleEditMode()" style="font-size:11px;font-weight:700;color:var(--text-3);background:var(--border-light);border:1px solid var(--border);border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap">⠿ Edit Layout</button>
+      </div>
       <div style="margin-bottom:14px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Accent Color — <span id="palette-label" style="color:var(--amber);font-weight:800"></span></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -4259,6 +4263,23 @@ function applyCustomAccent(hex) {
 // ─── DRAG & DROP WIDGETS ──────────────────────────────────────────────────────
 const DEFAULT_WIDGET_ORDER = ['stats','countdowns','japan','coffee-mood','coming-up','custom-countdowns','customize'];
 let _draggingWidget = null;
+let _editMode = false;
+
+function toggleEditMode() {
+  _editMode = !_editMode;
+  const container = document.getElementById('home-widgets');
+  if (!container) return;
+  container.classList.toggle('edit-mode', _editMode);
+  container.querySelectorAll('.home-widget').forEach(w =>
+    w.setAttribute('draggable', _editMode ? 'true' : 'false'));
+  const btn = document.getElementById('edit-layout-btn');
+  if (btn) {
+    btn.textContent = _editMode ? '✓ Done' : '⠿ Edit Layout';
+    btn.style.background = _editMode ? 'var(--amber)' : '';
+    btn.style.color = _editMode ? 'white' : '';
+    btn.style.borderColor = _editMode ? 'var(--amber)' : '';
+  }
+}
 
 function applyWidgetOrder() {
   const saved = JSON.parse(localStorage.getItem('ow-widget-order') || 'null');
@@ -4316,14 +4337,8 @@ function initWidgetDrag() {
     localStorage.setItem('ow-widget-order', JSON.stringify(order));
   });
 
-  // Make handles the drag initiators; block drag on interactive children
   container.querySelectorAll('.home-widget').forEach(w => {
-    w.setAttribute('draggable', 'true');
-    w.addEventListener('dragstart', e => {
-      if (!e.target.closest('.home-widget-handle') && e.target !== w) {
-        e.preventDefault();
-      }
-    });
+    w.setAttribute('draggable', 'false');
   });
 }
 
