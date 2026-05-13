@@ -582,21 +582,41 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 [data-theme="dark"] code{background:var(--surface)!important;color:var(--text-2)}
 
 /* ── Accent palettes ── */
-[data-accent="rose"]  {--amber:#c05678;--amber-bg:#fde8ef;--amber-dark:#8a3050}
-[data-accent="sage"]  {--amber:#4a7a55;--amber-bg:#e8f4ea;--amber-dark:#2e5538}
-[data-accent="blue"]  {--amber:#4472a8;--amber-bg:#e8f0f8;--amber-dark:#2a4a78}
-[data-accent="coral"] {--amber:#d06545;--amber-bg:#fdeae5;--amber-dark:#8a3a22}
-[data-accent="plum"]  {--amber:#7a5590;--amber-bg:#f0eaf8;--amber-dark:#50356a}
-[data-theme="dark"][data-accent="rose"]  {--amber:#e07898;--amber-bg:rgba(192,86,120,.15)}
-[data-theme="dark"][data-accent="sage"]  {--amber:#6a9870;--amber-bg:rgba(74,122,85,.15)}
-[data-theme="dark"][data-accent="blue"]  {--amber:#6090d0;--amber-bg:rgba(68,114,168,.15)}
-[data-theme="dark"][data-accent="coral"] {--amber:#e07850;--amber-bg:rgba(208,101,69,.15)}
-[data-theme="dark"][data-accent="plum"]  {--amber:#9a70b8;--amber-bg:rgba(122,85,144,.15)}
+[data-accent="rose"]     {--amber:#c05678;--amber-bg:#fde8ef;--amber-dark:#8a3050}
+[data-accent="coral"]    {--amber:#d06545;--amber-bg:#fdeae5;--amber-dark:#8a3a22}
+[data-accent="plum"]     {--amber:#7a5590;--amber-bg:#f0eaf8;--amber-dark:#50356a}
+[data-accent="sage"]     {--amber:#4a7a55;--amber-bg:#e8f4ea;--amber-dark:#2e5538}
+[data-accent="blue"]     {--amber:#4472a8;--amber-bg:#e8f0f8;--amber-dark:#2a4a78}
+[data-accent="teal"]     {--amber:#3a8a8a;--amber-bg:#e4f4f4;--amber-dark:#1e5e5e}
+[data-accent="forest"]   {--amber:#2e6b3e;--amber-bg:#e4f0e8;--amber-dark:#1a4428}
+[data-accent="gold"]     {--amber:#b89010;--amber-bg:#faf5d0;--amber-dark:#7a5e00}
+[data-accent="berry"]    {--amber:#5a3a7a;--amber-bg:#ede8f8;--amber-dark:#3a2050}
+[data-accent="pink"]     {--amber:#d04880;--amber-bg:#fde8f2;--amber-dark:#8a2050}
+[data-theme="dark"][data-accent="rose"]   {--amber:#e07898;--amber-bg:rgba(192,86,120,.15)}
+[data-theme="dark"][data-accent="coral"]  {--amber:#e07850;--amber-bg:rgba(208,101,69,.15)}
+[data-theme="dark"][data-accent="plum"]   {--amber:#9a70b8;--amber-bg:rgba(122,85,144,.15)}
+[data-theme="dark"][data-accent="sage"]   {--amber:#6a9870;--amber-bg:rgba(74,122,85,.15)}
+[data-theme="dark"][data-accent="blue"]   {--amber:#6090d0;--amber-bg:rgba(68,114,168,.15)}
+[data-theme="dark"][data-accent="teal"]   {--amber:#5ab8b8;--amber-bg:rgba(58,138,138,.15)}
+[data-theme="dark"][data-accent="forest"] {--amber:#5a9868;--amber-bg:rgba(46,107,62,.15)}
+[data-theme="dark"][data-accent="gold"]   {--amber:#d8b830;--amber-bg:rgba(184,144,16,.15)}
+[data-theme="dark"][data-accent="berry"]  {--amber:#8a68b8;--amber-bg:rgba(90,58,122,.15)}
+[data-theme="dark"][data-accent="pink"]   {--amber:#e870a8;--amber-bg:rgba(208,72,128,.15)}
 
-/* ── Palette picker ── */
+/* ── Background presets (light mode only) ── */
+html:not([data-theme="dark"]) body[data-bg="blush"]     {--bg:#fdf6f0;--surface:#fffbf8;--surface-warm:#fff8f5;--border:#e8d5ca;--border-light:#f5e8e2}
+html:not([data-theme="dark"]) body[data-bg="ivory"]     {--bg:#fafaf7;--surface:#ffffff;--surface-warm:#fdfdf8;--border:#e4e4dc;--border-light:#eeeee6}
+html:not([data-theme="dark"]) body[data-bg="frost"]     {--bg:#f4f7fb;--surface:#f9fbff;--surface-warm:#f6f9ff;--border:#d0daea;--border-light:#dde8f4}
+html:not([data-theme="dark"]) body[data-bg="parchment"] {--bg:#f2e8d8;--surface:#fdf5e8;--surface-warm:#fdf2e4;--border:#d8c4a0;--border-light:#e8d4b4}
+html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:#fafcf8;--surface-warm:#f7faf4;--border:#ccd9c4;--border-light:#dce8d4}
+
+/* ── Palette + bg picker swatches ── */
 .palette-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
 .palette-swatch:hover{transform:scale(1.15)}
 .palette-swatch.active{border-color:var(--text);transform:scale(1.1)}
+.bg-swatch{width:30px;height:22px;border-radius:5px;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.bg-swatch:hover{transform:scale(1.1)}
+.bg-swatch.active{border-color:var(--text)}
 
 /* ── Custom countdowns ── */
 .custom-cd-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)}
@@ -871,17 +891,6 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
     </div>
   </div>
 
-  <!-- Custom countdowns -->
-  <div class="card" id="custom-countdowns-card" style="margin-bottom:16px">
-    <div class="card-title">Countdowns ⏳</div>
-    <div id="custom-cd-list"></div>
-    <div class="custom-cd-add">
-      <input type="text" id="cd-name" placeholder="Event name">
-      <input type="date" id="cd-date">
-      <button onclick="addCustomCountdown()">+ Add</button>
-    </div>
-  </div>
-
   <!-- Bottom widgets row: Coffee + Mood -->
   <div class="home-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
     <div class="coffee-card" style="margin:0">
@@ -903,17 +912,46 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
     <div id="home-trips"></div>
   </div>
 
-  <!-- Palette picker -->
+  <!-- Custom countdowns -->
+  <div class="card" id="custom-countdowns-card" style="margin-bottom:14px">
+    <div class="card-title">Countdowns ⏳</div>
+    <div id="custom-cd-list"></div>
+    <div class="custom-cd-add">
+      <input type="text" id="cd-name" placeholder="Event name">
+      <input type="date" id="cd-date">
+      <button onclick="addCustomCountdown()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Customize -->
   <div class="card" style="margin-bottom:0">
-    <div class="card-title" style="margin-bottom:12px">Customize Palette 🎨</div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div class="palette-swatch" id="swatch-amber"  style="background:#bf7c36" onclick="setAccent('amber')"  title="Amber"></div>
-      <div class="palette-swatch" id="swatch-rose"   style="background:#c05678" onclick="setAccent('rose')"   title="Rose"></div>
-      <div class="palette-swatch" id="swatch-coral"  style="background:#d06545" onclick="setAccent('coral')"  title="Coral"></div>
-      <div class="palette-swatch" id="swatch-plum"   style="background:#7a5590" onclick="setAccent('plum')"   title="Plum"></div>
-      <div class="palette-swatch" id="swatch-sage"   style="background:#4a7a55" onclick="setAccent('sage')"   title="Sage"></div>
-      <div class="palette-swatch" id="swatch-blue"   style="background:#4472a8" onclick="setAccent('blue')"   title="Blue"></div>
-      <span id="palette-label" style="font-size:12px;color:var(--text-3);margin-left:4px"></span>
+    <div class="card-title" style="margin-bottom:14px">Customize 🎨</div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Accent Color — <span id="palette-label" style="color:var(--amber);font-weight:800"></span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="palette-swatch" id="swatch-amber"  style="background:#bf7c36" onclick="setAccent('amber')"  title="Amber"></div>
+        <div class="palette-swatch" id="swatch-rose"   style="background:#c05678" onclick="setAccent('rose')"   title="Rose"></div>
+        <div class="palette-swatch" id="swatch-coral"  style="background:#d06545" onclick="setAccent('coral')"  title="Coral"></div>
+        <div class="palette-swatch" id="swatch-pink"   style="background:#d04880" onclick="setAccent('pink')"   title="Pink"></div>
+        <div class="palette-swatch" id="swatch-plum"   style="background:#7a5590" onclick="setAccent('plum')"   title="Plum"></div>
+        <div class="palette-swatch" id="swatch-berry"  style="background:#5a3a7a" onclick="setAccent('berry')"  title="Berry"></div>
+        <div class="palette-swatch" id="swatch-blue"   style="background:#4472a8" onclick="setAccent('blue')"   title="Blue"></div>
+        <div class="palette-swatch" id="swatch-teal"   style="background:#3a8a8a" onclick="setAccent('teal')"   title="Teal"></div>
+        <div class="palette-swatch" id="swatch-forest" style="background:#2e6b3e" onclick="setAccent('forest')" title="Forest"></div>
+        <div class="palette-swatch" id="swatch-sage"   style="background:#4a7a55" onclick="setAccent('sage')"   title="Sage"></div>
+        <div class="palette-swatch" id="swatch-gold"   style="background:#b89010" onclick="setAccent('gold')"   title="Gold"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px">Background — <span id="bg-label" style="color:var(--amber);font-weight:800"></span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="bg-swatch" id="bgswatch-default"    style="background:#faf7f2;border-color:transparent"  onclick="setBackground('default')"    title="Linen (default)"></div>
+        <div class="bg-swatch" id="bgswatch-blush"      style="background:#fdf6f0"  onclick="setBackground('blush')"      title="Blush"></div>
+        <div class="bg-swatch" id="bgswatch-ivory"      style="background:#fafaf7"  onclick="setBackground('ivory')"      title="Ivory"></div>
+        <div class="bg-swatch" id="bgswatch-parchment"  style="background:#f2e8d8"  onclick="setBackground('parchment')"  title="Parchment"></div>
+        <div class="bg-swatch" id="bgswatch-frost"      style="background:#f4f7fb"  onclick="setBackground('frost')"      title="Frost"></div>
+        <div class="bg-swatch" id="bgswatch-sage"       style="background:#f2f5ef"  onclick="setBackground('sage')"       title="Sage"></div>
+      </div>
     </div>
   </div>
 
@@ -1300,6 +1338,8 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 <script>
 // ─── SEASONAL THEME ──────────────────────────────────────────────────────────
 (function applySeason() {
+  const savedBg = localStorage.getItem('ow-bg');
+  if (savedBg && savedBg !== 'default') { document.body.setAttribute('data-bg', savedBg); return; }
   const m = new Date().getMonth();
   const s = m >= 2 && m <= 4 ? 'spring' : m >= 5 && m <= 7 ? 'summer' : m >= 8 && m <= 10 ? 'fall' : 'winter';
   document.body.classList.add('season-' + s);
@@ -3593,18 +3633,22 @@ function toggleDarkMode() {
   if (mi) mi.textContent = next === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
 }
 // Sync dark-toggle button + menu label (theme already applied in <head>)
+const ACCENT_NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',pink:'Pink',plum:'Plum',berry:'Berry',blue:'Blue',teal:'Teal',forest:'Forest',sage:'Sage',gold:'Gold'};
+const BG_NAMES = {default:'Linen',blush:'Blush',ivory:'Ivory',parchment:'Parchment',frost:'Frost',sage:'Sage'};
 (function(){
-  const a = localStorage.getItem('ow-accent');
-  if (a && a !== 'amber') document.documentElement.setAttribute('data-accent', a);
-  const NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',plum:'Plum',sage:'Sage',blue:'Blue'};
-  const current = a || 'amber';
-  const activeEl = document.getElementById('swatch-' + current);
-  if (activeEl) activeEl.classList.add('active');
+  const a = localStorage.getItem('ow-accent') || 'amber';
+  if (a !== 'amber') document.documentElement.setAttribute('data-accent', a);
+  const sw = document.getElementById('swatch-' + a);
+  if (sw) sw.classList.add('active');
   const lbl = document.getElementById('palette-label');
-  if (lbl) lbl.textContent = NAMES[current] || '';
+  if (lbl) lbl.textContent = ACCENT_NAMES[a] || '';
+  const b = localStorage.getItem('ow-bg') || 'default';
+  const bsw = document.getElementById('bgswatch-' + b);
+  if (bsw) bsw.classList.add('active');
+  const blbl = document.getElementById('bg-label');
+  if (blbl) blbl.textContent = BG_NAMES[b] || '';
 })();
 function setAccent(name) {
-  const NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',plum:'Plum',sage:'Sage',blue:'Blue'};
   if (name === 'amber') document.documentElement.removeAttribute('data-accent');
   else document.documentElement.setAttribute('data-accent', name);
   localStorage.setItem('ow-accent', name);
@@ -3612,7 +3656,25 @@ function setAccent(name) {
   const sw = document.getElementById('swatch-' + name);
   if (sw) sw.classList.add('active');
   const lbl = document.getElementById('palette-label');
-  if (lbl) lbl.textContent = NAMES[name] || '';
+  if (lbl) lbl.textContent = ACCENT_NAMES[name] || '';
+}
+function setBackground(name) {
+  document.body.classList.remove('season-spring','season-summer','season-fall','season-winter');
+  if (name === 'default') {
+    document.body.removeAttribute('data-bg');
+    localStorage.removeItem('ow-bg');
+    const m = new Date().getMonth();
+    const s = m>=2&&m<=4?'spring':m>=5&&m<=7?'summer':m>=8&&m<=10?'fall':'winter';
+    document.body.classList.add('season-'+s);
+  } else {
+    document.body.setAttribute('data-bg', name);
+    localStorage.setItem('ow-bg', name);
+  }
+  document.querySelectorAll('.bg-swatch').forEach(el => el.classList.remove('active'));
+  const sw = document.getElementById('bgswatch-' + name);
+  if (sw) sw.classList.add('active');
+  const lbl = document.getElementById('bg-label');
+  if (lbl) lbl.textContent = BG_NAMES[name] || '';
 }
 
 (function(){
