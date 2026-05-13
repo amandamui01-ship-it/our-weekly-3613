@@ -1677,7 +1677,7 @@ function initFirestore() {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
     todos = snap.data().items || [];
     if (isActive('todos')) renderTodos();
-    if (isActive('home'))  renderHome();
+    scheduleRenderHome();
     const el = document.getElementById('stat-todos');
     if (el) el.textContent = todos.filter(t=>!t.done).length;
   });
@@ -1686,7 +1686,7 @@ function initFirestore() {
     if (!snap.exists) { ref('entries').set({items:[]}); return; }
     newEntries = snap.data().items || [];
     if (isActive('history')) renderHistory();
-    if (isActive('home'))    renderHome();
+    scheduleRenderHome();
   });
 
   ref('budgetTargets').onSnapshot(snap => {
@@ -1719,7 +1719,7 @@ function initFirestore() {
       if (changed) ref('trips').set({items: trips});
     }
     if (isActive('dates')) renderDates();
-    if (isActive('home'))  renderHome();
+    scheduleRenderHome();
   });
 
   ref('logistics').onSnapshot(snap => {
@@ -1782,7 +1782,7 @@ function initFirestore() {
       if (changed) ref('expenses').set({items: expenses});
     }
     if (isActive('budget')) renderBudget();
-    if (isActive('home'))   renderHome();
+    scheduleRenderHome();
   });
 }
 
@@ -1933,6 +1933,13 @@ const DAY_GREETINGS = [
 function homeNavBtn() {
   const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
   showPage(isWeekend ? 'review' : 'plan');
+}
+
+let _renderHomeTimer = null;
+function scheduleRenderHome() {
+  if (!isActive('home')) return;
+  clearTimeout(_renderHomeTimer);
+  _renderHomeTimer = setTimeout(renderHome, 80);
 }
 
 function renderHome() {
