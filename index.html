@@ -609,6 +609,11 @@ html:not([data-theme="dark"]) body[data-bg="ivory"]     {--bg:#fafaf7;--surface:
 html:not([data-theme="dark"]) body[data-bg="frost"]     {--bg:#f4f7fb;--surface:#f9fbff;--surface-warm:#f6f9ff;--border:#d0daea;--border-light:#dde8f4}
 html:not([data-theme="dark"]) body[data-bg="parchment"] {--bg:#f2e8d8;--surface:#fdf5e8;--surface-warm:#fdf2e4;--border:#d8c4a0;--border-light:#e8d4b4}
 html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:#fafcf8;--surface-warm:#f7faf4;--border:#ccd9c4;--border-light:#dce8d4}
+[data-theme="dark"] body[data-bg="blush"]     {--bg:#121620;--surface:#181e28;--surface-warm:#161c26;--border:#222a3a;--border-light:#1c2430}
+[data-theme="dark"] body[data-bg="ivory"]     {--bg:#161616;--surface:#202020;--surface-warm:#1e1e1e;--border:#2a2a2a;--border-light:#242424}
+[data-theme="dark"] body[data-bg="frost"]     {--bg:#14181e;--surface:#1a2028;--surface-warm:#181e26;--border:#222c3a;--border-light:#1e2834}
+[data-theme="dark"] body[data-bg="parchment"] {--bg:#1a1210;--surface:#241a10;--surface-warm:#221610;--border:#3a2818;--border-light:#302010}
+[data-theme="dark"] body[data-bg="sage"]      {--bg:#111a13;--surface:#182018;--surface-warm:#161e16;--border:#1e2e20;--border-light:#1a2a1c}
 
 /* ── Palette + bg picker swatches ── */
 .palette-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
@@ -3631,10 +3636,24 @@ function toggleDarkMode() {
   document.getElementById('dark-toggle').classList.toggle('active', next === 'dark');
   const mi = document.getElementById('menu-dark-item');
   if (mi) mi.textContent = next === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
+  updateBgSwatchColors();
 }
-// Sync dark-toggle button + menu label (theme already applied in <head>)
 const ACCENT_NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',pink:'Pink',plum:'Plum',berry:'Berry',blue:'Blue',teal:'Teal',forest:'Forest',sage:'Sage',gold:'Gold'};
-const BG_NAMES = {default:'Linen',blush:'Blush',ivory:'Ivory',parchment:'Parchment',frost:'Frost',sage:'Sage'};
+const BG_SWATCHES = {
+  light: {default:{c:'#faf7f2',l:'Linen'},blush:{c:'#fdf6f0',l:'Blush'},ivory:{c:'#fafaf7',l:'Ivory'},parchment:{c:'#f2e8d8',l:'Parchment'},frost:{c:'#f4f7fb',l:'Frost'},sage:{c:'#f2f5ef',l:'Sage'}},
+  dark:  {default:{c:'#1c1812',l:'Warm'}, blush:{c:'#121620',l:'Cool'}, ivory:{c:'#161616',l:'Neutral'},parchment:{c:'#1a1210',l:'Deep'},   frost:{c:'#14181e',l:'Slate'},sage:{c:'#111a13',l:'Forest'}}
+};
+function updateBgSwatchColors() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const data = isDark ? BG_SWATCHES.dark : BG_SWATCHES.light;
+  Object.entries(data).forEach(([key, {c}]) => {
+    const el = document.getElementById('bgswatch-' + key);
+    if (el) el.style.background = c;
+  });
+  const saved = localStorage.getItem('ow-bg') || 'default';
+  const lbl = document.getElementById('bg-label');
+  if (lbl) lbl.textContent = data[saved]?.l || '';
+}
 (function(){
   const a = localStorage.getItem('ow-accent') || 'amber';
   if (a !== 'amber') document.documentElement.setAttribute('data-accent', a);
@@ -3645,8 +3664,7 @@ const BG_NAMES = {default:'Linen',blush:'Blush',ivory:'Ivory',parchment:'Parchme
   const b = localStorage.getItem('ow-bg') || 'default';
   const bsw = document.getElementById('bgswatch-' + b);
   if (bsw) bsw.classList.add('active');
-  const blbl = document.getElementById('bg-label');
-  if (blbl) blbl.textContent = BG_NAMES[b] || '';
+  updateBgSwatchColors();
 })();
 function setAccent(name) {
   if (name === 'amber') document.documentElement.removeAttribute('data-accent');
@@ -3673,8 +3691,7 @@ function setBackground(name) {
   document.querySelectorAll('.bg-swatch').forEach(el => el.classList.remove('active'));
   const sw = document.getElementById('bgswatch-' + name);
   if (sw) sw.classList.add('active');
-  const lbl = document.getElementById('bg-label');
-  if (lbl) lbl.textContent = BG_NAMES[name] || '';
+  updateBgSwatchColors();
 }
 
 (function(){
