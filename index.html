@@ -662,15 +662,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .dark-toggle::after{content:'';position:absolute;width:18px;height:18px;background:white;border-radius:50%;top:3px;left:3px;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .dark-toggle.active::after{transform:translateX(16px)}
 
-/* ── Photo widget ── */
-.photo-widget-wrap{position:relative;width:100%;padding-top:44%;border-radius:10px;overflow:hidden;background:var(--border-light);margin-bottom:10px}
-.photo-widget-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .6s}
-.photo-widget-img.fade-out{opacity:0}
-.photo-widget-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-3);font-size:13px}
-.photo-dots{display:flex;justify-content:center;gap:6px;margin-bottom:10px}
-.photo-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .2s;cursor:pointer;border:none;padding:0}
-.photo-dot.active{background:var(--amber)}
-
 /* ── Mood widget ── */
 .mood-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mood-person{text-align:center;padding:12px 8px;border-radius:10px;background:var(--surface-warm);border:1px solid var(--border-light);display:flex;flex-direction:column;align-items:center;justify-content:center}
@@ -1103,7 +1094,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       </div>
       <div class="step-nav">
         <button class="btn btn-secondary" onclick="nextStep(0)">← Back</button>
-        <button class="btn btn-primary" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
+        <button class="btn btn-primary" id="save-entry-btn" style="flex:1" onclick="saveEntry()">💾 Save This Week's Entry ✓</button>
       </div>
     </div>
 
@@ -1644,29 +1635,23 @@ let trips = [], logisticsList = [], bucketList = [];
 let weekPlan = {}; // { mon: { gym:false, date:false, notes:'' }, ... }
 let expenses = [];
 let recurringItems = [];
-let photos = [];
 let mood = { amanda: '', aidan: '', week: '' };
-let photoIdx = 0;
-let photoTimer = null;
 
 function isActive(name) {
   return document.getElementById('page-' + name)?.classList.contains('active');
 }
 
+let _firestoreInited = false;
 function initFirestore() {
+  if (_firestoreInited) return; // guard against onAuthStateChanged stacking listeners on token refresh
+  _firestoreInited = true;
   const ref = key => db.collection('state').doc(key);
 
   ref('todoCategories').onSnapshot(snap => {
     if (!snap.exists) { ref('todoCategories').set({items: todoCategories}); return; }
     const saved = snap.data().items;
     if (saved && saved.length) todoCategories = saved;
-    if (isActive('todos')) renderTodos();
-  });
-
-  ref('photos').onSnapshot(snap => {
-    if (!snap.exists) { ref('photos').set({items:[]}); return; }
-    photos = snap.data().items || [];
-    if (isActive('home')) renderPhotoWidget();
+    if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
   });
 
   ref('mood').onSnapshot(snap => {
@@ -1678,7 +1663,7 @@ function initFirestore() {
   ref('todos').onSnapshot(snap => {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
     todos = snap.data().items || [];
-    if (isActive('todos')) renderTodos();
+    if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
     scheduleRenderHome();
     const el = document.getElementById('stat-todos');
     if (el) el.textContent = todos.filter(t=>!t.done).length;
@@ -1687,7 +1672,7 @@ function initFirestore() {
   ref('entries').onSnapshot(snap => {
     if (!snap.exists) { ref('entries').set({items:[]}); return; }
     newEntries = snap.data().items || [];
-    if (isActive('history')) renderHistory();
+    if (isActive('history') && !_hasTypingFocus('#page-history')) renderHistory();
     scheduleRenderHome();
   });
 
@@ -1720,7 +1705,7 @@ function initFirestore() {
       });
       if (changed) ref('trips').set({items: trips});
     }
-    if (isActive('dates')) renderDates();
+    if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
     scheduleRenderHome();
   });
 
@@ -1731,7 +1716,7 @@ function initFirestore() {
     } else {
       logisticsList = snap.data().items || [];
     }
-    if (isActive('dates')) renderDates();
+    if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
   });
 
   ref('bucket').onSnapshot(snap => {
@@ -1741,7 +1726,7 @@ function initFirestore() {
     } else {
       bucketList = snap.data().items || [];
     }
-    if (isActive('dates')) renderDates();
+    if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
   });
 
   ref('weekplan').onSnapshot(snap => {
@@ -1763,7 +1748,7 @@ function initFirestore() {
     } else {
       recurringItems = snap.data().items || [];
     }
-    if (isActive('budget')) renderRecurring();
+    if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderRecurring();
   });
 
   ref('expenses').onSnapshot(snap => {
@@ -1783,15 +1768,25 @@ function initFirestore() {
       });
       if (changed) ref('expenses').set({items: expenses});
     }
-    if (isActive('budget')) renderBudget();
+    if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderBudget();
     scheduleRenderHome();
   });
+}
+
+// True when the user is mid-typing inside the matched container — used to suppress Firestore-
+// driven re-renders so the partner's update doesn't wipe an input field as the user types.
+function _hasTypingFocus(containerSelector) {
+  const el = document.activeElement;
+  if (!el || el === document.body) return false;
+  const tag = el.tagName;
+  if (tag !== 'INPUT' && tag !== 'TEXTAREA' && el.getAttribute('contenteditable') !== 'true') return false;
+  const container = document.querySelector(containerSelector);
+  return !!(container && container.contains(el));
 }
 
 const _onSaveErr = e => { console.error('Save failed:', e); showToast('⚠️ Save failed — check your connection'); };
 function saveTodos()           { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr); }
 function saveTodoCategories()  { db.collection('state').doc('todoCategories').set({items: todoCategories}).catch(_onSaveErr); }
-function savePhotos() { db.collection('state').doc('photos').set({items:photos}).catch(_onSaveErr); }
 function saveMood()   { db.collection('state').doc('mood').set(mood).catch(_onSaveErr); }
 function saveEntries() {
   const data = {items: newEntries};
@@ -1841,6 +1836,9 @@ function showPage(name) {
     if (name === 'plan')    renderPlan();
     if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); checkRecurringReminder(); }
     if (name === 'review')  loadReviewDraft();
+    // Only run the 1Hz Japan countdown ticker when the home page is mounted — saves battery
+    // on mobile and avoids wasted getElementById calls on other pages.
+    if (name === 'home') startJapanTicker(); else stopJapanTicker();
     const newPage = document.getElementById('page-' + name);
     newPage.style.opacity = '0';
     newPage.classList.add('active');
@@ -2000,7 +1998,6 @@ function renderHome() {
   if (_budgetEl && _monthSpend > 0) countUp(_budgetEl, Math.round(_monthSpend), '$');
   else if (_budgetEl) _budgetEl.textContent = '—';
 
-  renderPhotoWidget();
   renderMoodWidget();
   renderNextTrip();
   renderAnniversary();
@@ -2217,11 +2214,13 @@ function shiftHistoryPhoto(id, dir) {
   wrap.querySelector('.hpn-count').textContent = `${idx + 1} / ${urls.length}`;
 }
 
+let _saveEntryInFlight = false;
 function saveEntry() {
+  if (_saveEntryInFlight) return; // guard double-tap
   const get = id => document.getElementById(id).value.trim();
   const entry = {
-    id: 'e-' + Date.now(),
-    date: new Date().toISOString().slice(0, 10),
+    id: 'e-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    date: _todayLocal(),
     well:     get('r-well'),
     stress:   get('r-stress'),
     adjust:   get('r-adjust'),
@@ -2236,32 +2235,39 @@ function saveEntry() {
     misc:     get('r-misc'),
     hearts:   heartVal,
   };
-  // Handle optional photos: resize to ≤900px wide, store as base64 array in Firestore
-  const finishSave = (urls) => {
+  const photos = _reviewPhotos.slice(); // capture before reset
+  _saveEntryInFlight = true;
+  const saveBtn = document.getElementById('save-entry-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = photos.length ? '📸 Uploading…' : '💾 Saving…'; }
+
+  const finalize = (urls) => {
     if (urls.length) entry.photoUrls = urls;
     newEntries.unshift(entry);
     saveEntries();
+    // Reset form only after the entry is committed so a failed save can be retried
+    ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    localStorage.removeItem('ow-review-draft');
+    _reviewPhotos = [];
+    renderReviewPhotos();
+    const rp = document.getElementById('r-photo');
+    if (rp) rp.value = '';
+    setHeart(0);
+    document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
+    nextStep(0);
+    _saveEntryInFlight = false;
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "💾 Save This Week's Entry ✓"; }
+    showToast('Entry saved! 💕');
+    burstReview();
+    showPage('plan');
   };
-  if (_reviewPhotos.length) {
-    if (storage) showToast('📸 Uploading photos…');
-    Promise.all(_reviewPhotos.map((f, i) => uploadPhoto(f, entry.id, i, 900, 0.75).catch(() => null)))
-      .then(urls => finishSave(urls.filter(Boolean)));
+
+  if (photos.length) {
+    Promise.all(photos.map((f, i) => uploadPhoto(f, entry.id, i, 900, 0.75).catch(() => null)))
+      .then(urls => finalize(urls.filter(Boolean)));
   } else {
-    finishSave([]);
+    finalize([]);
   }
-  ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  localStorage.removeItem('ow-review-draft');
-  _reviewPhotos = [];
-  renderReviewPhotos();
-  const rp = document.getElementById('r-photo');
-  if (rp) rp.value = '';
-  setHeart(0);
-  document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
-  nextStep(0);
-  showToast('Entry saved! 💕');
-  burstReview();
-  showPage('plan');
 }
 
 // ─── TO-DOS ──────────────────────────────────────────────────────────────────
@@ -2409,7 +2415,7 @@ function addTodoSection() {
   const input = document.getElementById('new-section-name');
   const label = input.value.trim();
   if (!label) return;
-  todoCategories.push({ id: 'cat-' + Date.now(), label });
+  todoCategories.push({ id: 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), label });
   saveTodoCategories();
   renderTodos();
 }
@@ -2608,6 +2614,15 @@ function renderDates() {
       }
     }
   }
+  // Prune dismissed overlaps that no longer apply (the conflict has been resolved). Otherwise
+  // a re-introduced overlap with the same trip ID would silently stay hidden forever.
+  const stillInOverlap = new Set();
+  _overlapPairs.forEach(([a,b]) => { stillInOverlap.add(a); stillInOverlap.add(b); });
+  let dismissedPruned = false;
+  for (const id of [...dismissedOverlaps]) {
+    if (!stillInOverlap.has(id)) { dismissedOverlaps.delete(id); dismissedPruned = true; }
+  }
+  if (dismissedPruned) localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissedOverlaps]));
 
   const tripCardHtml = (t, done) => {
     let badge = '';
@@ -3220,6 +3235,9 @@ function tripEmoji(label) {
   }
   return '✨';
 }
+// Detect whether a string already contains an emoji — covers the main emoji Unicode ranges.
+// Used to avoid double-appending an auto-emoji on top of one the user typed in themselves.
+const _hasEmoji = s => /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F0FF}]/u.test(s);
 
 function parseICSEndDate(datesStr, sortDate) {
   // ICS all-day DTEND is exclusive (day after last day)
@@ -3336,7 +3354,7 @@ function addTrip() {
   const label  = document.getElementById('new-trip-name').value.trim();
   if (!label) return;
   const sortDate       = parseSortDate(dates);
-  const labelWithEmoji = `${label} ${tripEmoji(label)}`;
+  const labelWithEmoji = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
   const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
   trips.push(trip);
   db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayUnion(trip) }).catch(_onSaveErr);
@@ -3413,7 +3431,7 @@ function saveTripEdit(id) {
   const label = document.getElementById('tedit-name-'  + id)?.value.trim();
   if (!label) return;
   t.dates = dates || t.dates;
-  t.label = label;
+  t.label = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
   if (dates) t.sortDate = parseSortDate(dates) || t.sortDate;
   const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
   dismissed.delete(id);
@@ -3426,10 +3444,10 @@ function addListItem(type) {
   const text = input.value.trim();
   if (!text) return;
   if (type === 'logistics') {
-    logisticsList.push({ id:'log-'+Date.now(), text });
+    logisticsList.push({ id:'log-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text });
     saveLogistics();
   } else {
-    bucketList.push({ id:'bkt-'+Date.now(), text });
+    bucketList.push({ id:'bkt-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text });
     saveBucket();
   }
   renderDates();
@@ -3807,102 +3825,6 @@ function setBackground(name) {
   if (mi && t === 'dark') mi.textContent = '☀️ Light mode';
 })();
 
-// ─── PHOTO WIDGET ─────────────────────────────────────────────────────────────
-function renderPhotoWidget() {
-  const wrap = document.getElementById('photo-widget-wrap');
-  const img  = document.getElementById('photo-widget-img');
-  const empty = document.getElementById('photo-widget-empty');
-  const dots = document.getElementById('photo-dots');
-  const delBtn = document.getElementById('photo-del-btn');
-  if (!wrap) return;
-  if (!photos.length) {
-    if (img)   { img.style.display = 'none'; img.src = ''; }
-    if (empty) empty.style.display = 'flex';
-    if (dots)  dots.innerHTML = '';
-    if (delBtn) delBtn.style.display = 'none';
-    return;
-  }
-  if (empty) empty.style.display = 'none';
-  photoIdx = Math.min(photoIdx, photos.length - 1);
-  if (img) {
-    img.style.display = 'block';
-    if (img.src !== photos[photoIdx].url) {
-      img.classList.add('fade-out');
-      setTimeout(() => { img.src = photos[photoIdx].url; img.classList.remove('fade-out'); }, 300);
-    }
-  }
-  if (dots) {
-    dots.innerHTML = photos.map((_, i) =>
-      `<button class="photo-dot${i===photoIdx?' active':''}" onclick="goToPhoto(${i})"></button>`
-    ).join('');
-  }
-  if (delBtn) delBtn.style.display = photos.length ? '' : 'none';
-  // Start/restart auto-rotation
-  if (photoTimer) clearInterval(photoTimer);
-  if (photos.length > 1) {
-    photoTimer = setInterval(() => {
-      photoIdx = (photoIdx + 1) % photos.length;
-      const img = document.getElementById('photo-widget-img');
-      if (img && img.src !== photos[photoIdx].url) {
-        img.classList.add('fade-out');
-        setTimeout(() => { img.src = photos[photoIdx].url; img.classList.remove('fade-out'); }, 300);
-      }
-      document.querySelectorAll('.photo-dot').forEach((d, i) => d.classList.toggle('active', i === photoIdx));
-    }, 5000);
-  }
-}
-
-function goToPhoto(i) {
-  photoIdx = i;
-  if (photoTimer) { clearInterval(photoTimer); photoTimer = null; }
-  renderPhotoWidget();
-}
-
-function removeBrokenPhoto(img) {
-  img.style.display = 'none';
-  const brokenUrl = img.src;
-  const idx = photos.findIndex(p => p.url === brokenUrl);
-  if (idx !== -1) {
-    photos.splice(idx, 1);
-    savePhotos();
-    showToast('⚠️ Photo URL broken — removed. Use a direct image link.');
-    photoIdx = 0;
-    renderPhotoWidget();
-  }
-}
-
-function addPhotoFromUrl() {
-  const input = document.getElementById('photo-url-input');
-  const url = input.value.trim();
-  if (!url) return;
-  showToast('Checking image…');
-  const test = new Image();
-  test.onload = () => {
-    const id = 'photo-' + Date.now();
-    photos.push({ id, url });
-    photoIdx = photos.length - 1;
-    savePhotos();
-    input.value = '';
-    document.getElementById('photo-url-row').style.display = 'none';
-    renderPhotoWidget();
-    showToast('Photo added! 💕');
-  };
-  test.onerror = () => {
-    showToast('⚠️ That URL didn\'t load. In Google Photos: open the photo, tap ⋮ → Share → Copy link won\'t work — instead long-press the photo itself → Copy image.');
-  };
-  test.src = url;
-}
-
-function deleteCurrentPhoto() {
-  if (!photos.length) return;
-  showConfirm('Remove this photo?', () => {
-    photos.splice(photoIdx, 1);
-    photoIdx = Math.max(0, photoIdx - 1);
-    savePhotos();
-    renderPhotoWidget();
-  });
-}
-
 // ─── MOOD OF THE WEEK ─────────────────────────────────────────────────────────
 const MOOD_EMOJIS = [
   '😊','😍','🥰','😄','🤩','😎','🥳','😜','🤪','😂',
@@ -4028,14 +3950,15 @@ function spinMood() {
 function getStreak() {
   const entries = newEntries; // only real entries, not seeds
   if (!entries.length) return 0;
+  // Use a continuous week count (days since a known Monday / 7). Prior `year*100+week` math broke
+  // when consecutive weeks straddled Dec/Jan: 202552 → 202601 is a jump of 49, not 1.
+  const MONDAY_EPOCH = Date.UTC(2024, 0, 1); // Jan 1 2024 is a Monday
   const weekNum = dateStr => {
     const d = new Date(dateStr + 'T12:00:00');
-    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-    const w1 = new Date(d.getFullYear(), 0, 4);
-    return d.getFullYear() * 100 + 1 + Math.round(((d - w1) / 864e5 - 3 + (w1.getDay() + 6) % 7) / 7);
+    const days = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - MONDAY_EPOCH) / 864e5);
+    return Math.floor(days / 7);
   };
-  const now = new Date().toISOString().slice(0, 10);
-  const thisW = weekNum(now);
+  const thisW = weekNum(_todayLocal());
   const weeks = [...new Set(entries.map(e => weekNum(e.date)))].sort((a, b) => b - a);
   if (!weeks.length || weeks[0] < thisW - 1) return 0;
   let streak = 1;
@@ -4382,10 +4305,15 @@ function toggleEditMode() {
 
 function applyWidgetOrder() {
   const saved = JSON.parse(localStorage.getItem('ow-widget-order') || 'null');
-  if (!saved) return;
   const container = document.getElementById('home-widgets');
   if (!container) return;
-  saved.forEach(key => {
+  // Fill in any widgets the user's saved order doesn't know about (added since they last saved
+  // their layout) using DEFAULT_WIDGET_ORDER as the source of truth.
+  const order = saved ? [...saved] : [];
+  for (const key of DEFAULT_WIDGET_ORDER) {
+    if (!order.includes(key)) order.push(key);
+  }
+  order.forEach(key => {
     const w = container.querySelector(`[data-widget="${key}"]`);
     if (w) container.appendChild(w);
   });
@@ -4456,21 +4384,32 @@ let _japanInterval = null;
 function tickJapan() {
   const diff = new Date('2026-10-24T00:00:00') - new Date();
   if (diff <= 0) {
-    if (_japanInterval) { clearInterval(_japanInterval); _japanInterval = null; }
+    stopJapanTicker();
     const card = document.querySelector('.japan-card');
     if (card) card.innerHTML = `
       <div class="japan-card-label" style="font-size:20px;margin-bottom:6px">🎌 We made it to Japan!</div>
       <div class="japan-card-sub">Oct 24 – Nov 8, 2026 · 楽しんで 🌸</div>`;
     return;
   }
+  const days = document.getElementById('jc-days');
+  if (!days) return; // home page not mounted — nothing to tick
   const pad = n => String(n).padStart(2,'0');
-  document.getElementById('jc-days').textContent = pad(Math.floor(diff/864e5));
+  days.textContent = pad(Math.floor(diff/864e5));
   document.getElementById('jc-hrs').textContent  = pad(Math.floor(diff/36e5)%24);
   document.getElementById('jc-mins').textContent = pad(Math.floor(diff/6e4)%60);
   document.getElementById('jc-secs').textContent = pad(Math.floor(diff/1e3)%60);
 }
-tickJapan();
-_japanInterval = setInterval(tickJapan, 1000);
+function startJapanTicker() {
+  if (_japanInterval) return;
+  tickJapan();
+  _japanInterval = setInterval(tickJapan, 1000);
+}
+function stopJapanTicker() {
+  if (_japanInterval) { clearInterval(_japanInterval); _japanInterval = null; }
+}
+// Home is the default page, so start the ticker on initial load. showPage handles subsequent
+// navigation between pages.
+startJapanTicker();
 
 // ─── BUDGET ──────────────────────────────────────────────────────────────────
 
@@ -4803,7 +4742,7 @@ function addExpense() {
   const shared   = document.getElementById('b-shared').checked;
   if (!date || !category || !desc || isNaN(amount)) return;
   const month = monthName(new Date(date + 'T12:00:00'));
-  const newItem = {id:'exp-'+Date.now(), date, month, person, category, description:desc, amount, shared};
+  const newItem = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date, month, person, category, description:desc, amount, shared};
   expenses.push(newItem);
   // arrayUnion appends atomically — safe if both people add at the same time
   db.collection('state').doc('expenses').update({
@@ -4986,7 +4925,7 @@ function addRecurring() {
   const amount   = parseFloat(document.getElementById('rec-amt').value);
   const shared   = document.getElementById('rec-shared').checked;
   if (!person || !cat || !desc || isNaN(amount)) return;
-  recurringItems.push({id:'rec-'+Date.now(), person, category:cat, description:desc, amount, shared});
+  recurringItems.push({id:'rec-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), person, category:cat, description:desc, amount, shared});
   saveRecurring();
   document.getElementById('rec-person-sel').value = '';
   document.getElementById('rec-cat-sel').value    = '';
@@ -5255,19 +5194,29 @@ function renderBulkPreview() {
   </table>`;
 }
 
+// Pick a year for an M/D-only date by guessing the closest year — biases toward previous year
+// when current-year would land far in the future (e.g. pasting Dec bank statements in January).
+function _guessYearForMD(mo, dy) {
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const candidate = new Date(curYear, mo - 1, dy);
+  // If the date is more than ~2 months in the future, the user almost certainly means last year.
+  const twoMoFromNow = new Date(); twoMoFromNow.setMonth(twoMoFromNow.getMonth() + 2);
+  return candidate > twoMoFromNow ? curYear - 1 : curYear;
+}
 function _parseBulkDate(str) {
   // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
   // M/D/YYYY or M/D/YY
   const mdy = str.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
   if (mdy) {
-    const yr = mdy[3] ? (mdy[3].length === 2 ? '20' + mdy[3] : mdy[3]) : new Date().getFullYear();
+    const yr = mdy[3] ? (mdy[3].length === 2 ? '20' + mdy[3] : mdy[3]) : _guessYearForMD(+mdy[1], +mdy[2]);
     return `${yr}-${String(mdy[1]).padStart(2,'0')}-${String(mdy[2]).padStart(2,'0')}`;
   }
   // M-D
   const md = str.match(/^(\d{1,2})-(\d{1,2})$/);
   if (md) {
-    const yr = new Date().getFullYear();
+    const yr = _guessYearForMD(+md[1], +md[2]);
     return `${yr}-${String(md[1]).padStart(2,'0')}-${String(md[2]).padStart(2,'0')}`;
   }
   return null;
