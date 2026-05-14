@@ -514,6 +514,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .budget-tx-cat{font-size:11px;color:var(--text-3)}
 .budget-tx-amt{font-weight:700;text-align:right;white-space:nowrap}
 .budget-tx-amt.income{color:var(--sage)}
+.budget-tx-amt.refund{color:var(--sage)}
 .budget-tx-shared{font-size:11px;color:var(--amber-dark);font-weight:800;white-space:nowrap;background:var(--amber-bg);border-radius:4px;padding:1px 5px}
 .shared-tx{background:var(--amber-bg);border-radius:6px}
 .budget-tx-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;line-height:1;-webkit-tap-highlight-color:transparent}
@@ -4624,11 +4625,14 @@ function renderBudget() {
     }
   }
 
-  // Snapshot strip
-  const income    = monthTx.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
-  const spending  = monthTx.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
-  const saved     = monthTx.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
-  const net_      = income - spending - saved;
+  // Snapshot strip — Spent/Income/Saved reflect ACTIVE FILTERS (person/cat/search) so the tiles
+  // never desync from the transaction list below. Settlement stays on the full-period monthTx
+  // because it's an inherently Amanda-vs-Aidan number that the filters can't meaningfully shrink.
+  const hasNonPeriodFilter = !!(searchQ || filterCat || filterPerson);
+  const snapSrc = hasNonPeriodFilter ? filtered : monthTx;
+  const income    = snapSrc.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
+  const spending  = snapSrc.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
+  const saved     = snapSrc.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
   const owes = calcOwes(monthTx);
   // owes.Aidan and owes.Amanda are equal-and-opposite (every shared tx credits one and debits the
   // other by the same half-amount), so the settlement is the magnitude of either side — NOT the
@@ -4636,37 +4640,62 @@ function renderBudget() {
   const settleAmt = Math.abs(owes.Aidan);
   const settleStr = settleAmt < 0.01 ? 'All square ✅' : `${owes.Aidan>0?'Amanda':'Aidan'} owes ${owes.Aidan>0?'Aidan':'Amanda'} ${fmt(settleAmt)}`;
   const settleColor = settleAmt < 0.01 ? 'var(--sage)' : 'var(--amber)';
-  document.getElementById('budget-snapshot').innerHTML = `
+  const filterHint = hasNonPeriodFilter
+    ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">filters active · Settlement is full period</div>`
+    : '';
+  document.getElementById('budget-snapshot').innerHTML = filterHint + `
     <div class="bsnap"><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
     <div class="bsnap"><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
     <div class="bsnap"><div class="bsnap-label">Saved</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
     <div class="bsnap"><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleAmt<0.01?'14':'18'}px">${settleStr}</div></div>`;
 
-  // Monthly trend bars
-  const yearTx = expenses.filter(e => e.date.startsWith(filterYear));
-  const monthlySpend = {};
-  for (const e of yearTx) {
+  // Monthly trend bars — keyed by YYYY-MM so the same calendar month in different years doesn't
+  // collapse into a single bar. Source: for specific-month/year views, use the year's expenses;
+  // for 3M/6M/All (which can cross year boundaries), use monthTx so the bars correspond to the
+  // data feeding the snapshot above.
+  const trendSrc = rangeViews.includes(_budgetMonth)
+    ? monthTx
+    : expenses.filter(e => e.date.startsWith(filterYear));
+  const monthlySpend = {}; // key: YYYY-MM
+  for (const e of trendSrc) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
-    monthlySpend[e.month] = (monthlySpend[e.month]||0) + e.amount;
+    const ym = e.date.slice(0, 7);
+    monthlySpend[ym] = (monthlySpend[ym]||0) + e.amount;
   }
+  const ymKeys = Object.keys(monthlySpend).sort();
   const maxSpend = Math.max(...Object.values(monthlySpend), 1);
-  const trendMonths = MONTHS_LIST.filter(m => monthlySpend[m] !== undefined);
-  document.getElementById('budget-trend').innerHTML = trendMonths.length ? trendMonths.map(m => {
-    const pct = Math.round((monthlySpend[m]||0) / maxSpend * 100);
-    const inWindow = _budgetMonth === 'all' ? true
-      : (_budgetMonth === '3m' || _budgetMonth === '6m') ? getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6).some(p => p.month === m)
-      : m === filterMonth;
-    const isActive = inWindow ? ' active' : '';
+  const activeYms = new Set(
+    _budgetMonth === 'all' ? ymKeys
+    : (_budgetMonth === '3m' || _budgetMonth === '6m') ? getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6).map(p => `${p.year}-${String(MONTHS_LIST.indexOf(p.month)+1).padStart(2,'0')}`)
+    : [`${filterYear}-${String(MONTHS_LIST.indexOf(filterMonth)+1).padStart(2,'0')}`]
+  );
+  // Show year suffix on label only when the same month appears in multiple years to disambiguate.
+  const monthsInMultipleYears = new Set();
+  const seen = {};
+  for (const k of ymKeys) {
+    const mm = k.slice(5,7);
+    if (seen[mm] && seen[mm] !== k.slice(0,4)) monthsInMultipleYears.add(mm);
+    seen[mm] = k.slice(0,4);
+  }
+  document.getElementById('budget-trend').innerHTML = ymKeys.length ? ymKeys.map(ym => {
+    const pct = Math.round(monthlySpend[ym] / maxSpend * 100);
+    const isActive = activeYms.has(ym) ? ' active' : '';
     const barPx = Math.max(2, Math.round(pct / 100 * 52));
-    return `<div class="btrend-col${isActive}" onclick="setBudgetMonth('${m}')" title="${m}: ${fmt(monthlySpend[m]||0)}" style="cursor:pointer">
+    const mIdx = parseInt(ym.slice(5,7)) - 1;
+    const yr2 = ym.slice(2,4);
+    const mLabel = MONTHS_LIST[mIdx];
+    const showYear = monthsInMultipleYears.has(ym.slice(5,7));
+    return `<div class="btrend-col${isActive}" onclick="_drillTrendBar('${ym}')" title="${mLabel} 20${yr2}: ${fmt(monthlySpend[ym])}" style="cursor:pointer">
       <div class="btrend-bar" style="height:${barPx}px"></div>
-      <div class="btrend-lbl">${m.slice(0,3)}</div>
+      <div class="btrend-lbl">${mLabel.slice(0,3)}${showYear?` '${yr2}`:''}</div>
     </div>`;
   }).join('') : '<div style="color:var(--text-3);font-size:13px">No data yet.</div>';
 
-  // Category breakdown (spending only, no Income/Savings/Investments)
+  // Category breakdown (spending only, no Income/Savings/Investments). Uses the SAME filtered
+  // set as the snapshot tiles so the breakdown matches what the user sees in the tx list.
+  const catSrc = hasNonPeriodFilter ? filtered : monthTx;
   const catTotals = {}, catAidan = {}, catAmanda = {};
-  for (const e of monthTx) {
+  for (const e of catSrc) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
     catTotals[e.category] = (catTotals[e.category]||0) + e.amount;
     catAidan[e.category]  = (catAidan[e.category]||0)  + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0);
@@ -4731,7 +4760,7 @@ function renderBudget() {
             </div>
             <div class="budget-tx-right">
               ${e.shared?`<span class="budget-tx-shared">50/50</span>`:''}
-              <span class="budget-tx-amt ${e.category==='Income'?'income':''}">${e.category==='Income'?'+':''}${fmt(e.amount)}</span>
+              <span class="budget-tx-amt ${e.category==='Income'?'income':''}${e.amount<0?' refund':''}">${e.amount<0?'−':(e.category==='Income'?'+':'')}${fmt(e.amount)}</span>
               <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
             </div>
           </div>`;
@@ -4767,6 +4796,17 @@ function filterByCat(cat) {
 
 function setBudgetMonth(m) {
   _budgetMonth = m;
+  _txShowAll = false;
+  renderBudget();
+}
+
+// Click a trend bar — drill into that specific YYYY-MM (switches year selector if needed).
+function _drillTrendBar(ym) {
+  const yr = ym.slice(0,4);
+  const mIdx = parseInt(ym.slice(5,7)) - 1;
+  const yearSel = document.getElementById('b-filter-year');
+  if (yearSel && yearSel.value !== yr) yearSel.value = yr;
+  _budgetMonth = MONTHS_LIST[mIdx];
   _txShowAll = false;
   renderBudget();
 }
@@ -4871,6 +4911,11 @@ function deleteExpense(id) {
   }).catch(_onSaveErr);
   renderBudget(); renderRecurring();
   if (item) showToast('Expense deleted', () => {
+    // If the user already re-entered the same expense between delete and undo, skip restoring
+    // to avoid creating a silent duplicate (matching same person+date+desc+amount+shared).
+    const dup = expenses.find(e => e.person === item.person && e.date === item.date &&
+      e.description === item.description && e.amount === item.amount && !!e.shared === !!item.shared);
+    if (dup) { showToast('Already re-entered — undo skipped'); return; }
     expenses.push(item);
     db.collection('state').doc('expenses').update({items: firebase.firestore.FieldValue.arrayUnion(item)}).catch(_onSaveErr);
     renderBudget(); renderRecurring();
@@ -4981,6 +5026,15 @@ const DEFAULT_RECURRING = [
   {id:'rec-19',person:'Amanda', category:'Dining',        description:'Epic Food',        amount:107.00,  shared:false},
 ];
 
+// "Already loaded" check by recurringId (stable) with a legacy fallback to person+description
+// — older rows loaded before we started stamping recurringId still need to be detected.
+function _isRecurringLoaded(r, month, year) {
+  return expenses.some(e => {
+    if (e.month !== month || !e.date || !e.date.startsWith(String(year))) return false;
+    if (e.recurringId) return e.recurringId === r.id;
+    return e.person === r.person && e.description === r.description;
+  });
+}
 function renderRecurring() {
   const fmt = n => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const el = document.getElementById('recurring-list');
@@ -4991,9 +5045,7 @@ function renderRecurring() {
   if (loadBtn && recurringItems.length) {
     const month = monthName(new Date());
     const year  = new Date().getFullYear().toString();
-    const allLoaded = recurringItems.every(r =>
-      expenses.some(e => e.person === r.person && e.description === r.description && e.month === month && e.date.startsWith(year))
-    );
+    const allLoaded = recurringItems.every(r => _isRecurringLoaded(r, month, year));
     loadBtn.textContent  = allLoaded ? `✓ ${month} loaded` : 'Load This Month';
     loadBtn.disabled     = allLoaded;
     loadBtn.style.background  = allLoaded ? 'var(--sage)' : '';
@@ -5006,10 +5058,7 @@ function renderRecurring() {
   const month = monthName(new Date());
   const year  = new Date().getFullYear().toString();
   el.innerHTML = recurringItems.map(r => {
-    const loaded = expenses.some(e =>
-      e.person === r.person && e.description === r.description &&
-      e.month === month && e.date.startsWith(year)
-    );
+    const loaded = _isRecurringLoaded(r, month, year);
     return `
     <div class="recurring-item" id="rec-item-${r.id}" onclick="editRecurring('${r.id}')" style="cursor:pointer">
       <span class="rec-person-badge ${r.person}">${r.person==='Aidan'?'AF':'AM'}</span>
@@ -5100,10 +5149,7 @@ function checkRecurringReminder() {
 
   const missing = toCheck.filter(({ year, month }) =>
     !_dismissedRecurring.has(`${month}-${year}`) &&
-    !recurringItems.every(r =>
-      expenses.some(e => e.person === r.person && e.description === r.description &&
-        e.month === month && e.date.startsWith(String(year)))
-    )
+    !recurringItems.every(r => _isRecurringLoaded(r, month, year))
   );
   // Only nag when the user is actually viewing one of the months with missing recurring —
   // otherwise the banner clutters every filter view (May, 6M, All, etc).
@@ -5118,8 +5164,7 @@ function checkRecurringReminder() {
       </div>
       <div id="rec-reminder-form-${month}-${year}">
         ${recurringItems.map(r => {
-          const loaded = expenses.some(e => e.person === r.person && e.description === r.description &&
-            e.month === month && e.date.startsWith(String(year)));
+          const loaded = _isRecurringLoaded(r, month, year);
           return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light)">
             <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;${r.person==='Amanda'?'background:var(--coral-bg);color:var(--coral)':'background:var(--blue-bg);color:var(--blue)'}">${r.person}</span>
             <span style="flex:1;font-size:13px;color:var(--text);${loaded?'text-decoration:line-through;opacity:.45':''}">${escHtml(r.description)}</span>
@@ -5142,16 +5187,15 @@ function loadRecurringForMonth(year, month) {
   const overrides = {};
   inputs.forEach(inp => { overrides[inp.dataset.recId] = parseFloat(inp.value); });
 
-  const firstDay = new Date(parseInt(year), MONTHS_LIST.indexOf(month), 1).toISOString().slice(0,10);
+  // Build the 1st-of-month date directly from components (no UTC roundtrip via toISOString).
+  const firstDay = `${year}-${String(MONTHS_LIST.indexOf(month)+1).padStart(2,'0')}-01`;
   const added = [];
   for (const r of recurringItems) {
-    const already = expenses.some(e => e.person === r.person && e.description === r.description &&
-      e.month === month && e.date.startsWith(String(year)));
-    if (already) continue;
+    if (_isRecurringLoaded(r, month, year)) continue;
     const amt = isFinite(overrides[r.id]) ? overrides[r.id] : r.amount;
     added.push({ id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
       date: firstDay, month, person: r.person, category: r.category,
-      description: r.description, amount: amt, shared: r.shared });
+      description: r.description, amount: amt, shared: r.shared, recurringId: r.id });
   }
   if (!added.length) { showToast('All already loaded!'); return; }
   expenses.push(...added);
@@ -5179,17 +5223,10 @@ function loadRecurring() {
   const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   let added = 0;
   for (const r of recurringItems) {
-    // Skip if already loaded this month (same description + person + month)
-    const already = expenses.some(e =>
-      e.person === r.person &&
-      e.description === r.description &&
-      e.month === month &&
-      e.date.startsWith(year)
-    );
-    if (already) continue;
+    if (_isRecurringLoaded(r, month, year)) continue;
     expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
       date:dateStr, month, person:r.person, category:r.category,
-      description:r.description, amount:r.amount, shared:r.shared});
+      description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id});
     added++;
   }
   if (added) {
@@ -5211,14 +5248,10 @@ function loadSingleRecurring(id) {
   const month = monthName(now);
   const year  = now.getFullYear().toString();
   const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-  const already = expenses.some(e =>
-    e.person === r.person && e.description === r.description &&
-    e.month === month && e.date.startsWith(year)
-  );
-  if (already) { showToast('Already loaded this month!'); return; }
+  if (_isRecurringLoaded(r, month, year)) { showToast('Already loaded this month!'); return; }
   const item = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
     date:dateStr, month, person:r.person, category:r.category,
-    description:r.description, amount:r.amount, shared:r.shared};
+    description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id};
   expenses.push(item);
   db.collection('state').doc('expenses').update({
     items: firebase.firestore.FieldValue.arrayUnion(item)
@@ -5233,6 +5266,10 @@ function _evalAmount(str) {
   // Strip $ and thousands-separator commas (e.g. $1,234.56)
   const cleaned = str.replace(/\$/g, '').replace(/,(?=\d)/g, '').trim();
   if (!cleaned) return NaN;
+  // Reject trailing operator and consecutive operators to avoid silently misinterpreting
+  // ambiguous input like "5 - -3" (user expects 8, naive split gives 2).
+  if (/[+\-]\s*$/.test(cleaned)) return NaN;
+  if (/[+\-]\s*[+\-]/.test(cleaned.replace(/^-/, ''))) return NaN;
   // Split on + and - to support simple math like "15.63 + 20.26"
   const tokens = cleaned.split(/\s*([\+\-])\s*/).filter(s => s !== '');
   let result = 0, op = '+';
@@ -5250,6 +5287,18 @@ function _evalAmount(str) {
 
 const _BULK_CATS = ['Dining','Entertainment','Groceries','Housing','Income','Insurance','Investments','Misc','Pet','Savings','Shopping','Subscriptions','Transportation','Travel','Utilities'];
 
+function _matchBulkCategory(catRaw) {
+  // Match categories whose name starts with the FULL user input (not a 3-char slice).
+  // Returns {category, warn} — warn is 'misc' if no match, 'ambiguous' if multiple, else null.
+  const q = catRaw.toLowerCase();
+  // Exact (case-insensitive) match always wins.
+  const exact = _BULK_CATS.find(c => c.toLowerCase() === q);
+  if (exact) return {category: exact, warn: null};
+  const matches = _BULK_CATS.filter(c => c.toLowerCase().startsWith(q));
+  if (matches.length === 0) return {category: 'Misc', warn: 'misc'};
+  if (matches.length === 1) return {category: matches[0], warn: null};
+  return {category: 'Misc', warn: 'ambiguous', candidates: matches};
+}
 function _parseBulkLine(line, fallback) {
   const parts = line.split(',').map(p => p.trim());
   if (parts.length < 2) return {error: 'too few fields — need at least: Category, amount, y/n'};
@@ -5258,16 +5307,18 @@ function _parseBulkLine(line, fallback) {
   if (maybeDate) { date = maybeDate; offset = 1; }
   const catRaw = parts[offset];
   if (!catRaw) return {error: 'missing category'};
-  const catMatch = _BULK_CATS.find(c => c.toLowerCase().startsWith(catRaw.toLowerCase().slice(0, 3)));
-  const category = catMatch || 'Misc';
-  const warnMisc = !catMatch;
+  const m = _matchBulkCategory(catRaw);
+  const category = m.category;
+  const warnMisc = m.warn === 'misc';
+  const warnAmbiguous = m.warn === 'ambiguous';
+  const candidates = m.candidates || null;
   const hasDesc = isNaN(_evalAmount(parts[offset + 1]));
   const description = hasDesc ? (parts[offset + 1] || '') : '';
   const amtIdx = offset + (hasDesc ? 2 : 1);
   const amount = _evalAmount(parts[amtIdx]);
   if (isNaN(amount)) return {error: `couldn't parse amount "${parts[amtIdx] || ''}"`};
   const shared = (parts[amtIdx + 1] || '').toLowerCase() === 'y';
-  return {date, category, catRaw, warnMisc, description, amount, shared};
+  return {date, category, catRaw, warnMisc, warnAmbiguous, candidates, description, amount, shared};
 }
 
 function renderBulkPreview() {
@@ -5278,12 +5329,23 @@ function renderBulkPreview() {
   const fallback = _todayLocal();
   const lines = text.split('\n').filter(l => l.trim());
   const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
+  // Carry forward the most recent explicit date — bank statement style where consecutive rows
+  // on the same day omit the repeated date.
+  let _carryDate = fallback;
   const rowsHtml = lines.map((line, idx) => {
     const lineNo = idx + 1;
-    const r = _parseBulkLine(line, fallback);
+    // First peek: did this line specify a date?
+    const firstField = line.split(',')[0]?.trim();
+    const explicitDate = firstField ? _parseBulkDate(firstField) : null;
+    const r = _parseBulkLine(line, _carryDate);
+    if (explicitDate) _carryDate = explicitDate;
     if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
-    const bg = r.warnMisc ? 'var(--amber-bg)' : '';
-    const catCell = r.warnMisc ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" unrecognized)</span>` : r.category;
+    const bg = (r.warnMisc || r.warnAmbiguous) ? 'var(--amber-bg)' : '';
+    const catCell = r.warnAmbiguous
+      ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" matches ${r.candidates.join('/')} — type more)</span>`
+      : r.warnMisc
+        ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" unrecognized)</span>`
+        : r.category;
     return `<tr style="background:${bg};border-top:1px solid var(--border-light)">
       <td style="padding:6px 6px 6px 12px;color:var(--text-3);font-family:monospace;font-size:11px">${lineNo}</td>
       <td style="padding:6px 12px;color:var(--text-3);white-space:nowrap">${fmtDate(r.date)}</td>
@@ -5348,12 +5410,17 @@ function _executeBulkImport() {
   const person   = document.getElementById('bulk-person').value;
   const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
   const fallback = _todayLocal();
+  let _carryDate = fallback;
   let added = 0;
   const errorLines = [], miscWarns = [];
   for (const line of lines) {
-    const r = _parseBulkLine(line, fallback);
+    const firstField = line.split(',')[0]?.trim();
+    const explicitDate = firstField ? _parseBulkDate(firstField) : null;
+    const r = _parseBulkLine(line, _carryDate);
+    if (explicitDate) _carryDate = explicitDate;
     if (r.error) { errorLines.push({line, reason: r.error}); continue; }
     if (r.warnMisc) miscWarns.push(r.catRaw);
+    if (r.warnAmbiguous) miscWarns.push(`${r.catRaw} (ambiguous: ${r.candidates.join(', ')})`);
     const month = monthName(new Date(r.date + 'T12:00:00'));
     expenses.push({id: 'exp-' + Date.now() + '-' + Math.random().toString(36).slice(2),
       date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared});
