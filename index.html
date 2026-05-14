@@ -566,6 +566,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
   --border:#3a3020;--border-light:#302818;
   --text:#f0e6d2;--text-2:#c4a882;--text-3:#8a7458;
   --amber-bg:#2e2010;--sage-bg:#181e18;--coral-bg:#2e1812;--blue-bg:#141828;
+  --amber-dark:#e8a05c;
   --shadow:0 2px 12px rgba(0,0,0,.25);--shadow-lg:0 8px 32px rgba(0,0,0,.4);
 }
 [data-theme="dark"] .welcome-banner{background:linear-gradient(135deg,#3d2b12 0%,#2a1e0e 100%)}
@@ -1310,8 +1311,18 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       </div>
       <div id="recurring-list" style="overflow-y:auto;max-height:280px;min-height:40px"></div>
       <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border-light)">
-        <input id="rec-person-sel" style="width:90px" class="bq-sel bq-input" placeholder="Person">
-        <input id="rec-cat-sel" style="flex:1;min-width:80px" class="bq-input" placeholder="Category">
+        <select id="rec-person-sel" style="width:100px" class="bq-sel">
+          <option value="">Person</option>
+          <option>Amanda</option>
+          <option>Aidan</option>
+        </select>
+        <select id="rec-cat-sel" style="flex:1;min-width:90px" class="bq-sel">
+          <option value="">Category</option>
+          <option>Dining</option><option>Entertainment</option><option>Groceries</option><option>Housing</option>
+          <option>Income</option><option>Insurance</option><option>Investments</option><option>Misc</option>
+          <option>Pet</option><option>Savings</option><option>Shopping</option><option>Subscriptions</option>
+          <option>Transportation</option><option>Travel</option><option>Utilities</option>
+        </select>
         <input id="rec-desc" class="bq-input" style="flex:2;min-width:100px" placeholder="Description">
         <input id="rec-amt" type="number" class="bq-input" style="width:80px" placeholder="$" min="0" step="0.01">
         <label class="bq-split"><input type="checkbox" id="rec-shared"> 50/50</label>
@@ -1357,8 +1368,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <div id="photo-lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt="Full size photo"></div>
 
 <!-- In-page confirm / prompt dialog -->
-<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--surface);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center">
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)_confirmCancel()">
+  <div style="background:var(--surface);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center" onclick="event.stopPropagation()">
     <div id="confirm-msg" style="font-size:15px;color:var(--text);line-height:1.5;margin-bottom:16px"></div>
     <input id="confirm-input" type="text" style="display:none;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;margin-bottom:16px;box-sizing:border-box" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')_confirmOk();if(event.key==='Escape')_confirmCancel()">
     <div style="display:flex;gap:10px;justify-content:center">
@@ -1965,11 +1976,18 @@ function renderHome() {
   const _nextForStat = _sortedTrips.find(t => !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= _today);
 
   const all = getAllEntries();
+  const lastEl = document.getElementById('stat-last-entry');
   if (all.length > 0) {
     const d = new Date(all[0].date + 'T12:00:00');
-    document.getElementById('stat-last-entry').textContent = `${MONTHS_S[d.getMonth()]} ${d.getDate()}`;
+    const daysAgo = Math.floor((_today - d) / 864e5);
+    const dateLabel = `${MONTHS_S[d.getMonth()]} ${d.getDate()}`;
+    // Append a relative-time hint and warn coral when reviews are overdue.
+    let suffix = '';
+    if (daysAgo >= 10 && daysAgo < 21) suffix = ` <span style="font-size:11px;color:var(--text-3)">(${Math.round(daysAgo/7)}w ago)</span>`;
+    else if (daysAgo >= 21) suffix = ` <span style="font-size:11px;color:var(--coral)">(${Math.round(daysAgo/7)}w ago)</span>`;
+    lastEl.innerHTML = dateLabel + suffix;
   } else {
-    document.getElementById('stat-last-entry').textContent = '—';
+    lastEl.textContent = '—';
   }
 
   const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
@@ -2061,7 +2079,16 @@ function pickTheme(el) {
     el.classList.remove('on');
   } else {
     const selected = chips.filter(c => c.classList.contains('on'));
-    if (selected.length >= 2) selected[0].classList.remove('on');
+    if (selected.length >= 2) {
+      // Flash the displaced chip so the user notices their first pick is being replaced.
+      const displaced = selected[0];
+      displaced.classList.remove('on');
+      displaced.style.transition = 'background-color .25s, color .25s';
+      const prevBg = displaced.style.background;
+      displaced.style.background = 'var(--coral-bg)';
+      displaced.style.color = 'var(--coral)';
+      setTimeout(() => { displaced.style.background = prevBg; displaced.style.color = ''; }, 400);
+    }
     el.classList.add('on');
   }
   const nowSelected = chips.filter(c => c.classList.contains('on'));
@@ -2108,6 +2135,8 @@ function addReviewPhoto(file) {
   renderReviewPhotos();
 }
 function removeReviewPhoto(i) {
+  const removed = _reviewPhotos[i];
+  if (removed && removed._owUrl) URL.revokeObjectURL(removed._owUrl);
   _reviewPhotos.splice(i, 1);
   renderReviewPhotos();
 }
@@ -2122,8 +2151,13 @@ function renderReviewPhotos() {
     return;
   }
   preview.style.display = 'block';
+  // Cache the blob URL on the file object so re-renders don't allocate a new URL each time
+  // (previously every render leaked 4 URLs into memory until the page reloaded).
   preview.innerHTML = `<div class="review-photo-list">${
-    _reviewPhotos.map((f, i) => `<div class="review-photo-thumb"><img src="${URL.createObjectURL(f)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`).join('')
+    _reviewPhotos.map((f, i) => {
+      if (!f._owUrl) f._owUrl = URL.createObjectURL(f);
+      return `<div class="review-photo-thumb"><img src="${f._owUrl}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`;
+    }).join('')
   }</div>`;
   if (addBtn) addBtn.style.display = _reviewPhotos.length >= 4 ? 'none' : '';
 }
@@ -2248,6 +2282,7 @@ function saveEntry() {
     ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
       .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     localStorage.removeItem('ow-review-draft');
+    photos.forEach(f => { if (f._owUrl) { URL.revokeObjectURL(f._owUrl); f._owUrl = null; } });
     _reviewPhotos = [];
     renderReviewPhotos();
     const rp = document.getElementById('r-photo');
@@ -2415,9 +2450,16 @@ function addTodoSection() {
   const input = document.getElementById('new-section-name');
   const label = input.value.trim();
   if (!label) return;
-  todoCategories.push({ id: 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), label });
+  const newCat = { id: 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), label };
+  todoCategories.push(newCat);
   saveTodoCategories();
   renderTodos();
+  // After re-render, scroll the new section into view and focus its add-todo input so
+  // mobile users can immediately start adding items rather than hunting for the new section.
+  setTimeout(() => {
+    const inp = document.getElementById('add-' + newCat.id);
+    if (inp) { inp.scrollIntoView({behavior:'smooth', block:'center'}); inp.focus(); }
+  }, 80);
 }
 
 function editTodoSection(id) {
@@ -2972,8 +3014,10 @@ function renderPlan() {
 }
 
 function clearPlan() {
-  showConfirm('Clear the whole plan and start fresh?', () => {
-    weekPlan = {};
+  showConfirm('Clear meals, plans, and notes for this week? (Pinned to-dos stay.)', () => {
+    // Preserve pinned to-dos and the week key so the user doesn't lose their focus list — the
+    // auto week-reset path (line ~2869) does the same thing.
+    weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: weekPlan._weekKey };
     savePlan();
     renderPlan();
   }, 'Clear');
@@ -3129,12 +3173,17 @@ function editEvent(key, idx) {
   chip.contentEditable = 'true';
   chip.style.cursor = 'text';
   chip.onclick = null;
-  // Select all text after the click event finishes
+  // Select all text after the click event finishes. Find the first text node rather than
+  // trusting a fixed childNodes index — Safari can split text nodes around inserted emoji.
   setTimeout(() => {
     chip.focus();
-    const range = document.createRange();
-    const textNode = chip.childNodes[1]; // childNodes[0]=emoji span, [1]=text, [2]=del span
-    if (textNode) { range.selectNodeContents(textNode); window.getSelection().removeAllRanges(); window.getSelection().addRange(range); }
+    const textNode = [...chip.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+    if (textNode) {
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+    }
   }, 0);
   const finish = (save) => {
     if (!chip.isConnected) return;
@@ -3353,6 +3402,17 @@ function addTrip() {
   const dates  = document.getElementById('new-trip-dates').value.trim();
   const label  = document.getElementById('new-trip-name').value.trim();
   if (!label) return;
+  if (!dates) {
+    // Highlight the empty date field briefly so the user notices what's missing.
+    const dEl = document.getElementById('new-trip-dates');
+    if (dEl) {
+      dEl.style.transition = 'border-color .25s, background-color .25s';
+      dEl.style.borderColor = 'var(--coral)';
+      dEl.style.background = 'var(--coral-bg)';
+      setTimeout(() => { dEl.style.borderColor = ''; dEl.style.background = ''; dEl.focus(); }, 600);
+    }
+    return;
+  }
   const sortDate       = parseSortDate(dates);
   const labelWithEmoji = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
   const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
@@ -3544,7 +3604,8 @@ function renderHistory() {
   document.getElementById('history-list').innerHTML = entries.map(e => {
     const d = new Date(e.date + 'T12:00:00');
     const dateLabel = `${MONTHS_S[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-    const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
+    const _src = e.well || e.stress || e.misc || '';
+    const preview = _src.slice(0, 90) + (_src.length > 90 ? '...' : '');
     const heartsHtml = e.hearts > 0 ? renderHeartsHtml(e.hearts) : '';
 
     return `
@@ -3572,11 +3633,15 @@ function deleteEntry(id) {
 }
 
 function surpriseMe() {
-  const entries = getAllEntries();
-  if (!entries.length) return;
-  const e = entries[Math.floor(Math.random() * entries.length)];
-  document.getElementById('history-search').value = '';
-  renderHistory();
+  // Honor whatever search is currently typed — surprise from the filtered set so the user
+  // doesn't lose their query just to see a random pick.
+  const q = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
+  const all = getAllEntries();
+  const pool = q
+    ? all.filter(e => Object.values(e).some(v => typeof v === 'string' && v.toLowerCase().includes(q)))
+    : all;
+  if (!pool.length) return;
+  const e = pool[Math.floor(Math.random() * pool.length)];
   setTimeout(() => {
     const header = document.getElementById('hh-' + e.id);
     const body   = document.getElementById('hb-' + e.id);
@@ -3721,7 +3786,8 @@ function doneEditingHistory(id) {
     if (e) {
       const header = document.getElementById('hh-' + id);
       if (header) {
-        const preview = (e.well || e.stress || e.misc || '').slice(0, 90) + ((e.well || e.stress || '').length > 90 ? '...' : '');
+        const _src = e.well || e.stress || e.misc || '';
+    const preview = _src.slice(0, 90) + (_src.length > 90 ? '...' : '');
         const previewEl = header.querySelector('.history-preview');
         if (previewEl) previewEl.textContent = preview || '—';
         const heartsEl = header.querySelector('.history-hearts');
@@ -4113,6 +4179,13 @@ function _confirmCancel() {
   document.getElementById('confirm-overlay').style.display = 'none';
   _confirmCallback = null;
 }
+// Allow Escape to dismiss the confirm/prompt overlay from anywhere (the input-level handler
+// only fires when the input is focused). Tap-outside-to-dismiss is wired on the overlay div.
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('confirm-overlay').style.display === 'flex') {
+    _confirmCancel();
+  }
+});
 
 let _toastTimer = null;
 let _toastUndo = null;
@@ -4132,12 +4205,6 @@ function _doUndo() {
   clearTimeout(_toastTimer);
   if (_toastUndo) { _toastUndo(); _toastUndo = null; }
   document.getElementById('toast').classList.remove('show');
-}
-function fabTodos() {
-  const firstCat = todoCategories[0];
-  if (!firstCat) return;
-  const input = document.getElementById('add-' + firstCat.id);
-  if (input) { input.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(() => input.focus(), 300); }
 }
 function fabBudget() {
   const body = document.getElementById('quickadd-body');
@@ -4242,6 +4309,16 @@ function addCustomCountdown() {
   const name = document.getElementById('cd-name').value.trim();
   const date = document.getElementById('cd-date').value;
   if (!name || !date) return;
+  // Warn if the picked date is in the past (the widget would just display "N days ago" —
+  // probably a year-typo). User can still proceed if they're logging an anniversary.
+  const today = _todayLocal();
+  if (date < today) {
+    showConfirm(`"${name}" is in the past (${date}). Add it anyway?`, () => _commitCountdown(name, date), 'Add', false);
+    return;
+  }
+  _commitCountdown(name, date);
+}
+function _commitCountdown(name, date) {
   const item = {id: 'cd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), name, date};
   customCountdowns.push(item);
   saveCustomCountdowns();
@@ -4448,6 +4525,8 @@ let _txShowAll = false;
 
 function renderBudget() {
   _cleanExpEdit(); // cancel any open inline edit before re-rendering
+  // Defensive: drop expenses missing a date so one corrupt row can't crash the whole render.
+  expenses = expenses.filter(e => e && e.date);
   const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const curYear = new Date().getFullYear().toString();
   // Dynamic year selector — always shows current year + all years with data
@@ -4456,8 +4535,12 @@ function renderBudget() {
     const prevVal = yearSel.value || curYear;
     const dataYears = [...new Set(expenses.map(e=>e.date?.slice(0,4)).filter(Boolean))].map(Number);
     const minYear = dataYears.length ? Math.min(...dataYears, +curYear) : +curYear;
+    // If the previously selected year is non-current and now has no data (last transaction
+    // deleted), snap back to current year instead of stranding the user on an empty year.
+    const prevHasData = +prevVal === +curYear || dataYears.includes(+prevVal);
+    const effectivePrev = prevHasData ? prevVal : curYear;
     yearSel.innerHTML = Array.from({length: +curYear + 1 - minYear + 1}, (_,i) => +curYear + 1 - i)
-      .map(y => `<option value="${y}"${y.toString()===prevVal?' selected':''}>${y}</option>`).join('');
+      .map(y => `<option value="${y}"${y.toString()===effectivePrev?' selected':''}>${y}</option>`).join('');
   }
   const filterYear = yearSel ? yearSel.value : curYear;
   const filterPerson = document.getElementById('b-filter-person')?.value || '';
@@ -4647,8 +4730,8 @@ function renderBudget() {
           ${txs.map(txRow).join('')}
         </div>`).join('') + `</div>`;
     const moreHtml = !showAll
-      ? `<button onclick="_txShowAll=true;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions ↓</button>`
-      : sorted.length > PREVIEW ? `<button onclick="_txShowAll=false;renderBudget()" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less ↑</button>` : '';
+      ? `<button onclick="_toggleTxShowAll(true)" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show all ${sorted.length} transactions ↓</button>`
+      : sorted.length > PREVIEW ? `<button onclick="_toggleTxShowAll(false)" style="width:100%;margin-top:10px;padding:9px;border:1px dashed var(--border);border-radius:9px;background:none;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Show less ↑</button>` : '';
     document.getElementById('budget-transactions').innerHTML = listHtml + moreHtml;
   }
 
@@ -4672,6 +4755,15 @@ function setBudgetMonth(m) {
   _budgetMonth = m;
   _txShowAll = false;
   renderBudget();
+}
+
+// After toggling show-all/show-less, the layout shifts and the user loses their place.
+// Scroll the transactions card back into view so the toggle button stays roughly where it was.
+function _toggleTxShowAll(showAll) {
+  _txShowAll = showAll;
+  renderBudget();
+  const card = document.getElementById('budget-transactions')?.closest('.card');
+  if (card) card.scrollIntoView({behavior:'smooth', block: showAll ? 'start' : 'end'});
 }
 
 function promptTarget(cat) {
@@ -5065,9 +5157,12 @@ function dismissRecurringReminder(key) {
 }
 
 function loadRecurring() {
-  const today = _todayLocal();
-  const month = monthName(new Date());
-  const year  = new Date().getFullYear().toString();
+  // Date all recurring expenses to the 1st of the month — matches loadRecurringForMonth and
+  // reflects that these bills logically belong to the month, not the day you happened to load them.
+  const now = new Date();
+  const month = monthName(now);
+  const year  = now.getFullYear().toString();
+  const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   let added = 0;
   for (const r of recurringItems) {
     // Skip if already loaded this month (same description + person + month)
@@ -5079,7 +5174,7 @@ function loadRecurring() {
     );
     if (already) continue;
     expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
-      date:today, month, person:r.person, category:r.category,
+      date:dateStr, month, person:r.person, category:r.category,
       description:r.description, amount:r.amount, shared:r.shared});
     added++;
   }
@@ -5098,16 +5193,17 @@ function loadRecurring() {
 function loadSingleRecurring(id) {
   const r = recurringItems.find(x => x.id === id);
   if (!r) return;
-  const today = _todayLocal();
-  const month = monthName(new Date());
-  const year  = new Date().getFullYear().toString();
+  const now = new Date();
+  const month = monthName(now);
+  const year  = now.getFullYear().toString();
+  const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   const already = expenses.some(e =>
     e.person === r.person && e.description === r.description &&
     e.month === month && e.date.startsWith(year)
   );
   if (already) { showToast('Already loaded this month!'); return; }
   const item = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
-    date:today, month, person:r.person, category:r.category,
+    date:dateStr, month, person:r.person, category:r.category,
     description:r.description, amount:r.amount, shared:r.shared};
   expenses.push(item);
   db.collection('state').doc('expenses').update({
@@ -5168,12 +5264,14 @@ function renderBulkPreview() {
   const fallback = _todayLocal();
   const lines = text.split('\n').filter(l => l.trim());
   const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
-  const rowsHtml = lines.map(line => {
+  const rowsHtml = lines.map((line, idx) => {
+    const lineNo = idx + 1;
     const r = _parseBulkLine(line, fallback);
-    if (r.error) return `<tr style="background:var(--coral-bg)"><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
+    if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
     const bg = r.warnMisc ? 'var(--amber-bg)' : '';
     const catCell = r.warnMisc ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" unrecognized)</span>` : r.category;
     return `<tr style="background:${bg};border-top:1px solid var(--border-light)">
+      <td style="padding:6px 6px 6px 12px;color:var(--text-3);font-family:monospace;font-size:11px">${lineNo}</td>
       <td style="padding:6px 12px;color:var(--text-3);white-space:nowrap">${fmtDate(r.date)}</td>
       <td style="padding:6px 12px">${catCell}</td>
       <td style="padding:6px 12px;color:var(--text-2)">${r.description || '<span style="color:var(--text-3)">—</span>'}</td>
@@ -5184,6 +5282,7 @@ function renderBulkPreview() {
   el.style.display = 'block';
   el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr style="background:var(--bg);border-bottom:1px solid var(--border)">
+      <th style="padding:5px 6px 5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">#</th>
       <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Date</th>
       <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Category</th>
       <th style="padding:5px 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);text-align:left">Description</th>
@@ -5277,6 +5376,8 @@ function _executeBulkImport() {
         <div style="color:${color};font-size:11px">${reason}</div>
       </div>`;
     }).join('');
+    // Scroll the error block into view so the user notices what failed and can fix it.
+    setTimeout(() => errEl.scrollIntoView({behavior:'smooth', block:'center'}), 100);
   } else {
     errEl.style.display = 'none';
     errEl.innerHTML = '';
@@ -5391,7 +5492,8 @@ auth.onAuthStateChanged(user => {
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/our-weekly-3613/sw.js');
+  // Use a relative path so the SW still registers if the app is hosted from a different folder.
+  navigator.serviceWorker.register('./sw.js');
 }
 </script>
 <!-- ── Bottom Nav (mobile) ── -->
