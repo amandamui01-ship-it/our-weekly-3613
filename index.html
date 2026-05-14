@@ -4552,8 +4552,10 @@ function renderBudget() {
     }
     return periods;
   };
+  // 'all', '3m', '6m' are rolling/aggregate views — they ignore the year filter so "All" is always
+  // a superset of "6M" (which can cross year boundaries). The year filter only narrows monthly pills.
   const monthTx = _budgetMonth === 'all'
-    ? expenses.filter(e => e.date.startsWith(filterYear))
+    ? expenses.slice()
     : _budgetMonth === '3m' || _budgetMonth === '6m'
       ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => ps.some(p => e.date.startsWith(p.year) && e.month === p.month)); })()
       : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
@@ -4699,6 +4701,9 @@ function renderBudget() {
   // Default date input
   const dateEl = document.getElementById('b-date');
   if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+
+  // Banner visibility depends on _budgetMonth — re-check on every filter change
+  checkRecurringReminder();
 }
 
 function filterByCat(cat) {
@@ -5040,9 +5045,12 @@ function checkRecurringReminder() {
         e.month === month && e.date.startsWith(String(year)))
     )
   );
-  if (!missing.length) { el.style.display = 'none'; return; }
+  // Only nag when the user is actually viewing one of the months with missing recurring —
+  // otherwise the banner clutters every filter view (May, 6M, All, etc).
+  const visible = missing.filter(({ month }) => month === _budgetMonth);
+  if (!visible.length) { el.style.display = 'none'; return; }
   el.style.display = '';
-  el.innerHTML = missing.map(({ year, month }) => `
+  el.innerHTML = visible.map(({ year, month }) => `
     <div class="card" style="border-color:var(--amber);background:var(--amber-bg);margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:13px;font-weight:700;color:var(--amber-dark)">💳 Recurring expenses not loaded for <strong>${month} ${year}</strong></div>
