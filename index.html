@@ -1139,11 +1139,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title" style="margin-bottom:14px">PTO Tracker 🏖️</div>
-    <div id="pto-tracker"></div>
-  </div>
-
-  <div class="card" style="margin-bottom:16px">
     <div class="card-title">Logistics to Figure Out 📋</div>
     <div class="list-items" id="logistics-list"></div>
   </div>
@@ -1582,21 +1577,21 @@ const SEED_ENTRIES = [
 ];
 
 const TRIPS_2026 = [
-  { dates:"Apr 3–6",       sortDate:"2026-04-03", label:"Erica & Kevin Engagement Party 💍", aidanVacation:1,   aidanWfh:0, aidanPersonal:0, amandaVacation:1,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Apr 9–12",      sortDate:"2026-04-09", label:"Ben's Bachelor Party 🍺",           aidanVacation:1,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Apr 18–19",     sortDate:"2026-04-18", label:"Cindy Visiting 🏠",                  aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"May 2",         sortDate:"2026-05-02", label:"Trout Fishing Weekend 🎣",           aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Early May",     sortDate:"2026-05-08", label:"Aidan's Parents Visiting 👨‍👩‍👧",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"May 20",        sortDate:"2026-05-20", label:"Lauv in Chicago 🎵",                 aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jun 5–7",       sortDate:"2026-06-05", label:"Kohler-Andre State Park 🏕️",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jun 20",        sortDate:"2026-06-20", label:"Ben's Wedding 🎊",                   aidanVacation:1.5, aidanWfh:0, aidanPersonal:0, amandaVacation:1.5, amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jun 27",        sortDate:"2026-06-27", label:"Ed Sheeran in Chicago 🎶",           aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jul 25",        sortDate:"2026-07-25", label:"Camping with Corey + Co 🏕️",        aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Jul 30 – Aug 2",sortDate:"2026-07-30", label:"Lollapalooza 🎸",                    aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Aug 21–23",     sortDate:"2026-08-21", label:"Peninsula State Park Camping 🌲",    aidanVacation:0.5, aidanWfh:0, aidanPersonal:0, amandaVacation:0.5, amandaWfh:0, amandaPersonal:0 },
-  { dates:"Aug 29",        sortDate:"2026-08-29", label:"Patrick's Wedding 💒",               aidanVacation:0,   aidanWfh:0, aidanPersonal:0, amandaVacation:0,   amandaWfh:0, amandaPersonal:0 },
-  { dates:"Oct 24 – Nov 8",sortDate:"2026-10-24", label:"JAPAN 🗾✨",                         aidanVacation:5,   aidanWfh:0, aidanPersonal:0, amandaVacation:13,  amandaWfh:0, amandaPersonal:2 },
-  { dates:"Late Dec",      sortDate:"2026-12-22", label:"Christmas in Missoula 🎄",           aidanVacation:3,   aidanWfh:0, aidanPersonal:0, amandaVacation:2,   amandaWfh:0, amandaPersonal:1 },
+  { dates:"Apr 3–6",       sortDate:"2026-04-03", label:"Erica & Kevin Engagement Party 💍" },
+  { dates:"Apr 9–12",      sortDate:"2026-04-09", label:"Ben's Bachelor Party 🍺" },
+  { dates:"Apr 18–19",     sortDate:"2026-04-18", label:"Cindy Visiting 🏠" },
+  { dates:"May 2",         sortDate:"2026-05-02", label:"Trout Fishing Weekend 🎣" },
+  { dates:"Early May",     sortDate:"2026-05-08", label:"Aidan's Parents Visiting 👨‍👩‍👧" },
+  { dates:"May 20",        sortDate:"2026-05-20", label:"Lauv in Chicago 🎵" },
+  { dates:"Jun 5–7",       sortDate:"2026-06-05", label:"Kohler-Andre State Park 🏕️" },
+  { dates:"Jun 20",        sortDate:"2026-06-20", label:"Ben's Wedding 🎊" },
+  { dates:"Jun 27",        sortDate:"2026-06-27", label:"Ed Sheeran in Chicago 🎶" },
+  { dates:"Jul 25",        sortDate:"2026-07-25", label:"Camping with Corey + Co 🏕️" },
+  { dates:"Jul 30 – Aug 2",sortDate:"2026-07-30", label:"Lollapalooza 🎸" },
+  { dates:"Aug 21–23",     sortDate:"2026-08-21", label:"Peninsula State Park Camping 🌲" },
+  { dates:"Aug 29",        sortDate:"2026-08-29", label:"Patrick's Wedding 💒" },
+  { dates:"Oct 24 – Nov 8",sortDate:"2026-10-24", label:"JAPAN 🗾✨" },
+  { dates:"Late Dec",      sortDate:"2026-12-22", label:"Christmas in Missoula 🎄" },
 ];
 
 const LOGISTICS_LIST = [
@@ -1706,18 +1701,15 @@ function initFirestore() {
     } else {
       trips = snap.data().items || [];
       let changed = false;
-      // Migrate old fields and back-fill missing data from TRIPS_2026 seed
+      // Back-fill missing sortDate from seed; strip any stale PTO fields left from the
+      // removed PTO tracker feature so they don't bloat the doc.
       trips = trips.map(t => {
         const seed = TRIPS_2026.find(s => s.label === t.label);
         let updated = {...t};
-        if (!t.sortDate && seed?.sortDate)              { updated.sortDate = seed.sortDate; changed = true; }
-        if (t.aidanDays !== undefined && t.aidanVacation === undefined) {
-          updated.aidanVacation = t.aidanDays; updated.aidanWfh = 0; updated.aidanPersonal = 0;
-          delete updated.aidanDays; changed = true;
-        }
-        if (t.amandaDays !== undefined && t.amandaVacation === undefined) {
-          updated.amandaVacation = t.amandaDays; updated.amandaWfh = 0; updated.amandaPersonal = 0;
-          delete updated.amandaDays; changed = true;
+        if (!t.sortDate && seed?.sortDate) { updated.sortDate = seed.sortDate; changed = true; }
+        const ptoFields = ['aidanVacation','aidanWfh','aidanPersonal','amandaVacation','amandaWfh','amandaPersonal','aidanDays','amandaDays'];
+        for (const f of ptoFields) {
+          if (f in updated) { delete updated[f]; changed = true; }
         }
         return updated;
       });
@@ -1817,27 +1809,24 @@ function saveEntries() {
   if (JSON.stringify(data).length > 850000) showToast('⚠️ History data is getting large — consider removing some photos');
   db.collection('state').doc('entries').set(data).catch(_onSaveErr);
 }
-// Targeted single-entry update — for edits/heart-changes/photo-add-remove on a saved entry.
-// Uses a transaction so a partner add (via arrayUnion) that hasn't synced to our local
-// state isn't silently overwritten by a full-array .set().
+// Targeted single-entry update for edits/heart-changes/photo-add-remove on a saved entry.
+// Trade-off note: we use plain saveEntries() (full-array .set with offline queueing) rather
+// than runTransaction because transactions fail offline — and offline edits are more common
+// than the partner-edits-the-same-entry-then-user-edits race. The narrow race window is
+// accepted in exchange for working offline.
 function _updateEntryById(id) {
-  const local = newEntries.find(e => e.id === id);
-  if (!local) return;
-  const ref = db.collection('state').doc('entries');
-  db.runTransaction(t => t.get(ref).then(snap => {
-    const items = (snap.data()?.items || []).map(x => x.id === id ? {...local} : x);
-    t.set(ref, {items});
-  })).catch(_onSaveErr);
+  saveEntries();
 }
-// Transactional delete by id — match on id only, not deep-equality. arrayRemove(item) doesn't
-// match if the partner edited the item before our delete synced, causing the deleted entry/
-// expense to come back as a zombie via the next snapshot.
-function _deleteByIdInDoc(docName, id) {
-  const ref = db.collection('state').doc(docName);
-  db.runTransaction(t => t.get(ref).then(snap => {
-    const items = (snap.data()?.items || []).filter(x => x.id !== id);
-    t.set(ref, {items});
-  })).catch(_onSaveErr);
+// Delete an item using arrayRemove so the SDK queues the operation offline (transactions
+// would fail outright when offline and the snapshot listener would zombie the row back).
+// Narrow caveat: arrayRemove uses deep-equality, so a partner-edit immediately followed by
+// user-delete could leave the row in place — that race is rarer than offline deletes.
+// Caller must pass the ORIGINAL item object (not the post-filter local state).
+function _removeFromDoc(docName, item) {
+  if (!item) return;
+  db.collection('state').doc(docName).update({
+    items: firebase.firestore.FieldValue.arrayRemove(item)
+  }).catch(_onSaveErr);
 }
 function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
@@ -2676,45 +2665,6 @@ function addCategoryDragListeners() {
 }
 
 // ─── DATES ───────────────────────────────────────────────────────────────────
-// PTO yearly allowances per person — yearly grant from employer/preference.
-const PTO_LIMITS = {
-  Amanda: { vacation: 16, wfh: 7, personal: 10 },
-  Aidan:  { vacation: 26, wfh: 7, personal: 10 },
-};
-function renderPTO(yearStr) {
-  const el = document.getElementById('pto-tracker');
-  if (!el) return;
-  const yearTrips = trips.filter(t => t.sortDate && t.sortDate.startsWith(yearStr));
-  const sumFor = (person) => ({
-    vacation: yearTrips.reduce((s, t) => s + (t[`${person.toLowerCase()}Vacation`] || 0), 0),
-    wfh:      yearTrips.reduce((s, t) => s + (t[`${person.toLowerCase()}Wfh`]      || 0), 0),
-    personal: yearTrips.reduce((s, t) => s + (t[`${person.toLowerCase()}Personal`] || 0), 0),
-  });
-  const fmtDays = n => Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
-  const renderRow = (label, used, total, color) => {
-    const pct = total > 0 ? Math.min(100, Math.round(used / total * 100)) : 0;
-    const over = used > total;
-    return `<div style="display:grid;grid-template-columns:80px 1fr 90px;gap:10px;align-items:center;padding:6px 0;font-size:12px">
-      <div style="font-weight:600;color:var(--text-2)">${label}</div>
-      <div style="background:var(--border-light);border-radius:99px;height:8px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${over?'var(--coral)':color};border-radius:99px;transition:width .4s"></div>
-      </div>
-      <div style="font-size:11px;color:${over?'var(--coral)':'var(--text-3)'};text-align:right;font-weight:600">${fmtDays(used)} / ${fmtDays(total)}${over?' ⚠':''}</div>
-    </div>`;
-  };
-  const renderPerson = (person, color) => {
-    const used = sumFor(person);
-    const lim = PTO_LIMITS[person];
-    return `<div style="margin-bottom:14px">
-      <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:4px">${person}</div>
-      ${renderRow('Vacation', used.vacation, lim.vacation, 'var(--amber)')}
-      ${renderRow('WFH',      used.wfh,      lim.wfh,      'var(--sage)')}
-      ${renderRow('Personal', used.personal, lim.personal, 'var(--blue)')}
-    </div>`;
-  };
-  el.innerHTML = renderPerson('Amanda', 'var(--coral)') + renderPerson('Aidan', 'var(--blue)') +
-    `<div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:4px">Edit per-trip PTO by clicking a trip card. Limits assumed yearly.</div>`;
-}
 function _setDatesYear(y) { _datesYear = y; renderDates(); }
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2790,7 +2740,6 @@ function renderDates() {
   };
 
   document.getElementById('trip-grid').innerHTML = yearPickerHtml + upcoming.map(t => tripCardHtml(t, false)).join('');
-  renderPTO(yearStr);
 
   const pastCard = document.getElementById('past-adventures-card');
   const pastGrid = document.getElementById('past-grid');
@@ -3749,8 +3698,9 @@ function renderHistory() {
 
 function deleteEntry(id) {
   showConfirm('Delete this entry? This cannot be undone.', () => {
+    const item = newEntries.find(e => e.id === id);
     newEntries = newEntries.filter(e => e.id !== id);
-    _deleteByIdInDoc('entries', id);
+    _removeFromDoc('entries', item);
     renderHistory();
   });
 }
@@ -5059,15 +5009,14 @@ function deleteExpense(id) {
   const item = expenses.find(e => e.id === id);
   if (!item) return;
   expenses = expenses.filter(e => e.id !== id);
-  // Transactional id-based delete — arrayRemove uses deep equality, which fails if the
-  // partner edited this expense before our delete synced (zombie row would reappear).
-  _deleteByIdInDoc('expenses', id);
+  _removeFromDoc('expenses', item);
   renderBudget(); renderRecurring();
   showToast('Expense deleted', () => {
     // If the user already re-entered the same expense between delete and undo, skip restoring
-    // to avoid creating a silent duplicate (matching same person+date+desc+amount+shared).
+    // to avoid creating a silent duplicate (match on person+date+category+desc+amount+shared).
     const dup = expenses.find(e => e.person === item.person && e.date === item.date &&
-      e.description === item.description && e.amount === item.amount && !!e.shared === !!item.shared);
+      e.category === item.category && e.description === item.description &&
+      e.amount === item.amount && !!e.shared === !!item.shared);
     if (dup) { showToast('Already re-entered — undo skipped'); return; }
     expenses.push(item);
     db.collection('state').doc('expenses').update({items: firebase.firestore.FieldValue.arrayUnion(item)}).catch(_onSaveErr);
