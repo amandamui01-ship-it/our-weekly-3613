@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>our weekly ♥</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
 <link rel="manifest" href="manifest.json">
@@ -1138,6 +1138,11 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 
   <div class="card" style="margin-bottom:16px">
+    <div class="card-title" style="margin-bottom:14px">PTO Tracker 🏖️</div>
+    <div id="pto-tracker"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
     <div class="card-title">Logistics to Figure Out 📋</div>
     <div class="list-items" id="logistics-list"></div>
   </div>
@@ -1369,7 +1374,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <div id="photo-lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt="Full size photo"></div>
 
 <!-- In-page confirm / prompt dialog -->
-<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)_confirmCancel()">
+<div id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-msg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:10000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)_confirmCancel()">
   <div style="background:var(--surface);border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center" onclick="event.stopPropagation()">
     <div id="confirm-msg" style="font-size:15px;color:var(--text);line-height:1.5;margin-bottom:16px"></div>
     <input id="confirm-input" type="text" style="display:none;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;margin-bottom:16px;box-sizing:border-box" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')_confirmOk();if(event.key==='Escape')_confirmCancel()">
@@ -1743,9 +1748,9 @@ function initFirestore() {
 
   ref('weekplan').onSnapshot(snap => {
     weekPlan = snap.exists ? (snap.data().plan || {}) : {};
-    if (isActive('plan')
-      && !document.querySelector('.plan-slot-add-input[style*="inline"]')
-      && !document.querySelector('.plan-slot-event[contenteditable="true"]')) renderPlan();
+    // Skip re-render while the user is mid-typing in any meal input, notes textarea,
+    // add-event input, or contenteditable chip — otherwise partner's update wipes their input.
+    if (isActive('plan') && !_hasTypingFocus('#page-plan')) renderPlan();
   });
 
   ref('countdowns').onSnapshot(snap => {
@@ -1815,12 +1820,15 @@ function saveTrips()     { db.collection('state').doc('trips').set({items: trips
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
 function _getPlanWeekKey() {
+  // Use the MOST RECENT Monday (or today if Monday) so the plan tab keeps showing the current
+  // week's Sat/Sun until Monday morning. Previously the code rolled forward on Sat/Sun, which
+  // auto-wiped Sat/Sun plans you'd just made on Friday.
   const t = new Date(); t.setHours(0,0,0,0);
-  const dow = t.getDay();
+  const dow = t.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const daysBack = dow === 0 ? 6 : dow - 1; // Sun→6, Mon→0, Tue→1, ..., Sat→5
   const mon = new Date(t);
-  if (dow === 0 || dow === 6) mon.setDate(t.getDate() + (dow === 0 ? 1 : 2));
-  else mon.setDate(t.getDate() - (dow - 1));
-  return mon.toISOString().slice(0,10);
+  mon.setDate(t.getDate() - daysBack);
+  return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
 }
 function savePlan() {
   weekPlan._weekKey = _getPlanWeekKey();
@@ -2001,8 +2009,8 @@ function renderHome() {
   document.getElementById('home-trips').innerHTML = _upcoming.length
     ? _upcoming.map(t => `
     <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${t.dates.replace(/\b[a-z]/g, c => c.toUpperCase())}</div>
-      <div style="font-size:13px;color:var(--text);flex:1">${t.label}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${escHtml(t.dates.replace(/\b[a-z]/g, c => c.toUpperCase()))}</div>
+      <div style="font-size:13px;color:var(--text);flex:1">${escHtml(t.label)}</div>
     </div>
   `).join('') + `<div onclick="showPage('dates')" style="text-align:right;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;padding-top:8px">See all dates ↗</div>`
     : `<div style="text-align:center;padding:20px 0">
@@ -2192,8 +2200,12 @@ function addEditPhoto(id, file) {
   if (urls.length >= 4) return;
   if (storage) showToast('📸 Uploading photo…');
   uploadPhoto(file, entry.id, urls.length, 800, 0.65).then(url => {
-    entry.photoUrls = [...getEntryPhotoUrls(entry), url];
-    delete entry.photoUrl;
+    // Re-resolve the entry after the async upload — if partner edited the entry while we
+    // were uploading, the old `entry` reference is orphaned and writes would be lost.
+    const fresh = newEntries.find(e => e.id === id);
+    if (!fresh) { showToast('Entry was deleted before photo finished uploading'); return; }
+    fresh.photoUrls = [...getEntryPhotoUrls(fresh), url];
+    delete fresh.photoUrl;
     saveEntries();
     renderEditPhotos(id);
   });
@@ -2621,6 +2633,45 @@ function addCategoryDragListeners() {
 }
 
 // ─── DATES ───────────────────────────────────────────────────────────────────
+// PTO yearly allowances per person — yearly grant from employer/preference.
+const PTO_LIMITS = {
+  Amanda: { vacation: 16, wfh: 7, personal: 10 },
+  Aidan:  { vacation: 26, wfh: 7, personal: 10 },
+};
+function renderPTO(yearStr) {
+  const el = document.getElementById('pto-tracker');
+  if (!el) return;
+  const yearTrips = trips.filter(t => t.sortDate && t.sortDate.startsWith(yearStr));
+  const sumFor = (person) => ({
+    vacation: yearTrips.reduce((s, t) => s + (t[`${person.toLowerCase()}Vacation`] || 0), 0),
+    wfh:      yearTrips.reduce((s, t) => s + (t[`${person.toLowerCase()}Wfh`]      || 0), 0),
+    personal: yearTrips.reduce((s, t) => s + (t[`${person.toLowerCase()}Personal`] || 0), 0),
+  });
+  const fmtDays = n => Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+  const renderRow = (label, used, total, color) => {
+    const pct = total > 0 ? Math.min(100, Math.round(used / total * 100)) : 0;
+    const over = used > total;
+    return `<div style="display:grid;grid-template-columns:80px 1fr 90px;gap:10px;align-items:center;padding:6px 0;font-size:12px">
+      <div style="font-weight:600;color:var(--text-2)">${label}</div>
+      <div style="background:var(--border-light);border-radius:99px;height:8px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${over?'var(--coral)':color};border-radius:99px;transition:width .4s"></div>
+      </div>
+      <div style="font-size:11px;color:${over?'var(--coral)':'var(--text-3)'};text-align:right;font-weight:600">${fmtDays(used)} / ${fmtDays(total)}${over?' ⚠':''}</div>
+    </div>`;
+  };
+  const renderPerson = (person, color) => {
+    const used = sumFor(person);
+    const lim = PTO_LIMITS[person];
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:4px">${person}</div>
+      ${renderRow('Vacation', used.vacation, lim.vacation, 'var(--amber)')}
+      ${renderRow('WFH',      used.wfh,      lim.wfh,      'var(--sage)')}
+      ${renderRow('Personal', used.personal, lim.personal, 'var(--blue)')}
+    </div>`;
+  };
+  el.innerHTML = renderPerson('Amanda', 'var(--coral)') + renderPerson('Aidan', 'var(--blue)') +
+    `<div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:4px">Edit per-trip PTO by clicking a trip card. Limits assumed yearly.</div>`;
+}
 function _setDatesYear(y) { _datesYear = y; renderDates(); }
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
@@ -2696,6 +2747,7 @@ function renderDates() {
   };
 
   document.getElementById('trip-grid').innerHTML = yearPickerHtml + upcoming.map(t => tripCardHtml(t, false)).join('');
+  renderPTO(yearStr);
 
   const pastCard = document.getElementById('past-adventures-card');
   const pastGrid = document.getElementById('past-grid');
@@ -2896,16 +2948,13 @@ function getReviewWeekLabel() {
 }
 
 function formatPlanLabel() {
+  // Most-recent-Monday — matches _getPlanWeekKey. Plan tab shows the current week through
+  // Sunday end-of-day, then rolls over Monday morning.
   const today = new Date();
   const dow = today.getDay();
-  const isSatOrSun = dow === 0 || dow === 6;
+  const daysBack = dow === 0 ? 6 : dow - 1;
   const mon = new Date(today);
-  if (isSatOrSun) {
-    const toMon = dow === 0 ? 1 : 2;
-    mon.setDate(today.getDate() + toMon);
-  } else {
-    mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-  }
+  mon.setDate(today.getDate() - daysBack);
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
@@ -2942,15 +2991,13 @@ function renderPlan() {
   }
 
   // Schedule
-  // Compute Monday of the displayed plan week (matches formatPlanLabel logic)
+  // Compute Monday of the displayed plan week — most recent Monday (matches _getPlanWeekKey
+  // and formatPlanLabel). Roll-over to next week's Monday happens automatically on Monday 00:00.
   const _planToday = new Date(); _planToday.setHours(0,0,0,0);
   const _planDow = _planToday.getDay();
   const _planMon = new Date(_planToday);
-  if (_planDow === 0 || _planDow === 6) {
-    _planMon.setDate(_planToday.getDate() + (_planDow === 0 ? 1 : 2));
-  } else {
-    _planMon.setDate(_planToday.getDate() - (_planDow - 1));
-  }
+  const _planDaysBack = _planDow === 0 ? 6 : _planDow - 1;
+  _planMon.setDate(_planToday.getDate() - _planDaysBack);
   const _dayOff = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
 
   // Pre-compute which trips overlap each day of the plan week
@@ -3294,7 +3341,9 @@ function tripEmoji(label) {
 }
 // Detect whether a string already contains an emoji — covers the main emoji Unicode ranges.
 // Used to avoid double-appending an auto-emoji on top of one the user typed in themselves.
-const _hasEmoji = s => /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F0FF}]/u.test(s);
+// Cover the main emoji ranges (Misc Symbols, Dingbats, Misc Symbols & Pictographs, etc.) so
+// trip labels with ⭐ / ⌚ / ▶️ / ♥ don't get a duplicate auto-emoji appended.
+const _hasEmoji = s => /\p{Extended_Pictographic}/u.test(s);
 
 function parseICSEndDate(datesStr, sortDate) {
   // ICS all-day DTEND is exclusive (day after last day)
@@ -3685,6 +3734,11 @@ function _historyClickOutside(e) {
 function editHistoryEntry(id) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
+  // If another entry is in edit mode, close it cleanly first — otherwise its form HTML stays
+  // visible forever once a new edit takes over the click-outside listener.
+  if (_editingHistoryId && _editingHistoryId !== id) {
+    doneEditingHistory(_editingHistoryId);
+  }
   const body = document.getElementById('hb-' + id);
   body.style.transition = 'opacity 0.15s';
   body.style.opacity = '0';
@@ -4131,7 +4185,7 @@ function addSwipeToDelete() {
 function exportData() {
   const payload = {
     exportedAt: new Date().toISOString(),
-    version: 1,
+    version: 2,
     todos,
     todoCategories,
     trips,
@@ -4143,7 +4197,7 @@ function exportData() {
     logisticsList,
     bucketList,
     mood,
-    photos,
+    customCountdowns,
   };
   const json = JSON.stringify(payload, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -4164,6 +4218,7 @@ function escHtml(str) {
 
 let _confirmCallback = null;
 function showConfirm(msg, onOk, okLabel = 'Delete', isHtml = false) {
+  _confirmReturnFocus = document.activeElement;
   const msgEl = document.getElementById('confirm-msg');
   if (isHtml) msgEl.innerHTML = msg; else msgEl.textContent = msg;
   document.getElementById('confirm-ok').textContent = okLabel;
@@ -4173,8 +4228,10 @@ function showConfirm(msg, onOk, okLabel = 'Delete', isHtml = false) {
   const ov = document.getElementById('confirm-overlay');
   ov.style.display = 'flex';
   _confirmCallback = onOk;
+  setTimeout(() => document.getElementById('confirm-ok').focus(), 50);
 }
 function showPrompt(msg, defaultVal, onOk, okLabel = 'Save') {
+  _confirmReturnFocus = document.activeElement;
   document.getElementById('confirm-msg').textContent = msg;
   document.getElementById('confirm-ok').textContent = okLabel;
   document.getElementById('confirm-ok').style.background = 'var(--amber)';
@@ -4189,16 +4246,27 @@ function showPrompt(msg, defaultVal, onOk, okLabel = 'Save') {
 function _confirmOk() {
   document.getElementById('confirm-overlay').style.display = 'none';
   if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+  if (_confirmReturnFocus) { try { _confirmReturnFocus.focus(); } catch (_) {} _confirmReturnFocus = null; }
 }
 function _confirmCancel() {
   document.getElementById('confirm-overlay').style.display = 'none';
   _confirmCallback = null;
+  // Restore focus to whatever was focused before the modal opened.
+  if (_confirmReturnFocus) { try { _confirmReturnFocus.focus(); } catch (_) {} _confirmReturnFocus = null; }
 }
-// Allow Escape to dismiss the confirm/prompt overlay from anywhere (the input-level handler
-// only fires when the input is focused). Tap-outside-to-dismiss is wired on the overlay div.
+let _confirmReturnFocus = null;
+// Allow Escape to dismiss + Tab to cycle between Cancel and OK inside the modal so keyboard
+// users can't tab their way back to the underlying page (a11y: focus trap).
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('confirm-overlay').style.display === 'flex') {
-    _confirmCancel();
+  const ov = document.getElementById('confirm-overlay');
+  if (ov.style.display !== 'flex') return;
+  if (e.key === 'Escape') { _confirmCancel(); return; }
+  if (e.key === 'Tab') {
+    const focusables = ov.querySelectorAll('button, input:not([type=hidden])');
+    if (!focusables.length) return;
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
 });
 
@@ -4306,7 +4374,12 @@ function renderCustomCountdowns() {
     list.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px 0 4px">No countdowns yet — add one below!</div>';
     return;
   }
-  const cards = customCountdowns.slice().sort((a,b) => a.date.localeCompare(b.date)).map(cd => {
+  // Sort upcoming first (soonest → furthest), then past (most-recent → oldest) — so the next
+  // anniversary or trip is at the top, not buried under last year's already-happened events.
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const upcoming = customCountdowns.filter(c => c.date >= todayStr).sort((a,b) => a.date.localeCompare(b.date));
+  const past     = customCountdowns.filter(c => c.date <  todayStr).sort((a,b) => b.date.localeCompare(a.date));
+  const cards = [...upcoming, ...past].map(cd => {
     const d = new Date(cd.date + 'T00:00:00');
     const days = Math.ceil((d - today) / 864e5);
     const num  = days > 0 ? days : days === 0 ? '🎉' : Math.abs(days);
