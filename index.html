@@ -1796,6 +1796,12 @@ function _hasTypingFocus(containerSelector) {
 }
 
 const _onSaveErr = e => { console.error('Save failed:', e); showToast('⚠️ Save failed — check your connection'); };
+
+// NOTE on concurrency: these whole-array .set() writes are last-writer-wins. If Amanda and
+// Aidan mutate the same doc within the same render cycle (~milliseconds), one user's edit can
+// silently overwrite the other's. We rely on the onSnapshot listeners keeping local state
+// current to keep that race window narrow. Add/delete operations have been migrated to
+// arrayUnion/arrayRemove (atomic). Edit/toggle/reorder paths still use whole-array writes.
 function saveTodos()           { db.collection('state').doc('todos').set({items: todos}).catch(_onSaveErr); }
 function saveTodoCategories()  { db.collection('state').doc('todoCategories').set({items: todoCategories}).catch(_onSaveErr); }
 function saveMood()   { db.collection('state').doc('mood').set(mood).catch(_onSaveErr); }
@@ -2277,7 +2283,8 @@ function saveEntry() {
   const finalize = (urls) => {
     if (urls.length) entry.photoUrls = urls;
     newEntries.unshift(entry);
-    saveEntries();
+    // Use arrayUnion so concurrent saves from the partner don't overwrite each other.
+    db.collection('state').doc('entries').update({ items: firebase.firestore.FieldValue.arrayUnion(entry) }).catch(_onSaveErr);
     // Reset form only after the entry is committed so a failed save can be retried
     ['r-well','r-stress','r-adjust','r-theme','r-amanda','r-aidan','r-misc']
       .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -3503,13 +3510,12 @@ function addListItem(type) {
   const input = document.getElementById('new-' + type);
   const text = input.value.trim();
   if (!text) return;
-  if (type === 'logistics') {
-    logisticsList.push({ id:'log-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text });
-    saveLogistics();
-  } else {
-    bucketList.push({ id:'bkt-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), text });
-    saveBucket();
-  }
+  const item = { id:(type === 'logistics' ? 'log-' : 'bkt-')+Date.now()+'-'+Math.random().toString(36).slice(2,7), text };
+  const docName = type === 'logistics' ? 'logistics' : 'bucket';
+  if (type === 'logistics') logisticsList.push(item); else bucketList.push(item);
+  // arrayUnion is atomic — safe if both people add simultaneously.
+  db.collection('state').doc(docName).update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
+  input.value = '';
   renderDates();
 }
 
@@ -3552,12 +3558,17 @@ function editBucketItem(id) {
 function deleteListItem(type, id) {
   const arr = type === 'logistics' ? logisticsList : bucketList;
   const item = arr.find(x => x.id === id);
-  if (type === 'logistics') { logisticsList = logisticsList.filter(x => x.id !== id); saveLogistics(); }
-  else { bucketList = bucketList.filter(x => x.id !== id); saveBucket(); }
+  if (!item) return;
+  const docName = type === 'logistics' ? 'logistics' : 'bucket';
+  if (type === 'logistics') logisticsList = logisticsList.filter(x => x.id !== id);
+  else bucketList = bucketList.filter(x => x.id !== id);
+  // arrayRemove is atomic — safe even if partner is adding items concurrently.
+  db.collection('state').doc(docName).update({ items: firebase.firestore.FieldValue.arrayRemove(item) }).catch(_onSaveErr);
   renderDates();
-  if (item) showToast('Item deleted', () => {
-    if (type === 'logistics') { logisticsList.push(item); saveLogistics(); }
-    else { bucketList.push(item); saveBucket(); }
+  showToast('Item deleted', () => {
+    if (type === 'logistics') logisticsList.push(item);
+    else bucketList.push(item);
+    db.collection('state').doc(docName).update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
     renderDates();
   });
 }
@@ -3626,8 +3637,11 @@ function renderHistory() {
 
 function deleteEntry(id) {
   showConfirm('Delete this entry? This cannot be undone.', () => {
+    const item = newEntries.find(e => e.id === id);
     newEntries = newEntries.filter(e => e.id !== id);
-    saveEntries();
+    if (item) {
+      db.collection('state').doc('entries').update({ items: firebase.firestore.FieldValue.arrayRemove(item) }).catch(_onSaveErr);
+    }
     renderHistory();
   });
 }
