@@ -1817,6 +1817,18 @@ function saveEntries() {
   if (JSON.stringify(data).length > 850000) showToast('⚠️ History data is getting large — consider removing some photos');
   db.collection('state').doc('entries').set(data).catch(_onSaveErr);
 }
+// Targeted single-entry update — for edits/heart-changes/photo-add-remove on a saved entry.
+// Uses a transaction so a partner add (via arrayUnion) that hasn't synced to our local
+// state isn't silently overwritten by a full-array .set().
+function _updateEntryById(id) {
+  const local = newEntries.find(e => e.id === id);
+  if (!local) return;
+  const ref = db.collection('state').doc('entries');
+  db.runTransaction(t => t.get(ref).then(snap => {
+    const items = (snap.data()?.items || []).map(x => x.id === id ? {...local} : x);
+    t.set(ref, {items});
+  })).catch(_onSaveErr);
+}
 function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
@@ -2227,7 +2239,7 @@ function addEditPhoto(id, file) {
     if (!fresh) { showToast('Entry was deleted before photo finished uploading'); return; }
     fresh.photoUrls = [...getEntryPhotoUrls(fresh), url];
     delete fresh.photoUrl;
-    saveEntries();
+    _updateEntryById(id);
     renderEditPhotos(id);
   });
 }
@@ -2239,7 +2251,7 @@ function removeEditPhoto(event, id, idx) {
   urls.splice(idx, 1);
   entry.photoUrls = urls;
   delete entry.photoUrl;
-  saveEntries();
+  _updateEntryById(id);
   renderEditPhotos(id);
 }
 
@@ -3380,8 +3392,11 @@ function parseICSEndDate(datesStr, sortDate) {
   if (!datesStr || !sortDate) return addOne(sortDate);
   const year = parseInt(sortDate.slice(0, 4));
   const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-  // Match end of range: "Apr 3–6", "Oct 24 – Nov 8", "Jul 30 – Aug 2"
-  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d+)/);
+  // Match end of range: "Apr 3–6", "Oct 24 – Nov 8", "Jul 30 – Aug 2". Constrain the trailing
+  // number to 1-2 digits and require it NOT be followed by more digits — otherwise a label
+  // like "Jun-Jul 2026" captures "2026" as the end-day, which yields Date(year, 6, 2027) and
+  // a multi-year trip that overlays every future day on the plan view.
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)/);
   if (rangeMatch) {
     const endDay = parseInt(rangeMatch[2]);
     let endMonth;
@@ -3391,7 +3406,7 @@ function parseICSEndDate(datesStr, sortDate) {
       const startMonthMatch = datesStr.match(/([A-Za-z]+)/);
       if (startMonthMatch) endMonth = months[startMonthMatch[1].toLowerCase().slice(0,3)];
     }
-    if (endMonth !== undefined && !isNaN(endDay)) {
+    if (endMonth !== undefined && !isNaN(endDay) && endDay >= 1 && endDay <= 31) {
       // Handle year rollover (e.g. Dec end in Jan)
       let endYear = year;
       const startMonth = parseInt(sortDate.slice(5,7)) - 1;
@@ -3683,12 +3698,18 @@ function buildHistoryBodyHtml(e) {
     ${isNew ? `<div class="history-edit-btn-row"><button class="history-del-btn" onclick="deleteEntry('${e.id}');event.stopPropagation()">🗑️ Delete</button><button class="history-edit-btn" onclick="editHistoryEntry('${e.id}');event.stopPropagation()">✏️ Edit</button></div>` : ''}`;
 }
 
+// Fields searched across the history tab — kept in one place so renderHistory and surpriseMe
+// stay in sync (was: surpriseMe used Object.values(e) which matched seed-only fields like
+// `upcoming`/`appts` that the list filter ignored, so Surprise could pick an entry that
+// wasn't in the visible list and the click did nothing).
+const _HISTORY_SEARCH_FIELDS = ['well','stress','adjust','theme','amanda','aidan','misc','date'];
+function _historyMatches(e, query) {
+  return _HISTORY_SEARCH_FIELDS.map(f => e[f] || '').join(' ').toLowerCase().includes(query);
+}
 function renderHistory() {
   const query = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
   let entries = getAllEntries();
-  if (query) {
-    entries = entries.filter(e => [e.well,e.stress,e.adjust,e.theme,e.amanda,e.aidan,e.misc,e.date].join(' ').toLowerCase().includes(query));
-  }
+  if (query) entries = entries.filter(e => _historyMatches(e, query));
   const meta = document.getElementById('history-search-meta');
   if (meta) meta.textContent = query ? `${entries.length} entr${entries.length===1?'y':'ies'} matching "${query}"` : '';
   document.getElementById('history-list').innerHTML = entries.map(e => {
@@ -3730,9 +3751,7 @@ function surpriseMe() {
   // doesn't lose their query just to see a random pick.
   const q = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
   const all = getAllEntries();
-  const pool = q
-    ? all.filter(e => Object.values(e).some(v => typeof v === 'string' && v.toLowerCase().includes(q)))
-    : all;
+  const pool = q ? all.filter(e => _historyMatches(e, q)) : all;
   if (!pool.length) return;
   const e = pool[Math.floor(Math.random() * pool.length)];
   setTimeout(() => {
@@ -3831,7 +3850,7 @@ function saveHistoryField(id, field, val) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   entry[field] = val.trim();
-  saveEntries();
+  _updateEntryById(id);
 }
 
 function setEditHeartClick(e, el, id, n) {
@@ -3859,7 +3878,7 @@ function setEditHeart(id, val) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   entry.hearts = val;
-  saveEntries();
+  _updateEntryById(id);
   document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
