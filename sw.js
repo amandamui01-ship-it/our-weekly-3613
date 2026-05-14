@@ -1,7 +1,9 @@
-const CACHE = 'ow-v4';
+const CACHE = 'ow-v5';
+// Use relative paths so the service worker survives moving the app to a different host or
+// repo path. The scope is wherever this sw.js is served from, which is what we want.
 const SHELL = [
-  '/our-weekly-3613/',
-  '/our-weekly-3613/index.html',
+  './',
+  './index.html',
 ];
 
 self.addEventListener('install', e => {
@@ -32,8 +34,10 @@ self.addEventListener('fetch', e => {
     url.includes('firebasestorage')
   ) return;
 
-  // Cache-first for the app shell (HTML) so it loads instantly offline
-  if (SHELL.some(s => url.endsWith(s) || url === location.origin + s)) {
+  // Cache-first for the app shell (HTML) so it loads instantly offline. Match by comparing
+  // resolved URLs against the registration scope so this works at any hosted path.
+  const scope = self.registration.scope;
+  if (url === scope || url === scope + 'index.html') {
     e.respondWith(
       caches.match(e.request).then(cached => {
         const network = fetch(e.request).then(res => {

@@ -125,6 +125,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Seasonal theming (light mode only — dark mode has its own palette) ── */
 html:not([data-theme="dark"]) body.season-spring{--bg:#fdf6f0;--surface:#fffbf8;--surface-warm:#fff8f5;--border:#e8d5ca;--border-light:#f5e8e2}
 html:not([data-theme="dark"]) body.season-summer{--bg:#fdf9ec;--surface:#fffef5;--surface-warm:#fffcef;--border:#e8d8b0;--border-light:#f2e9cc}
+html:not([data-theme="dark"]) body.season-fall{--bg:#fbf2e8;--surface:#fff9f1;--surface-warm:#fff5ea;--border:#e8c9a8;--border-light:#f0dec5}
 html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;--surface-warm:#f5f8ff;--border:#cdd8ea;--border-light:#dde6f5}
 
 /* ── Typography ── */
@@ -1831,7 +1832,9 @@ function _getPlanWeekKey() {
   return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
 }
 function savePlan() {
-  weekPlan._weekKey = _getPlanWeekKey();
+  // Do NOT advance _weekKey here — only renderPlan should do that after clearing prior slots.
+  // Previously this ran on every meal-input debounce, so a save firing after midnight Sun→Mon
+  // would relabel the stale plan as the new week's, defeating the auto-reset.
   db.collection('state').doc('weekplan').set({plan: weekPlan}).catch(_onSaveErr);
 }
 function saveExpenses()   { db.collection('state').doc('expenses').set({items: expenses}).catch(_onSaveErr);       }
@@ -1988,7 +1991,6 @@ function renderHome() {
 
   const _today = new Date(); _today.setHours(0,0,0,0);
   const _sortedTrips = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate));
-  const _nextForStat = _sortedTrips.find(t => !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= _today);
 
   const all = getAllEntries();
   const lastEl = document.getElementById('stat-last-entry');
@@ -2035,6 +2037,19 @@ function renderHome() {
   renderNextTrip();
   renderAnniversary();
   renderCustomCountdowns();
+  // If the user leaves the app open across midnight, the date/greeting/"days until X" all stay
+  // frozen at yesterday. Schedule a single re-render right after midnight.
+  _scheduleMidnightHomeRefresh();
+}
+let _midnightTimer = null;
+function _scheduleMidnightHomeRefresh() {
+  if (_midnightTimer) clearTimeout(_midnightTimer);
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+  _midnightTimer = setTimeout(() => {
+    _midnightTimer = null;
+    if (isActive('home')) renderHome();
+  }, tomorrow - now);
 }
 
 // ─── COFFEE ROULETTE ─────────────────────────────────────────────────────────
@@ -2108,6 +2123,9 @@ function pickTheme(el) {
   }
   const nowSelected = chips.filter(c => c.classList.contains('on'));
   document.getElementById('r-theme').value = nowSelected.map(c => c.textContent).join(', ');
+  // Assigning .value programmatically doesn't fire an "input" event — autosave the draft
+  // directly so the picks survive a tab close.
+  _saveReviewDraft();
 }
 
 function renderHeartsHtml(val) {
@@ -2127,6 +2145,9 @@ function setHeart(n) {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
   });
+  // Persist to the review draft — neither click nor programmatic value sets fire an "input"
+  // event, so the autosave dispatcher (text-field listener at line 3306) never picks this up.
+  _saveReviewDraft();
 }
 function previewHeart(e, el, n) {
   const rect = el.getBoundingClientRect();
@@ -2853,6 +2874,14 @@ function loadReviewDraft() {
       const el = document.getElementById(id);
       if (el && draft[id] && !el.value) { el.value = draft[id]; _growNotes(el); }
     });
+    // Restore theme chip visual state — r-theme.value carries the labels but the chips
+    // themselves were left unselected, making it look like nothing was picked.
+    if (draft['r-theme']) {
+      const picked = new Set(draft['r-theme'].split(',').map(s => s.trim()).filter(Boolean));
+      document.querySelectorAll('.theme-chip').forEach(c => {
+        if (picked.has(c.textContent)) c.classList.add('on');
+      });
+    }
     if (draft.heartVal) setHeart(draft.heartVal);
     if (draft.photoCount > 0) {
       const preview = document.getElementById('r-photo-preview');
@@ -3883,6 +3912,12 @@ function toggleDarkMode() {
   const mi = document.getElementById('menu-dark-item');
   if (mi) mi.textContent = next === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
   updateBgSwatchColors();
+  // Re-apply custom accent — light-mode formulas blast every amber-bg surface near-white in
+  // dark mode, and dark-mode formulas are too dim in light mode.
+  if (localStorage.getItem('ow-accent') === 'custom') {
+    const hex = localStorage.getItem('ow-accent-custom');
+    if (hex) applyCustomAccent(hex);
+  }
 }
 const ACCENT_NAMES = {amber:'Amber',rose:'Rose',coral:'Coral',pink:'Pink',plum:'Plum',berry:'Berry',blue:'Blue',teal:'Teal',forest:'Forest',sage:'Sage',gold:'Gold'};
 const BG_SWATCHES = {
@@ -4031,15 +4066,22 @@ function removePicker() { document.getElementById('emoji-picker-popup')?.remove(
 function pickMood(person, emoji) {
   removePicker();
   const thisWeek = getISOWeek();
+  const weekRolled = mood.week !== thisWeek;
   const other = person === 'amanda' ? 'aidan' : 'amanda';
+  // Local optimistic update
   mood = {
     ...mood,
     [person]: emoji,
-    [other]: mood.week !== thisWeek ? '' : mood[other],
+    [other]: weekRolled ? '' : mood[other],
     week: thisWeek
   };
-  saveMood();
   renderMoodWidget();
+  // Merge-write only the changed fields so concurrent picks by the partner aren't clobbered
+  // by a full-document set(). On week rollover, also explicitly clear the OTHER person's stale
+  // pick (otherwise merge would preserve it).
+  const patch = { [person]: emoji, week: thisWeek };
+  if (weekRolled) patch[other] = '';
+  db.collection('state').doc('mood').set(patch, {merge:true}).catch(_onSaveErr);
 }
 
 function spinMood() {
@@ -4434,9 +4476,18 @@ function applyCustomAccent(hex) {
   const {r,g,b} = _hexToRgb(hex);
   const mix = (ch, w) => Math.round(ch + w * (255 - ch));
   const dim = (ch, f) => Math.round(ch * f);
+  const lighten = (ch, w) => Math.round(ch + w * (255 - ch));
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.style.setProperty('--amber', hex);
-  document.documentElement.style.setProperty('--amber-bg', `rgb(${mix(r,.88)},${mix(g,.88)},${mix(b,.88)})`);
-  document.documentElement.style.setProperty('--amber-dark', `rgb(${dim(r,.65)},${dim(g,.65)},${dim(b,.65)})`);
+  // In dark mode use a translucent tint so backgrounds stay dark; in light mode use the
+  // existing pastel mix. amber-dark must also brighten in dark mode for adequate contrast.
+  if (isDark) {
+    document.documentElement.style.setProperty('--amber-bg', `rgba(${r},${g},${b},.18)`);
+    document.documentElement.style.setProperty('--amber-dark', `rgb(${lighten(r,.35)},${lighten(g,.35)},${lighten(b,.35)})`);
+  } else {
+    document.documentElement.style.setProperty('--amber-bg', `rgb(${mix(r,.88)},${mix(g,.88)},${mix(b,.88)})`);
+    document.documentElement.style.setProperty('--amber-dark', `rgb(${dim(r,.65)},${dim(g,.65)},${dim(b,.65)})`);
+  }
   document.documentElement.removeAttribute('data-accent');
   localStorage.setItem('ow-accent', 'custom');
   localStorage.setItem('ow-accent-custom', hex);
