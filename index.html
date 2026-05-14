@@ -1829,6 +1829,16 @@ function _updateEntryById(id) {
     t.set(ref, {items});
   })).catch(_onSaveErr);
 }
+// Transactional delete by id — match on id only, not deep-equality. arrayRemove(item) doesn't
+// match if the partner edited the item before our delete synced, causing the deleted entry/
+// expense to come back as a zombie via the next snapshot.
+function _deleteByIdInDoc(docName, id) {
+  const ref = db.collection('state').doc(docName);
+  db.runTransaction(t => t.get(ref).then(snap => {
+    const items = (snap.data()?.items || []).filter(x => x.id !== id);
+    t.set(ref, {items});
+  })).catch(_onSaveErr);
+}
 function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
@@ -3585,12 +3595,14 @@ function saveTripEditIfActive(id) {
 
 function saveTripEdit(id) {
   if (_tripSaved) return;
-  _tripSaved = true;
   const t = trips.find(x => x.id === id);
   if (!t) return;
   const dates = document.getElementById('tedit-dates-' + id)?.value.trim();
   const label = document.getElementById('tedit-name-'  + id)?.value.trim();
+  // Empty label bails BEFORE flipping the saved flag so the user can retype and retry —
+  // previously the flag was set unconditionally and later retries silently no-op'd.
   if (!label) return;
+  _tripSaved = true;
   t.dates = dates || t.dates;
   t.label = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
   if (dates) t.sortDate = parseSortDate(dates) || t.sortDate;
@@ -3737,11 +3749,8 @@ function renderHistory() {
 
 function deleteEntry(id) {
   showConfirm('Delete this entry? This cannot be undone.', () => {
-    const item = newEntries.find(e => e.id === id);
     newEntries = newEntries.filter(e => e.id !== id);
-    if (item) {
-      db.collection('state').doc('entries').update({ items: firebase.firestore.FieldValue.arrayRemove(item) }).catch(_onSaveErr);
-    }
+    _deleteByIdInDoc('entries', id);
     renderHistory();
   });
 }
@@ -5048,12 +5057,13 @@ function addExpense() {
 
 function deleteExpense(id) {
   const item = expenses.find(e => e.id === id);
+  if (!item) return;
   expenses = expenses.filter(e => e.id !== id);
-  if (item) db.collection('state').doc('expenses').update({
-    items: firebase.firestore.FieldValue.arrayRemove(item)
-  }).catch(_onSaveErr);
+  // Transactional id-based delete — arrayRemove uses deep equality, which fails if the
+  // partner edited this expense before our delete synced (zombie row would reappear).
+  _deleteByIdInDoc('expenses', id);
   renderBudget(); renderRecurring();
-  if (item) showToast('Expense deleted', () => {
+  showToast('Expense deleted', () => {
     // If the user already re-entered the same expense between delete and undo, skip restoring
     // to avoid creating a silent duplicate (matching same person+date+desc+amount+shared).
     const dup = expenses.find(e => e.person === item.person && e.date === item.date &&
@@ -5169,13 +5179,17 @@ const DEFAULT_RECURRING = [
   {id:'rec-19',person:'Amanda', category:'Dining',        description:'Epic Food',        amount:107.00,  shared:false},
 ];
 
-// "Already loaded" check by recurringId (stable) with a legacy fallback to person+description
-// — older rows loaded before we started stamping recurringId still need to be detected.
+// "Already loaded" check by recurringId (stable) with a legacy fallback to person+description.
+// The fallback also requires an approximate amount match (within $1) so a manual expense that
+// happens to share a description with a recurring template (e.g., "Epic Food") doesn't trigger
+// a false-positive "already loaded" and block the user from loading their actual recurring.
 function _isRecurringLoaded(r, month, year) {
   return expenses.some(e => {
     if (e.month !== month || !e.date || !e.date.startsWith(String(year))) return false;
     if (e.recurringId) return e.recurringId === r.id;
-    return e.person === r.person && e.description === r.description;
+    return e.person === r.person
+      && e.description === r.description
+      && Math.abs((e.amount || 0) - (r.amount || 0)) < 1;
   });
 }
 function renderRecurring() {
@@ -5484,16 +5498,18 @@ function renderBulkPreview() {
     if (explicitDate) _carryDate = explicitDate;
     if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
     const bg = (r.warnMisc || r.warnAmbiguous) ? 'var(--amber-bg)' : '';
+    // Escape user-paste fields — a pasted line like `Din<img src=x onerror=alert(1)>, 5, n`
+    // would otherwise inject markup into the preview row.
     const catCell = r.warnAmbiguous
-      ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" matches ${r.candidates.join('/')} — type more)</span>`
+      ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${escHtml(r.catRaw)}" matches ${r.candidates.map(escHtml).join('/')} — type more)</span>`
       : r.warnMisc
-        ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${r.catRaw}" unrecognized)</span>`
-        : r.category;
+        ? `<span style="color:var(--amber-dark)">Misc</span> <span style="font-size:10px;color:var(--text-3)">("${escHtml(r.catRaw)}" unrecognized)</span>`
+        : escHtml(r.category);
     return `<tr style="background:${bg};border-top:1px solid var(--border-light)">
       <td style="padding:6px 6px 6px 12px;color:var(--text-3);font-family:monospace;font-size:11px">${lineNo}</td>
       <td style="padding:6px 12px;color:var(--text-3);white-space:nowrap">${fmtDate(r.date)}</td>
       <td style="padding:6px 12px">${catCell}</td>
-      <td style="padding:6px 12px;color:var(--text-2)">${r.description || '<span style="color:var(--text-3)">—</span>'}</td>
+      <td style="padding:6px 12px;color:var(--text-2)">${r.description ? escHtml(r.description) : '<span style="color:var(--text-3)">—</span>'}</td>
       <td style="padding:6px 12px;font-weight:600;white-space:nowrap">$${r.amount.toFixed(2)}</td>
       <td style="padding:6px 12px;color:var(--text-3)">${r.shared ? 'shared' : 'solo'}</td>
     </tr>`;
