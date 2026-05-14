@@ -4477,7 +4477,6 @@ function applyCustomAccent(hex) {
 }
 
 // ─── DRAG & DROP WIDGETS ──────────────────────────────────────────────────────
-const DEFAULT_WIDGET_ORDER = ['stats','countdowns','japan','coffee-mood','coming-up','custom-countdowns','customize'];
 let _draggingWidget = null;
 let _editMode = false;
 
@@ -4497,14 +4496,17 @@ function toggleEditMode() {
   }
 }
 
+// Inline default order — declaring this as a top-level `const` ran into TDZ because the
+// IIFE earlier in the script calls applyWidgetOrder() before the const initializer line
+// executes.
 function applyWidgetOrder() {
+  const DEFAULT_ORDER = ['stats','countdowns','japan','coffee-mood','coming-up','custom-countdowns','customize'];
   const saved = JSON.parse(localStorage.getItem('ow-widget-order') || 'null');
   const container = document.getElementById('home-widgets');
   if (!container) return;
-  // Fill in any widgets the user's saved order doesn't know about (added since they last saved
-  // their layout) using DEFAULT_WIDGET_ORDER as the source of truth.
+  // Fill in any widgets the user's saved order doesn't know about (added since they last saved).
   const order = saved ? [...saved] : [];
-  for (const key of DEFAULT_WIDGET_ORDER) {
+  for (const key of DEFAULT_ORDER) {
     if (!order.includes(key)) order.push(key);
   }
   order.forEach(key => {
