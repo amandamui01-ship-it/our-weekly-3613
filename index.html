@@ -4501,6 +4501,9 @@ let budgetTargets = {};
 function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}).catch(_onSaveErr); }
 
 const monthName = d => MONTHS_LIST[d.getMonth()];
+// Local-timezone today as YYYY-MM-DD. Plain `new Date().toISOString().slice(0,10)` returns the
+// UTC date, which can be a day ahead in evening hours and put expenses on the wrong day.
+const _todayLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 let _budgetMonth = monthName(new Date());
 let _txShowAll = false;
 
@@ -4591,14 +4594,17 @@ function renderBudget() {
   const saved     = monthTx.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
   const net_      = income - spending - saved;
   const owes = calcOwes(monthTx);
-  const diff = owes.Aidan - owes.Amanda;
-  const settleStr = Math.abs(diff) < 0.01 ? 'All square ✅' : `${diff>0?'Amanda':'Aidan'} owes ${diff>0?'Aidan':'Amanda'} ${fmt(Math.abs(diff))}`;
-  const settleColor = Math.abs(diff) < 0.01 ? 'var(--sage)' : 'var(--amber)';
+  // owes.Aidan and owes.Amanda are equal-and-opposite (every shared tx credits one and debits the
+  // other by the same half-amount), so the settlement is the magnitude of either side — NOT the
+  // difference, which would double-count it.
+  const settleAmt = Math.abs(owes.Aidan);
+  const settleStr = settleAmt < 0.01 ? 'All square ✅' : `${owes.Aidan>0?'Amanda':'Aidan'} owes ${owes.Aidan>0?'Aidan':'Amanda'} ${fmt(settleAmt)}`;
+  const settleColor = settleAmt < 0.01 ? 'var(--sage)' : 'var(--amber)';
   document.getElementById('budget-snapshot').innerHTML = `
     <div class="bsnap"><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
     <div class="bsnap"><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
     <div class="bsnap"><div class="bsnap-label">Saved</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
-    <div class="bsnap"><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${Math.abs(diff)<0.01?'14':'18'}px">${settleStr}</div></div>`;
+    <div class="bsnap"><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleAmt<0.01?'14':'18'}px">${settleStr}</div></div>`;
 
   // Monthly trend bars
   const yearTx = expenses.filter(e => e.date.startsWith(filterYear));
@@ -4632,11 +4638,20 @@ function renderBudget() {
   }
   const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxCat = catSorted[0]?.[1] || 1;
+  // Targets are stored as MONTHLY values. When viewing a multi-month window, scale the target
+  // to the period length so comparisons stay apples-to-apples (e.g. on 6M, a $300/mo dining
+  // target should compare against $1800 of spending, not $300).
+  const targetMultiplier = _budgetMonth === '3m' ? 3
+    : _budgetMonth === '6m' ? 6
+    : _budgetMonth === 'all' ? (new Set(monthTx.map(e => e.date.slice(0, 7))).size || 1)
+    : 1;
   const bannerEl = document.getElementById('budget-overbudget-banner');
   if (bannerEl) {
-    const over = catSorted.filter(([c,t]) => budgetTargets[c]>0 && t>budgetTargets[c]);
+    const over = catSorted
+      .map(([c,t]) => [c, t, (budgetTargets[c]||0) * targetMultiplier])
+      .filter(([,t,target]) => target > 0 && t > target);
     bannerEl.innerHTML = over.length
-      ? `<div style="padding:10px 16px;background:var(--coral-bg);border:1px solid var(--coral);border-radius:10px;font-size:12px;color:var(--coral);font-weight:600">⚠️ Over budget: ${over.map(([c,t])=>`${CAT_EMOJIS[c]||'📦'} ${c} <span style="font-weight:400">(+${fmt(t-budgetTargets[c])})</span>`).join(' &nbsp;·&nbsp; ')}</div>`
+      ? `<div style="padding:10px 16px;background:var(--coral-bg);border:1px solid var(--coral);border-radius:10px;font-size:12px;color:var(--coral);font-weight:600">⚠️ Over budget: ${over.map(([c,t,target])=>`${CAT_EMOJIS[c]||'📦'} ${c} <span style="font-weight:400">(+${fmt(t-target)})</span>`).join(' &nbsp;·&nbsp; ')}</div>`
       : '';
   }
   document.getElementById('budget-cats').innerHTML = catSorted.length ? catSorted.map(([cat, total]) => {
@@ -4644,7 +4659,7 @@ function renderBudget() {
     const amandaAmt = catAmanda[cat] || 0;
     const color = CAT_COLORS[cat] || 'var(--amber)';
     const emoji = CAT_EMOJIS[cat] || '📦';
-    const target = budgetTargets[cat] || 0;
+    const target = (budgetTargets[cat] || 0) * targetMultiplier;
     const barPct = target > 0 ? Math.min(100, Math.round(total/target*100)) : Math.round(total/maxCat*100);
     const barColor = target > 0 && total > target ? 'var(--coral)' : color;
     const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : `<span class="bcat-set-target" data-cat="${escHtml(cat)}" onclick="promptTarget(this.dataset.cat);event.stopPropagation()" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
@@ -4700,7 +4715,7 @@ function renderBudget() {
 
   // Default date input
   const dateEl = document.getElementById('b-date');
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  if (dateEl && !dateEl.value) dateEl.value = _todayLocal();
 
   // Banner visibility depends on _budgetMonth — re-check on every filter change
   checkRecurringReminder();
@@ -5111,7 +5126,7 @@ function dismissRecurringReminder(key) {
 }
 
 function loadRecurring() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = _todayLocal();
   const month = monthName(new Date());
   const year  = new Date().getFullYear().toString();
   let added = 0;
@@ -5144,7 +5159,7 @@ function loadRecurring() {
 function loadSingleRecurring(id) {
   const r = recurringItems.find(x => x.id === id);
   if (!r) return;
-  const today = new Date().toISOString().slice(0,10);
+  const today = _todayLocal();
   const month = monthName(new Date());
   const year  = new Date().getFullYear().toString();
   const already = expenses.some(e =>
@@ -5211,7 +5226,7 @@ function renderBulkPreview() {
   if (!el) return;
   const text = document.getElementById('bulk-text').value.trim();
   if (!text) { el.style.display = 'none'; return; }
-  const fallback = new Date().toISOString().slice(0, 10);
+  const fallback = _todayLocal();
   const lines = text.split('\n').filter(l => l.trim());
   const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
   const rowsHtml = lines.map(line => {
@@ -5270,7 +5285,7 @@ function bulkAddExpenses() {
 function _executeBulkImport() {
   const person   = document.getElementById('bulk-person').value;
   const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
-  const fallback = new Date().toISOString().slice(0, 10);
+  const fallback = _todayLocal();
   let added = 0;
   const errorLines = [], miscWarns = [];
   for (const line of lines) {
