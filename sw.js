@@ -1,4 +1,4 @@
-const CACHE = 'ow-v5';
+const CACHE = 'ow-v6';
 // Use relative paths so the service worker survives moving the app to a different host or
 // repo path. The scope is wherever this sw.js is served from, which is what we want.
 const SHELL = [
