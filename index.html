@@ -1262,7 +1262,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div id="bulk-cat-chips" style="flex:1;min-width:0"></div>
       <!-- Right: picker + button stacked -->
       <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-        <select id="bulk-person" class="bq-sel" style="width:110px">
+        <select id="bulk-person" class="bq-sel" style="width:110px" onchange="localStorage.setItem('ow-bulk-person', this.value)">
           <option value="Amanda">Amanda</option>
           <option value="Aidan">Aidan</option>
         </select>
@@ -1832,15 +1832,31 @@ function saveTrips()     { db.collection('state').doc('trips').set({items: trips
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
 function _getPlanWeekKey() {
-  // Use the MOST RECENT Monday (or today if Monday) so the plan tab keeps showing the current
-  // week's Sat/Sun until Monday morning. Previously the code rolled forward on Sat/Sun, which
-  // auto-wiped Sat/Sun plans you'd just made on Friday.
+  // Most-recent Monday for the auto-rollover floor. The actual displayed plan week is driven
+  // by weekPlan._weekKey, which the user can advance to next Monday via clearPlan on Sat/Sun.
   const t = new Date(); t.setHours(0,0,0,0);
   const dow = t.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
   const daysBack = dow === 0 ? 6 : dow - 1; // Sun→6, Mon→0, Tue→1, ..., Sat→5
   const mon = new Date(t);
   mon.setDate(t.getDate() - daysBack);
-  return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+  return _fmtDateKey(mon);
+}
+function _fmtDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// Monday Date for the currently-displayed plan week. Reads weekPlan._weekKey when set so
+// formatPlanLabel + the schedule grid stay in sync with whatever week the user advanced to.
+function _planMondayDate() {
+  if (weekPlan && weekPlan._weekKey) {
+    const [y, m, d] = weekPlan._weekKey.split('-').map(Number);
+    if (y && m && d) return new Date(y, m - 1, d);
+  }
+  const t = new Date(); t.setHours(0,0,0,0);
+  const dow = t.getDay();
+  const daysBack = dow === 0 ? 6 : dow - 1;
+  const mon = new Date(t);
+  mon.setDate(t.getDate() - daysBack);
+  return mon;
 }
 function savePlan() {
   // Do NOT advance _weekKey here — only renderPlan should do that after clearing prior slots.
@@ -2948,13 +2964,8 @@ function getReviewWeekLabel() {
 }
 
 function formatPlanLabel() {
-  // Most-recent-Monday — matches _getPlanWeekKey. Plan tab shows the current week through
-  // Sunday end-of-day, then rolls over Monday morning.
-  const today = new Date();
-  const dow = today.getDay();
-  const daysBack = dow === 0 ? 6 : dow - 1;
-  const mon = new Date(today);
-  mon.setDate(today.getDate() - daysBack);
+  // Driven by weekPlan._weekKey so the label tracks the user's advance on Sat/Sun.
+  const mon = _planMondayDate();
   const sun = new Date(mon);
   sun.setDate(mon.getDate() + 6);
   const fmt = d => d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
@@ -2962,9 +2973,11 @@ function formatPlanLabel() {
 }
 
 function renderPlan() {
-  // Auto-reset when a new week begins, preserving only pinned to-dos
+  // Auto-reset when a new week begins, preserving only pinned to-dos. Use `<` so a user-
+  // advanced future key (set by clearPlan on Sat/Sun to plan next week) doesn't get rolled
+  // back to the current Monday floor.
   const _currentWeekKey = _getPlanWeekKey();
-  if (weekPlan._weekKey && weekPlan._weekKey !== _currentWeekKey) {
+  if (weekPlan._weekKey && weekPlan._weekKey < _currentWeekKey) {
     weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: _currentWeekKey };
     savePlan();
     showToast('✨ Fresh week — schedule cleared');
@@ -2991,13 +3004,10 @@ function renderPlan() {
   }
 
   // Schedule
-  // Compute Monday of the displayed plan week — most recent Monday (matches _getPlanWeekKey
-  // and formatPlanLabel). Roll-over to next week's Monday happens automatically on Monday 00:00.
+  // Monday of the displayed plan week, driven by weekPlan._weekKey (advances on Sat/Sun
+  // when the user clicks Clear & Start Fresh to plan the upcoming week).
   const _planToday = new Date(); _planToday.setHours(0,0,0,0);
-  const _planDow = _planToday.getDay();
-  const _planMon = new Date(_planToday);
-  const _planDaysBack = _planDow === 0 ? 6 : _planDow - 1;
-  _planMon.setDate(_planToday.getDate() - _planDaysBack);
+  const _planMon = _planMondayDate();
   const _dayOff = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
 
   // Pre-compute which trips overlap each day of the plan week
@@ -3069,12 +3079,25 @@ function renderPlan() {
 }
 
 function clearPlan() {
-  showConfirm('Clear meals, plans, and notes for this week? (Pinned to-dos stay.)', () => {
-    // Preserve pinned to-dos and the week key so the user doesn't lose their focus list — the
-    // auto week-reset path (line ~2869) does the same thing.
-    weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: weekPlan._weekKey };
+  // On Sat/Sun, treat Clear as "start next week" — advance the week key to next Monday so
+  // the schedule + label flip to the upcoming Mon–Sun and the user can plan ahead.
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const advanceToNext = (dow === 6 || dow === 0);
+  let newKey = weekPlan._weekKey;
+  if (advanceToNext) {
+    const nextMon = new Date(today);
+    nextMon.setDate(today.getDate() + (dow === 6 ? 2 : 1));
+    newKey = _fmtDateKey(nextMon);
+  }
+  const msg = advanceToNext
+    ? 'Clear and start planning next week? (Pinned to-dos stay.)'
+    : 'Clear meals, plans, and notes for this week? (Pinned to-dos stay.)';
+  showConfirm(msg, () => {
+    weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: newKey };
     savePlan();
     renderPlan();
+    if (advanceToNext) showToast('✨ Planning next week now');
   }, 'Clear');
 }
 
@@ -5264,13 +5287,19 @@ function checkRecurringReminder() {
   const visible = missing.filter(({ month }) => month === _budgetMonth);
   if (!visible.length) { el.style.display = 'none'; return; }
   el.style.display = '';
-  el.innerHTML = visible.map(({ year, month }) => `
+  el.innerHTML = visible.map(({ year, month }) => {
+    const key = `${month}-${year}`;
+    const minimized = _minimizedRecurring.has(key);
+    return `
     <div class="card" style="border-color:var(--amber);background:var(--amber-bg);margin-bottom:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;${minimized?'':'margin-bottom:12px'}">
         <div style="font-size:13px;font-weight:700;color:var(--amber-dark)">💳 Recurring expenses not loaded for <strong>${month} ${year}</strong></div>
-        <button onclick="dismissRecurringReminder('${month}-${year}')" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
+        <div style="display:flex;align-items:center;gap:2px">
+          <button onclick="toggleRecurringReminder('${key}')" title="${minimized?'Expand':'Minimize'}" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:4px 6px;line-height:1;transform:${minimized?'rotate(-90deg)':'rotate(0)'};transition:transform .2s">▼</button>
+          <button onclick="dismissRecurringReminder('${key}')" title="Dismiss" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
+        </div>
       </div>
-      <div id="rec-reminder-form-${month}-${year}">
+      <div id="rec-reminder-form-${key}" style="${minimized?'display:none':''}">
         ${recurringItems.map(r => {
           const loaded = _isRecurringLoaded(r, month, year);
           return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light)">
@@ -5285,7 +5314,8 @@ function checkRecurringReminder() {
           <button onclick="loadRecurringForMonth('${year}','${month}')" class="btn btn-primary" style="font-size:12px;padding:6px 14px">Load ${month} ${year}</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function loadRecurringForMonth(year, month) {
@@ -5319,6 +5349,14 @@ let _dismissedRecurring = new Set(JSON.parse(localStorage.getItem('ow-rec-dismis
 function dismissRecurringReminder(key) {
   _dismissedRecurring.add(key);
   localStorage.setItem('ow-rec-dismissed', JSON.stringify([..._dismissedRecurring]));
+  checkRecurringReminder();
+}
+
+let _minimizedRecurring = new Set(JSON.parse(localStorage.getItem('ow-rec-minimized') || '[]'));
+function toggleRecurringReminder(key) {
+  if (_minimizedRecurring.has(key)) _minimizedRecurring.delete(key);
+  else _minimizedRecurring.add(key);
+  localStorage.setItem('ow-rec-minimized', JSON.stringify([..._minimizedRecurring]));
   checkRecurringReminder();
 }
 
@@ -5587,6 +5625,12 @@ function renderBulkCatChips() {
   const rest = sorted.slice(5);
   const chip = (c, hot) => `<button class="bulk-cat-chip${hot?' bulk-cat-chip-hot':''}" onclick="insertBulkCat('${c}')">${c}</button>`;
   el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:5px">${top.map(c=>chip(c,true)).join('')}${rest.map(c=>chip(c,false)).join('')}</div>`;
+  // Restore last-used person so Amanda/Aidan doesn't have to re-pick every time.
+  const lastPerson = localStorage.getItem('ow-bulk-person');
+  const personSel = document.getElementById('bulk-person');
+  if (personSel && lastPerson && (lastPerson === 'Amanda' || lastPerson === 'Aidan')) {
+    personSel.value = lastPerson;
+  }
 }
 
 function insertBulkCat(cat) {
