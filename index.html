@@ -323,12 +323,20 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .tw-section-last{padding-bottom:0;margin-bottom:0;border-bottom:none}
 
 /* ── Calendar grid view ── */
-.cal-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.cal-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:14px}
+.cal-nav-group{grid-column:2;display:flex;align-items:center;gap:8px}
 .cal-nav-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--text-2);display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s;padding:0;flex-shrink:0}
 .cal-nav-btn:hover{background:var(--amber-bg);border-color:var(--amber);color:var(--amber-dark)}
-.cal-month-label{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:800;color:var(--text);flex:1;min-width:170px;text-align:center;line-height:30px}
-.cal-today-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;padding:0 14px;height:30px;font-size:12px;font-weight:700;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s;margin-left:auto;flex-shrink:0}
+.cal-month-label{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:800;color:var(--text);min-width:170px;text-align:center;line-height:30px}
+.cal-today-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;padding:0 14px;height:30px;font-size:12px;font-weight:700;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s;flex-shrink:0;grid-column:3;justify-self:end}
 .cal-today-btn:hover{background:var(--amber);color:white;border-color:var(--amber)}
+@media(max-width:540px){
+  .cal-header{grid-template-columns:auto 1fr auto;gap:6px}
+  .cal-nav-group{grid-column:2;justify-content:center}
+  .cal-month-label{font-size:15px;min-width:0}
+  .cal-today-btn{grid-column:3}
+  /* Stack a hidden spacer on far left to balance Today's width on narrow screens — skipped for now; grid auto-handles */
+}
 .cal-view-toggle{margin-left:auto;display:inline-flex;background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
 .cal-view-toggle button{background:none;border:none;padding:6px 10px;font-size:14px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s;line-height:1}
 .cal-view-toggle button.active{background:var(--amber);color:white}
@@ -358,7 +366,11 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .cal-bar-start{border-radius:4px 0 0 4px;padding-left:8px;margin-left:1px}
 .cal-bar-end{border-radius:0 4px 4px 0;padding-right:8px;margin-right:1px}
 .cal-bar-start.cal-bar-end{border-radius:4px}
+.cal-bar-past{opacity:.45;filter:saturate(.7)}
 .cal-bar-empty{height:16px;background:transparent;cursor:default}
+.cal-event{font-size:10px;font-weight:600;padding:1px 6px;margin:2px 0 0;background:var(--surface-warm);color:var(--text-2);border-left:2px solid var(--amber);border-radius:0 3px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+.cal-day-past .cal-event{opacity:.5}
+.cal-day-past .cal-day-num{opacity:.55}
 .cal-day-chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:auto;padding-top:3px}
 .cal-chip{font-size:11px;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;background:var(--surface-warm);border:1px solid var(--border-light);transition:all .12s;line-height:1}
 .cal-chip:hover{transform:scale(1.15)}
@@ -1253,8 +1265,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <div class="cal-view-toggle" style="margin:0">
-          <button id="cal-view-cal" onclick="setDatesView('cal')" title="Calendar view" aria-label="Calendar view">📅</button>
-          <button id="cal-view-grid" onclick="setDatesView('grid')" title="Card view" aria-label="Card view">▦</button>
+          <button id="cal-view-cal" onclick="setDatesView('cal')" title="Calendar view">📅 Calendar</button>
+          <button id="cal-view-grid" onclick="setDatesView('grid')" title="Card view">▦ Cards</button>
         </div>
         <div class="cal-menu-wrap">
           <button class="cal-menu-btn" id="cal-menu-btn" onclick="toggleCalMenu(event)" title="Calendar tools" aria-label="Calendar tools">⋯</button>
@@ -1267,9 +1279,11 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     </div>
     <div id="cal-view-container">
       <div class="cal-header">
-        <button class="cal-nav-btn" onclick="navCalMonth(-1)" title="Previous month">◀</button>
-        <div class="cal-month-label" id="cal-month-label"></div>
-        <button class="cal-nav-btn" onclick="navCalMonth(1)" title="Next month">▶</button>
+        <div class="cal-nav-group">
+          <button class="cal-nav-btn" onclick="navCalMonth(-1)" title="Previous month">◀</button>
+          <div class="cal-month-label" id="cal-month-label"></div>
+          <button class="cal-nav-btn" onclick="navCalMonth(1)" title="Next month">▶</button>
+        </div>
         <button class="cal-today-btn" onclick="navCalToday()" title="Jump to current month">Today</button>
       </div>
       <div class="cal-dow-row">
@@ -2984,6 +2998,7 @@ function _calMonthDays(monthStr) {
 // multi-day trips render as a continuous strip across days without colliding with other trips.
 function _assignLanesForWeek(weekDays, weekTrips) {
   const segments = [];
+  const today = new Date(); today.setHours(0,0,0,0);
   for (const t of weekTrips) {
     if (!t.sortDate) continue;
     const tStart = new Date(t.sortDate + 'T00:00:00');
@@ -3001,7 +3016,9 @@ function _assignLanesForWeek(weekDays, weekTrips) {
       // tripStartsThisWeek: the trip's actual first day falls in this week (label rendering)
       const tripStartsThisWeek = weekDays[startCol].getTime() === tStart.getTime();
       const tripEndsThisWeek = weekDays[endCol].getTime() === new Date(tEnd.getTime() - 86400000).getTime();
-      segments.push({ trip: t, startCol, endCol, tripStartsThisWeek, tripEndsThisWeek });
+      // Trip is fully past if its exclusive end <= today (i.e. last actual day was yesterday or earlier).
+      const isPast = tEnd <= today;
+      segments.push({ trip: t, startCol, endCol, tripStartsThisWeek, tripEndsThisWeek, isPast });
     }
   }
   // Earlier-starting + longer-spanning segments take lower lanes to keep visual continuity.
@@ -3024,6 +3041,7 @@ function _assignLanesForWeek(weekDays, weekTrips) {
             isWeekStart: i === seg.startCol,    // left rounded in this week regardless
             isWeekEnd:   i === seg.endCol,      // right rounded in this week regardless
             showLabel: i === seg.startCol,      // only label on first day of THIS week's segment
+            isPast: seg.isPast,
           };
         }
         break;
@@ -3107,10 +3125,23 @@ function renderCalendar() {
           const cls = ['cal-bar', tripColor(t.id)];
           if (slot.isWeekStart) cls.push('cal-bar-start');
           if (slot.isWeekEnd)   cls.push('cal-bar-end');
+          if (slot.isPast)      cls.push('cal-bar-past');
           const label = slot.showLabel ? escHtml(t.label) : '&nbsp;';
           barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}">${label}</div>`;
         } else {
           barsHtml += `<div class="cal-bar-empty"></div>`;
+        }
+      }
+
+      // Freeform This Week events for current plan-week days. Pull from weekPlan[dayKey].events
+      // (or the legacy notes/notesList shape) so anything written in the schedule grid surfaces
+      // on the calendar grid too.
+      let eventsHtml = '';
+      if (isPlanWeek) {
+        const dp = (weekPlan && weekPlan[dKey]) || {};
+        const events = dp.events || (dp.notesList && dp.notesList.length ? dp.notesList : dp.notes ? [dp.notes] : []);
+        if (events && events.length) {
+          eventsHtml = events.map(evt => `<div class="cal-event" title="${escHtml(evt)}">${escHtml(evt)}</div>`).join('');
         }
       }
 
@@ -3125,13 +3156,16 @@ function renderCalendar() {
         </div>`;
       }
 
+      const isPastDay = d < today;
       const cellCls = ['cal-day'];
-      if (!inMonth) cellCls.push('cal-day-other');
-      if (isToday)  cellCls.push('cal-day-today');
+      if (!inMonth)   cellCls.push('cal-day-other');
+      if (isToday)    cellCls.push('cal-day-today');
+      else if (isPastDay) cellCls.push('cal-day-past');
       const cellIso = _fmtDateKey(d);
       html += `<div class="${cellCls.join(' ')}" data-date="${cellIso}" onclick="addEventForDay('${cellIso}')">
         <div class="cal-day-num">${d.getDate()}</div>
         <div class="cal-day-bars">${barsHtml}</div>
+        ${eventsHtml}
         ${chipsHtml}
       </div>`;
     }
