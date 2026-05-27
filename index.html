@@ -330,8 +330,18 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .cal-today-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;padding:0 14px;height:30px;font-size:12px;font-weight:700;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s;margin-left:auto;flex-shrink:0}
 .cal-today-btn:hover{background:var(--amber);color:white;border-color:var(--amber)}
 .cal-view-toggle{margin-left:auto;display:inline-flex;background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
-.cal-view-toggle button{background:none;border:none;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s}
+.cal-view-toggle button{background:none;border:none;padding:6px 10px;font-size:14px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s;line-height:1}
 .cal-view-toggle button.active{background:var(--amber);color:white}
+
+/* Calendar tools overflow menu (Sync / Export, etc.) */
+.cal-menu-wrap{position:relative;display:inline-block}
+.cal-menu-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;width:32px;height:30px;cursor:pointer;font-size:16px;color:var(--text-2);display:inline-flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s;padding:0;line-height:1}
+.cal-menu-btn:hover{background:var(--amber-bg);border-color:var(--amber);color:var(--amber-dark)}
+.cal-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:0 6px 24px rgba(45,36,23,.14);padding:5px;min-width:230px;z-index:50}
+.cal-menu.open{display:block}
+.cal-menu-item{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;padding:9px 12px;font-size:13px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit;border-radius:6px;text-align:left;transition:background .12s}
+.cal-menu-item:hover{background:var(--amber-bg);color:var(--amber-dark)}
+.cal-menu-item span{flex:1}
 .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
 .cal-dow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);text-align:center;padding:6px 0}
 .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(82px,auto);gap:0;background:var(--surface);border:1px solid var(--border-light);border-radius:9px;overflow:hidden}
@@ -1243,11 +1253,16 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <div class="cal-view-toggle" style="margin:0">
-          <button id="cal-view-cal" onclick="setDatesView('cal')">📅 Calendar</button>
-          <button id="cal-view-grid" onclick="setDatesView('grid')">▦ Cards</button>
+          <button id="cal-view-cal" onclick="setDatesView('cal')" title="Calendar view" aria-label="Calendar view">📅</button>
+          <button id="cal-view-grid" onclick="setDatesView('grid')" title="Card view" aria-label="Card view">▦</button>
         </div>
-        <button class="btn btn-secondary" onclick="openIcsSubscribeModal()" style="font-size:12px;padding:5px 12px" title="Get a live subscription URL for iPhone/Google Calendar">📡 Sync</button>
-        <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px" title="Download a one-time .ics file for Outlook/work calendar">📅 Export</button>
+        <div class="cal-menu-wrap">
+          <button class="cal-menu-btn" id="cal-menu-btn" onclick="toggleCalMenu(event)" title="Calendar tools" aria-label="Calendar tools">⋯</button>
+          <div id="cal-menu" class="cal-menu" role="menu">
+            <button class="cal-menu-item" role="menuitem" onclick="closeCalMenu();openIcsSubscribeModal()">📡 <span>Sync to iPhone / Google</span></button>
+            <button class="cal-menu-item" role="menuitem" onclick="closeCalMenu();exportToCalendar()">📅 <span>Download .ics for Outlook</span></button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="cal-view-container">
@@ -3906,6 +3921,26 @@ function parseICSEndDate(datesStr, sortDate) {
   }
   return addOne(sortDate);
 }
+
+// Calendar-tools overflow menu (Sync / Export). Click toggles; outside click or item pick closes.
+function toggleCalMenu(e) {
+  if (e) e.stopPropagation();
+  const m = document.getElementById('cal-menu');
+  if (!m) return;
+  m.classList.toggle('open');
+}
+function closeCalMenu() {
+  document.getElementById('cal-menu')?.classList.remove('open');
+}
+document.addEventListener('click', e => {
+  const m = document.getElementById('cal-menu');
+  if (!m || !m.classList.contains('open')) return;
+  if (e.target.closest('#cal-menu') || e.target.closest('#cal-menu-btn')) return;
+  closeCalMenu();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeCalMenu();
+});
 
 // ─── iPhone / Google Calendar live subscribe ─────────────────────────────────
 // Public URL for the deployed Firebase Function (Gen 2 — Cloud Run backed). Region us-central1.
