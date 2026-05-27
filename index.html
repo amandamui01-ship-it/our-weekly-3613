@@ -386,6 +386,18 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .cal-bar-cd{display:inline-block;margin-left:6px;font-size:9px;font-weight:800;padding:0 5px;background:rgba(255,255,255,.28);border-radius:6px;letter-spacing:.02em;text-transform:lowercase;vertical-align:middle}
 .cal-bar-cd-soon{background:rgba(255,255,255,.5);animation:cal-cd-pulse 1.8s ease-in-out infinite}
 @keyframes cal-cd-pulse{0%,100%{opacity:.85}50%{opacity:1}}
+@keyframes cal-bar-in{from{opacity:0;transform:scaleX(.7) translateY(-4px)}to{opacity:1;transform:scaleX(1) translateY(0)}}
+.cal-bar-new{animation:cal-bar-in .5s cubic-bezier(.34,1.4,.64,1) both;transform-origin:left center}
+/* Floating hover preview for trip bars (desktop only — skipped on touch). */
+.cal-trip-preview{position:fixed;display:none;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--tc,var(--amber));border-radius:9px;box-shadow:0 8px 28px rgba(45,36,23,.18);padding:11px 14px;min-width:200px;max-width:280px;z-index:200;pointer-events:none;font-size:12px;line-height:1.45;color:var(--text-2);transition:opacity .12s}
+.cal-trip-preview.visible{display:block}
+.cal-trip-preview-title{font-family:'Playfair Display',Georgia,serif;font-size:15px;font-weight:800;color:var(--text);margin-bottom:4px;line-height:1.2}
+.cal-trip-preview-dates{font-size:11px;font-weight:700;color:var(--tc,var(--amber));text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.cal-trip-preview-row{display:flex;align-items:flex-start;gap:6px;margin-top:4px}
+.cal-trip-preview-row-icon{flex-shrink:0;width:14px;text-align:center}
+.cal-trip-preview-status{display:inline-block;padding:1px 8px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
+.cal-trip-preview-notes{margin-top:6px;color:var(--text-2);font-size:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media(hover:none){.cal-trip-preview{display:none!important}}
 .cal-bar-empty{height:16px;background:transparent;cursor:default}
 .cal-event{font-size:10px;font-weight:600;padding:1px 6px;margin:2px 0 0;background:var(--surface-warm);color:var(--text-2);border-left:2px solid var(--amber);border-radius:0 3px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
 .cal-day-past{background:var(--bg)}
@@ -1314,6 +1326,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <div class="cal-dow">Sun</div>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
+      <div id="cal-trip-preview" class="cal-trip-preview" aria-hidden="true"></div>
     </div>
     <div class="trip-grid" id="trip-grid"></div>
   </div>
@@ -3079,6 +3092,9 @@ function _assignLanesForWeek(weekDays, weekTrips) {
 // Map a JS getDay() value to the weekPlan day key (Mon-first).
 const _DOW_TO_KEY = ['sun','mon','tue','wed','thu','fri','sat'];
 
+// IDs of trips added since the last renderCalendar — their bars get a one-shot entrance animation.
+const _newTripIds = new Set();
+
 // Compact "Today at a glance" banner above the calendar — shows today's date plus any active
 // chips, freeform events, and trips overlapping today. Designed to make the calendar feel
 // alive without scanning the grid. Pulls from weekPlan + trips so it stays in sync with edits.
@@ -3125,6 +3141,63 @@ function _renderTodayBanner(today) {
     el.innerHTML = labelHtml + tripsHtml + eventsHtml + chipsHtml;
   }
   el.style.display = '';
+}
+
+// Hover preview popover for trip bars (desktop only). Delegated on cal-grid so it survives
+// every renderCalendar() innerHTML rebuild without re-binding handlers.
+let _calPreviewBound = false;
+function _bindCalPreview() {
+  if (_calPreviewBound) return;
+  const grid = document.getElementById('cal-grid');
+  const preview = document.getElementById('cal-trip-preview');
+  if (!grid || !preview) return;
+  // Touch devices skip — the popover would clash with tap-to-open-detail.
+  if (window.matchMedia && window.matchMedia('(hover: none)').matches) { _calPreviewBound = true; return; }
+
+  const show = (bar, ev) => {
+    const onclick = bar.getAttribute('onclick') || '';
+    const m = onclick.match(/openTrip\('([^']+)'\)/);
+    if (!m) return;
+    const t = trips.find(x => x.id === m[1]);
+    if (!t) return;
+    const status = TRIP_STATUS_CYCLE.includes(t.status) ? t.status : 'planning';
+    const parts = [];
+    parts.push(`<div class="cal-trip-preview-title">${escHtml(t.label)}</div>`);
+    parts.push(`<div class="cal-trip-preview-dates">${escHtml(t.dates || '')}</div>`);
+    if (t.location) parts.push(`<div class="cal-trip-preview-row"><span class="cal-trip-preview-row-icon">📍</span><span>${escHtml(t.location)}</span></div>`);
+    if (t.who) parts.push(`<div class="cal-trip-preview-row"><span class="cal-trip-preview-row-icon">👥</span><span>${escHtml(t.who)}</span></div>`);
+    parts.push(`<div><span class="cal-trip-preview-status td-status-${status}">${TRIP_STATUS_EMOJI[status]} ${status}</span></div>`);
+    if (t.notes) parts.push(`<div class="cal-trip-preview-notes">${escHtml(t.notes)}</div>`);
+    // Apply the trip color to the left border via CSS var
+    const color = tripColor(t.id);
+    preview.className = 'cal-trip-preview visible ' + color;
+    preview.innerHTML = parts.join('');
+    // Position near the bar, clamped to viewport
+    const r = bar.getBoundingClientRect();
+    const previewW = 260;
+    let left = r.left;
+    let top = r.bottom + 6;
+    if (left + previewW > window.innerWidth - 12) left = window.innerWidth - previewW - 12;
+    if (top + 200 > window.innerHeight) top = r.top - 200 - 6; // flip above
+    preview.style.left = Math.max(8, left) + 'px';
+    preview.style.top = Math.max(8, top) + 'px';
+  };
+  const hide = () => { preview.classList.remove('visible'); };
+
+  grid.addEventListener('mouseover', e => {
+    const bar = e.target.closest('.cal-bar');
+    if (!bar || bar.classList.contains('cal-bar-empty')) return;
+    show(bar, e);
+  });
+  grid.addEventListener('mouseout', e => {
+    if (!e.target.closest('.cal-bar')) return;
+    // Only hide if leaving the bar (not just transitioning to a child like the countdown span)
+    const related = e.relatedTarget;
+    if (related && related.closest && related.closest('.cal-bar') === e.target.closest('.cal-bar')) return;
+    hide();
+  });
+  grid.addEventListener('mouseleave', hide);
+  _calPreviewBound = true;
 }
 
 // Surgical refresh for calendar chip on/off state when only weekPlan changes — avoids the full
@@ -3199,6 +3272,7 @@ function renderCalendar() {
           if (slot.isWeekStart) cls.push('cal-bar-start');
           if (slot.isWeekEnd)   cls.push('cal-bar-end');
           if (slot.isPast)      cls.push('cal-bar-past');
+          if (_newTripIds.has(t.id)) cls.push('cal-bar-new');
           // Countdown badge on the trip's first day in the calendar window when within 14 days.
           // Shows on hover to keep the bar compact; matches the Cards-view "in N days" affordance.
           let countdownChip = '';
@@ -3256,6 +3330,10 @@ function renderCalendar() {
     }
   }
   gridEl.innerHTML = html;
+  // Entrance animation runs once per trip-add; clear so subsequent renders don't re-trigger it.
+  _newTripIds.clear();
+  // First-time bind for hover-preview delegation (idempotent — checks its own bound flag).
+  _bindCalPreview();
 }
 
 let _thisWeekStateApplied = false;
@@ -4244,6 +4322,7 @@ function addTrip() {
   const labelWithEmoji = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
   const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
   trips.push(trip);
+  _newTripIds.add(trip.id); // bar gets the entrance animation on the next renderCalendar
   db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayUnion(trip) }).catch(_onSaveErr);
   document.getElementById('new-trip-dates').value = '';
   document.getElementById('new-trip-name').value = '';
