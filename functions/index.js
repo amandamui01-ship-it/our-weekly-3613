@@ -1,0 +1,162 @@
+// Live .ics calendar feed for Our Weekly. Subscribed-to by iPhone/Google Calendar so trips added
+// in the app appear automatically (typically refreshed every few hours by the calendar client).
+//
+// Access is gated by a token stored in Firestore at state/settings.icsToken. The client app reads
+// the same token to display a complete subscribable URL to the user.
+
+const { onRequest } = require('firebase-functions/v2/https');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+
+initializeApp();
+const db = getFirestore();
+
+// Mirror of the same logic in index.html — ICS DTEND for all-day events is exclusive (day AFTER
+// the last day). Keep this in sync with the client implementation.
+function parseICSEndDate(datesStr, sortDate) {
+  const addOne = s => {
+    const d = new Date(s + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10).replace(/-/g, '');
+  };
+  if (!datesStr || !sortDate) return addOne(sortDate);
+  const year = parseInt(sortDate.slice(0, 4));
+  const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)/);
+  if (rangeMatch) {
+    const endDay = parseInt(rangeMatch[2]);
+    let endMonth;
+    if (rangeMatch[1]) {
+      endMonth = months[rangeMatch[1].toLowerCase().slice(0, 3)];
+    } else {
+      const startMonthMatch = datesStr.match(/([A-Za-z]+)/);
+      if (startMonthMatch) endMonth = months[startMonthMatch[1].toLowerCase().slice(0, 3)];
+    }
+    if (endMonth !== undefined && !isNaN(endDay) && endDay >= 1 && endDay <= 31) {
+      let endYear = year;
+      const startMonth = parseInt(sortDate.slice(5, 7)) - 1;
+      if (endMonth < startMonth - 1) endYear++;
+      const d = new Date(Date.UTC(endYear, endMonth, endDay + 1));
+      return d.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+  }
+  return addOne(sortDate);
+}
+
+const escIcs = s => (s || '')
+  .toString()
+  .replace(/\\/g, '\\\\')
+  .replace(/;/g, '\\;')
+  .replace(/,/g, '\\,')
+  .replace(/\r?\n/g, '\\n');
+
+// RFC 5545 §3.1: content lines longer than 75 OCTETS must be folded — split at 75 octets and
+// continue with CRLF + a single space. Apple/Google tolerate unfolded lines but stricter parsers
+// (Lotus Notes, some Linux mail clients) silently truncate. Counting code units is a good-enough
+// approximation for the ASCII property names + mostly-ASCII trip text we emit.
+function foldIcs(line) {
+  if (line.length <= 75) return line;
+  const parts = [];
+  let i = 0;
+  while (i < line.length) {
+    const len = i === 0 ? 75 : 74; // continuation lines lose 1 char to the leading space
+    parts.push((i === 0 ? '' : ' ') + line.slice(i, i + len));
+    i += len;
+  }
+  return parts.join('\r\n');
+}
+
+// Vague dates ("Late Dec", "Early May") shouldn't be exported as concrete calendar events — they
+// have a placeholder sortDate that doesn't reflect a real day commitment.
+const isVague = t => !t.dates
+  || !/^[A-Za-z]+\s+\d/.test(t.dates.trim())
+  || /^(early|late|mid|end of)/i.test(t.dates.trim());
+
+// Cache the expected token in module scope across warm invocations so we don't pay a Firestore
+// read for every poll from every device. TTL is short — token regeneration takes effect within
+// a few minutes for any subscribed device.
+let _tokenCache = { value: null, until: 0 };
+const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
+async function _expectedToken() {
+  const now = Date.now();
+  if (_tokenCache.value !== null && now < _tokenCache.until) return _tokenCache.value;
+  const snap = await db.collection('state').doc('settings').get();
+  const tok = snap.exists ? (snap.data().icsToken || '') : '';
+  _tokenCache = { value: tok, until: now + TOKEN_CACHE_TTL_MS };
+  return tok;
+}
+
+exports.ics = onRequest(
+  { region: 'us-central1', cors: false, memory: '256MiB' },
+  async (req, res) => {
+    try {
+      const expectedToken = await _expectedToken();
+
+      // Token must be set in Firestore AND match the query string. No token = no access.
+      const givenToken = (req.query && req.query.token) ? String(req.query.token) : '';
+      if (!expectedToken || givenToken !== expectedToken) {
+        // Don't leak whether the token field exists vs. value mismatch — same response either way.
+        res.set('Cache-Control', 'no-store');
+        res.status(403).type('text/plain').send('Forbidden');
+        return;
+      }
+
+      const tripsSnap = await db.collection('state').doc('trips').get();
+      const trips = tripsSnap.exists ? (tripsSnap.data().items || []) : [];
+
+      const now = new Date();
+      const dtstamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '').slice(0, 15) + 'Z';
+
+      const lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//Our Weekly//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'X-WR-CALNAME:Our Weekly',
+        'X-PUBLISHED-TTL:PT2H',
+        'REFRESH-INTERVAL;VALUE=DURATION:PT2H',
+      ];
+
+      for (const t of trips) {
+        if (!t.sortDate || isVague(t)) continue;
+        const descParts = [];
+        if (t.location) descParts.push(`Location: ${t.location}`);
+        if (t.who) descParts.push(`Who: ${t.who}`);
+        if (t.status) descParts.push(`Status: ${t.status}`);
+        if (t.notes) descParts.push('', t.notes);
+        if (Array.isArray(t.links) && t.links.length) {
+          descParts.push('');
+          for (const l of t.links) {
+            if (l && l.url) descParts.push(`${l.label || 'Link'}: ${l.url}`);
+          }
+        }
+
+        const eventLines = [
+          'BEGIN:VEVENT',
+          `UID:our-weekly-${t.id}@ourweekly`,
+          `DTSTAMP:${dtstamp}`,
+          `DTSTART;VALUE=DATE:${t.sortDate.replace(/-/g, '')}`,
+          `DTEND;VALUE=DATE:${parseICSEndDate(t.dates, t.sortDate)}`,
+          `SUMMARY:${escIcs(t.label)}`,
+        ];
+        if (descParts.length) eventLines.push(`DESCRIPTION:${escIcs(descParts.join('\n'))}`);
+        if (t.location) eventLines.push(`LOCATION:${escIcs(t.location)}`);
+        eventLines.push('CLASS:PRIVATE', 'CATEGORIES:Our Weekly', 'END:VEVENT');
+
+        lines.push(...eventLines);
+      }
+      lines.push('END:VCALENDAR');
+
+      res.set('Content-Type', 'text/calendar; charset=utf-8');
+      // Private (per-user) caching only — the response body is gated by a per-couple token, so a
+      // shared/CDN cache must not be allowed to serve it to anyone else who happens to have the
+      // same URL. 15-min max-age balances freshness against iPhone's hourly poll rate.
+      res.set('Cache-Control', 'private, max-age=900');
+      res.status(200).send(lines.map(foldIcs).join('\r\n'));
+    } catch (err) {
+      console.error('ICS feed error', err);
+      res.status(500).type('text/plain').send('Internal error');
+    }
+  }
+);

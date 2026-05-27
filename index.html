@@ -257,10 +257,6 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .trip-card:hover .trip-del{opacity:.45}
 .trip-del:hover{opacity:1!important;color:var(--coral)}
 @media(hover:none){.trip-card .trip-del{opacity:.35}}
-.trip-edit-form{display:flex;flex-direction:column;gap:4px;padding:0}
-.trip-edit-form input{border:none;border-bottom:1px solid var(--amber);background:transparent;font-family:'Inter',-apple-system,sans-serif;font-weight:700;color:var(--text);outline:none;padding:0;text-align:center;width:100%}
-.trip-edit-form input:nth-child(1){font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;line-height:1.2}
-.trip-edit-form input:nth-child(2){font-size:14px;line-height:1.3}
 .trip-edit-actions{display:flex;gap:6px;justify-content:center;margin-top:4px}
 .trip-edit-save{font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;border:none;background:var(--amber);color:white;cursor:pointer;font-family:inherit}
 .trip-edit-cancel{font-size:11px;font-weight:700;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-3);cursor:pointer;font-family:inherit}
@@ -321,6 +317,120 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 /* Pulse for upcoming trips ≤7 days */
 @keyframes trip-pulse{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 4px 24px rgba(217,106,82,.4)}}
 .trip-pulse{animation:trip-pulse 2.5s ease-in-out infinite}
+
+/* ── This Week section inner blocks ── */
+.tw-section{padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid var(--border-light)}
+.tw-section-last{padding-bottom:0;margin-bottom:0;border-bottom:none}
+
+/* ── Calendar grid view ── */
+.cal-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.cal-nav-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--text-2);display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s;padding:0}
+.cal-nav-btn:hover{background:var(--amber-bg);border-color:var(--amber);color:var(--amber-dark)}
+.cal-month-label{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:800;color:var(--text);min-width:160px;text-align:center}
+.cal-today-btn{background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s}
+.cal-today-btn:hover{background:var(--amber);color:white;border-color:var(--amber)}
+.cal-view-toggle{margin-left:auto;display:inline-flex;background:var(--surface-warm);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
+.cal-view-toggle button{background:none;border:none;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit;transition:all .15s}
+.cal-view-toggle button.active{background:var(--amber);color:white}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.cal-dow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);text-align:center;padding:6px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:minmax(82px,auto);gap:0;background:var(--surface);border:1px solid var(--border-light);border-radius:9px;overflow:hidden}
+.cal-day{background:var(--surface);min-width:0;min-height:82px;padding:5px 4px 4px;display:flex;flex-direction:column;position:relative;cursor:pointer;transition:background .12s;outline:1px solid var(--border-light);outline-offset:-1px}
+.cal-day:hover{background:var(--surface-warm)}
+.cal-day-other{background:var(--bg)}
+.cal-day-other .cal-day-num{color:var(--text-3);opacity:.55}
+.cal-day-today{background:var(--amber-bg)}
+.cal-day-today .cal-day-num{background:var(--amber);color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:800}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:3px;line-height:22px;height:22px;display:inline-block}
+.cal-day-bars{display:flex;flex-direction:column;gap:2px;min-height:0;min-width:0;margin:0 -4px}
+.cal-bar{font-size:10px;font-weight:700;color:white;padding:2px 6px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--tc,var(--amber));cursor:pointer;transition:filter .15s;border-radius:0;min-width:0}
+.cal-bar:hover{filter:brightness(1.08)}
+.cal-bar-start{border-radius:4px 0 0 4px;padding-left:8px;margin-left:1px}
+.cal-bar-end{border-radius:0 4px 4px 0;padding-right:8px;margin-right:1px}
+.cal-bar-start.cal-bar-end{border-radius:4px}
+.cal-bar-empty{height:16px;background:transparent;cursor:default}
+.cal-day-chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:auto;padding-top:3px}
+.cal-chip{font-size:11px;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;background:var(--surface-warm);border:1px solid var(--border-light);transition:all .12s;line-height:1}
+.cal-chip:hover{transform:scale(1.15)}
+.cal-chip.on.gym{background:#2e5233;border-color:#2e5233;color:white}
+.cal-chip.on.date{background:#8a2a18;border-color:#8a2a18;color:white}
+.cal-chip.on.friends{background:#1a3d6e;border-color:#1a3d6e;color:white}
+.cal-chip-off{opacity:.4}
+@media(max-width:680px){
+  .cal-grid{grid-auto-rows:minmax(64px,auto)}
+  .cal-day{min-height:64px;padding:3px 3px 3px}
+  .cal-day-num{font-size:11px;height:20px;line-height:20px}
+  .cal-day-today .cal-day-num{width:20px;height:20px}
+  .cal-bar{font-size:9px;padding:1px 4px}
+  .cal-bar-start{padding-left:5px}
+  .cal-bar-end{padding-right:5px}
+  .cal-chip{width:14px;height:14px;font-size:9px}
+  .cal-month-label{font-size:16px;min-width:120px}
+  .cal-dow{font-size:9px;padding:4px 0}
+}
+@media(max-width:420px){
+  .cal-bar{font-size:8px}
+}
+
+/* ── Trip detail page ── */
+.td-back{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-2);font-size:13px;font-weight:600;cursor:pointer;padding:6px 10px 6px 0;margin-bottom:16px;font-family:inherit;transition:color .15s}
+.td-back:hover{color:var(--amber)}
+.td-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden}
+.td-header::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--tc,var(--amber))}
+.td-name-input{font-family:'Playfair Display',Georgia,serif;font-size:28px;font-weight:800;color:var(--text);background:transparent;border:none;border-bottom:1px solid transparent;outline:none;width:100%;padding:2px 0;line-height:1.2}
+.td-name-input:focus{border-bottom-color:var(--amber)}
+.td-dates-input{font-size:13px;font-weight:700;color:var(--tc,var(--amber));text-transform:uppercase;letter-spacing:.06em;background:transparent;border:none;outline:none;font-family:'Inter',-apple-system,sans-serif;padding:0;margin-top:4px;width:auto;min-width:120px;border-bottom:1px solid transparent}
+.td-dates-input:focus{border-bottom-color:var(--amber)}
+.td-meta-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--text-2);align-items:center}
+.td-meta-item{display:flex;align-items:center;gap:6px}
+.td-meta-item input{border:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text);outline:none;padding:2px 4px;border-bottom:1px solid var(--border-light);min-width:140px}
+.td-meta-item input:focus{border-bottom-color:var(--amber)}
+.td-status-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:1px solid;transition:all .15s;background:transparent;font-family:inherit}
+.td-status-pill:hover{transform:translateY(-1px)}
+.td-status-idea{color:var(--text-3);border-color:var(--text-3);background:var(--bg)}
+.td-status-planning{color:var(--amber-dark);border-color:var(--amber);background:var(--amber-bg)}
+.td-status-confirmed{color:var(--sage);border-color:var(--sage);background:var(--sage-bg)}
+.td-delete{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;padding:6px 10px;border-radius:6px;font-weight:600;font-family:inherit;transition:color .15s,background .15s}
+.td-delete:hover{color:var(--coral);background:var(--coral-bg)}
+.td-section{margin-bottom:16px}
+.td-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px}
+.td-textarea{width:100%;min-height:80px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:15px;font-family:inherit;background:var(--surface-warm);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text);line-height:1.5;field-sizing:content}
+.td-textarea:focus{border-color:var(--amber)}
+.td-day{background:var(--surface-warm);border:1px solid var(--border-light);border-radius:9px;padding:12px 14px;margin-bottom:8px}
+.td-day-label{font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.td-day-textarea{width:100%;min-height:48px;border:none;background:transparent;font-size:14px;font-family:inherit;resize:none;overflow:hidden;outline:none;color:var(--text);padding:0;line-height:1.5;field-sizing:content}
+.td-day-textarea::placeholder{color:var(--text-3);font-style:italic}
+.td-pack-item,.td-link-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;border:1px solid var(--border-light);background:var(--surface-warm);margin-bottom:6px;transition:background .15s}
+.td-pack-item:hover,.td-link-item:hover{background:var(--bg)}
+.td-pack-check{width:18px;height:18px;border:2px solid var(--border);border-radius:5px;background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:12px;color:transparent}
+.td-pack-check.checked{background:var(--sage);border-color:var(--sage);color:white}
+.td-pack-text{flex:1;font-size:14px;color:var(--text);border:none;background:transparent;outline:none;font-family:inherit;padding:2px 0}
+.td-pack-item.packed .td-pack-text{text-decoration:line-through;color:var(--text-3)}
+.td-link-icon{font-size:16px;flex-shrink:0}
+.td-link-label{font-size:14px;font-weight:600;color:var(--text);border:none;background:transparent;outline:none;font-family:inherit;min-width:0;flex-shrink:0;width:130px;padding:2px 0;border-bottom:1px solid transparent}
+.td-link-label:focus{border-bottom-color:var(--amber)}
+.td-link-url{flex:1;min-width:0;font-size:13px;color:var(--blue);border:none;background:transparent;outline:none;font-family:inherit;padding:2px 0;border-bottom:1px solid transparent;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.td-link-url:focus{border-bottom-color:var(--amber)}
+.td-link-go{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px 8px;border-radius:4px;font-size:13px;text-decoration:none;flex-shrink:0}
+.td-link-go:hover{color:var(--amber);background:var(--amber-bg)}
+.td-item-del{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px 8px;font-size:16px;line-height:1;border-radius:4px;flex-shrink:0;opacity:0;transition:opacity .15s;font-family:inherit}
+.td-pack-item:hover .td-item-del,.td-link-item:hover .td-item-del{opacity:.5}
+.td-item-del:hover{color:var(--coral);opacity:1!important}
+.td-add-row{display:flex;gap:8px;margin-top:8px}
+.td-add-row input{flex:1;padding:9px 12px;border:1px dashed var(--border);border-radius:9px;font-size:14px;background:var(--surface-warm);color:var(--text);outline:none;font-family:inherit;transition:all .15s}
+.td-add-row input:focus{border-color:var(--amber);border-style:solid}
+.td-add-row button{padding:9px 16px;background:var(--amber);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.td-add-row button:hover{background:var(--amber-dark)}
+.td-budget-row{display:flex;align-items:baseline;gap:8px}
+.td-budget-row input{font-size:24px;font-weight:700;color:var(--amber);border:none;background:transparent;outline:none;font-family:'Playfair Display',Georgia,serif;width:140px;border-bottom:1px solid var(--border);padding:2px 4px}
+.td-budget-row input:focus{border-bottom-color:var(--amber)}
+.td-budget-actual{font-size:12px;color:var(--text-3);margin-left:auto}
+@media(max-width:540px){
+  .td-header{padding:18px 18px}
+  .td-name-input{font-size:22px}
+  .td-link-label{width:100px}
+  .td-meta-row{gap:10px;font-size:12px}
+}
 /* Flip digit animation (next trip countdown) */
 .flip-digit{display:inline-block;animation:flip-in .45s cubic-bezier(.36,.07,.19,.97) both;transform-origin:top center}
 @keyframes flip-in{0%{transform:rotateX(-90deg);opacity:0}60%{opacity:1}100%{transform:rotateX(0);opacity:1}}
@@ -814,9 +924,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <nav id="nav">
   <div id="logo" onclick="showPage('home')" style="cursor:pointer">our weekly ♥</div>
   <div class="nav-tab" onclick="showPage('review')"><span class="nav-emoji">✏️ </span>Review</div>
-  <div class="nav-tab" onclick="showPage('plan')"><span class="nav-emoji">🗓️ </span>This Week</div>
   <div class="nav-tab" onclick="showPage('todos')"><span class="nav-emoji">✅ </span>To-Dos</div>
-  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">✈️ </span>Dates</div>
+  <div class="nav-tab" onclick="showPage('dates')"><span class="nav-emoji">📅 </span>Calendar</div>
   <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
   <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">📖 </span>History</div>
   <div class="nav-dark-controls" style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
@@ -832,9 +941,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     <div class="menu-header">our weekly ♥</div>
     <div class="menu-item" onclick="showPage('home')">🏠 Home</div>
     <div class="menu-item" onclick="showPage('review')">✏️ Review</div>
-    <div class="menu-item" onclick="showPage('plan')">🗓️ This Week</div>
     <div class="menu-item" onclick="showPage('todos')">✅ To-Dos</div>
-    <div class="menu-item" onclick="showPage('dates')">✈️ Dates</div>
+    <div class="menu-item" onclick="showPage('dates')">📅 Calendar</div>
     <div class="menu-item" onclick="showPage('budget')">💰 Budget</div>
     <div class="menu-item" onclick="showPage('history')">📖 History</div>
     <div class="menu-divider"></div>
@@ -1114,7 +1222,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <!-- ── 2026 DATES ── -->
 <div class="page" id="page-dates">
   <div class="page-title" id="dates-page-title">Dates</div>
-  <div class="page-sub">All the good stuff to look forward to. 🎉</div>
+  <div class="page-sub">Trips, plans, and everything coming up. 🗓️</div>
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleAddDate()">
@@ -1131,11 +1239,76 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 
   <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div class="card-title" style="margin-bottom:0">Trips & Events ✈️</div>
-      <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px">📅 Export to Calendar</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div class="cal-view-toggle" style="margin:0">
+          <button id="cal-view-cal" onclick="setDatesView('cal')">📅 Calendar</button>
+          <button id="cal-view-grid" onclick="setDatesView('grid')">▦ Cards</button>
+        </div>
+        <button class="btn btn-secondary" onclick="openIcsSubscribeModal()" style="font-size:12px;padding:5px 12px" title="Get a live subscription URL for iPhone/Google Calendar">📡 Sync</button>
+        <button class="btn btn-secondary" onclick="exportToCalendar()" style="font-size:12px;padding:5px 12px" title="Download a one-time .ics file for Outlook/work calendar">📅 Export</button>
+      </div>
+    </div>
+    <div id="cal-view-container">
+      <div class="cal-header">
+        <button class="cal-nav-btn" onclick="navCalMonth(-1)" title="Previous month">◀</button>
+        <button class="cal-today-btn" onclick="navCalToday()" title="Jump to current month">Today</button>
+        <button class="cal-nav-btn" onclick="navCalMonth(1)" title="Next month">▶</button>
+        <div class="cal-month-label" id="cal-month-label"></div>
+      </div>
+      <div class="cal-dow-row">
+        <div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div>
+        <div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
+        <div class="cal-dow">Sun</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
     </div>
     <div class="trip-grid" id="trip-grid"></div>
+  </div>
+
+  <!-- ── THIS WEEK (merged from former This Week tab) ── -->
+  <div class="card" style="margin-bottom:16px">
+    <div onclick="toggleThisWeekSection()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0">
+        <div class="card-title" style="margin-bottom:0">📅 This Week</div>
+        <div id="plan-week-label" style="font-size:11px;color:var(--text-3);font-weight:500"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="clearPlan();event.stopPropagation()">🗑️ Clear</button>
+        <span id="this-week-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">▼</span>
+      </div>
+    </div>
+    <div id="this-week-body" style="margin-top:20px">
+      <div id="plan-theme-banner" style="display:none;text-align:center;margin:-4px 0 20px"></div>
+      <div class="tw-section">
+        <div class="card-title">Weekly Schedule</div>
+        <div class="plan-week" id="plan-week"></div>
+      </div>
+      <div class="tw-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="card-title" style="margin-bottom:0">This Week's Focus ✅</div>
+          <button class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleWeekTodoPicker()">+ Pick To-Dos</button>
+        </div>
+        <div id="week-todos-list"></div>
+        <div id="week-todo-picker" style="display:none"></div>
+      </div>
+      <div class="tw-section">
+        <div class="card-title">Notes & Reminders</div>
+        <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
+          style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;background:var(--surface-warm);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text)"
+          onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+      <div class="tw-section tw-section-last">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleMealPlan()">
+          <div class="card-title" style="margin-bottom:0">Meal Plan</div>
+          <span id="meal-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
+        </div>
+        <div id="plan-meals-wrap" style="display:none;margin-top:12px">
+          <div class="plan-meals" id="plan-meals"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
@@ -1148,13 +1321,12 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     <div class="list-items" id="bucket-list"></div>
   </div>
 
-  <div class="card" id="past-adventures-card" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="togglePastAdventures()">
-      <div class="card-title" style="margin-bottom:0" id="past-adventures-title">✅ Past Adventures</div>
-      <span id="past-chev" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
-    </div>
-    <div class="trip-grid" id="past-grid" style="display:none;margin-top:12px"></div>
   </div>
+
+<!-- ── TRIP DETAIL ── -->
+<div class="page" id="page-trip">
+  <button class="td-back" onclick="closeTrip()">← Back to Calendar</button>
+  <div id="trip-detail-body"></div>
 </div>
 
 <!-- ── HISTORY ── -->
@@ -1169,51 +1341,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div id="history-list"></div>
   <div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid var(--border-light)">
     <button onclick="exportData()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-3);padding:4px 8px;opacity:.6" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.6'">💾 export backup</button>
-  </div>
-</div>
-
-<!-- ── THIS WEEK PLAN ── -->
-<div class="page" id="page-plan">
-  <div class="page-title">This Week</div>
-  <div class="page-sub" id="plan-week-label">Plan ahead so the week actually happens. 🗓️</div>
-  <div id="plan-theme-banner" style="display:none;text-align:center;margin:-4px 0 20px"></div>
-  <div style="text-align:center;margin-bottom:24px">
-    <button class="btn btn-secondary" onclick="clearPlan()">🗑️ Clear & Start Fresh</button>
-  </div>
-
-  <!-- Week Schedule -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Weekly Schedule</div>
-    <div class="plan-week" id="plan-week"></div>
-  </div>
-
-  <!-- This Week's Focus -->
-  <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div class="card-title" style="margin-bottom:0">This Week's Focus ✅</div>
-      <button class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="toggleWeekTodoPicker()">+ Pick To-Dos</button>
-    </div>
-    <div id="week-todos-list"></div>
-    <div id="week-todo-picker" style="display:none"></div>
-  </div>
-
-  <!-- Notes -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Notes & Reminders</div>
-    <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
-      style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;background:var(--surface);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text)"
-      onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-  </div>
-
-  <!-- Meal Plan -->
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleMealPlan()">
-      <div class="card-title" style="margin-bottom:0">Meal Plan</div>
-      <span id="meal-chevron" style="font-size:11px;color:var(--text-3);transition:transform .2s">▶</span>
-    </div>
-    <div id="plan-meals-wrap" style="display:none;margin-top:12px">
-      <div class="plan-meals" id="plan-meals"></div>
-    </div>
   </div>
 </div>
 
@@ -1381,6 +1508,48 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 </div>
 
+<!-- iPhone / Google Calendar live-subscribe modal -->
+<div id="ics-overlay" role="dialog" aria-modal="true" aria-labelledby="ics-title" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeIcsSubscribeModal()">
+  <div style="background:var(--surface);border-radius:16px;padding:24px;max-width:520px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22);max-height:90vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div id="ics-title" style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:800;color:var(--amber)">📡 Live Calendar Subscription</div>
+      <button onclick="closeIcsSubscribeModal()" style="background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:var(--text-3);padding:0 4px;font-family:inherit">×</button>
+    </div>
+    <div style="font-size:13px;color:var(--text-2);line-height:1.55;margin-bottom:14px">
+      Subscribe your iPhone or Google Calendar to this URL — new trips and edits sync automatically.
+    </div>
+    <div id="ics-url-state" style="font-size:13px;color:var(--text-2);margin-bottom:14px"></div>
+    <div id="ics-url-block" style="display:none;margin-bottom:18px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="ics-url-input" readonly style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:12px;font-family:monospace;color:var(--text);background:var(--surface-warm);outline:none;min-width:0">
+        <button onclick="copyIcsUrl()" class="btn btn-primary" style="font-size:12px;padding:8px 14px;flex-shrink:0">📋 Copy</button>
+      </div>
+      <div id="ics-copy-confirm" style="font-size:11px;color:var(--sage);margin-top:6px;min-height:14px"></div>
+    </div>
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text);padding:6px 0">📱 iPhone setup</summary>
+      <ol style="font-size:13px;color:var(--text-2);line-height:1.7;margin:8px 0 0 22px;padding:0">
+        <li>Copy the URL above</li>
+        <li>iPhone: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar</li>
+        <li>Paste the URL into the Server field, tap Next, then Save</li>
+        <li>New trips will appear within a few hours (iOS controls refresh interval)</li>
+      </ol>
+    </details>
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text);padding:6px 0">🗓️ Google Calendar setup</summary>
+      <ol style="font-size:13px;color:var(--text-2);line-height:1.7;margin:8px 0 0 22px;padding:0">
+        <li>Copy the URL above</li>
+        <li>Open Google Calendar (web) → left sidebar → "Other calendars" → + → "From URL"</li>
+        <li>Paste the URL and click "Add calendar"</li>
+        <li>Google polls every few hours and updates automatically</li>
+      </ol>
+    </details>
+    <div style="font-size:11px;color:var(--text-3);line-height:1.5;padding-top:14px;border-top:1px solid var(--border-light)">
+      Anyone with this URL can read your trip list — keep it private. Click <a href="#" onclick="regenIcsToken();return false" style="color:var(--coral);font-weight:600">regenerate</a> to invalidate the old URL.
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -1424,6 +1593,16 @@ try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage 
   window.addEventListener('offline', update);
   update();
 })();
+
+// Flush any debounced trips write before the tab closes / app backgrounds. Using both events
+// because pagehide fires reliably on iOS Safari where beforeunload often doesn't.
+['beforeunload', 'pagehide'].forEach(evt => window.addEventListener(evt, () => {
+  if (typeof _saveTripsTimer !== 'undefined' && _saveTripsTimer) {
+    clearTimeout(_saveTripsTimer);
+    _saveTripsTimer = null;
+    try { db.collection('state').doc('trips').set({items: trips}); } catch(e) {}
+  }
+}));
 
 // Enable offline persistence so the app works without a connection
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
@@ -1716,6 +1895,13 @@ function initFirestore() {
       if (changed) ref('trips').set({items: trips});
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
+    // Skip trip-detail re-render right after a local save — the snapshot would otherwise
+    // rebuild the whole detail page (textarea remount, scroll loss) for the user's own write.
+    // Partner edits still re-render after the echo guard window.
+    const sinceLocalWrite = Date.now() - _lastTripWrite;
+    if (isActive('trip') && !_hasTypingFocus('#page-trip') && sinceLocalWrite > TRIP_ECHO_GUARD_MS) {
+      renderTrip();
+    }
     scheduleRenderHome();
   });
 
@@ -1743,7 +1929,13 @@ function initFirestore() {
     weekPlan = snap.exists ? (snap.data().plan || {}) : {};
     // Skip re-render while the user is mid-typing in any meal input, notes textarea,
     // add-event input, or contenteditable chip — otherwise partner's update wipes their input.
-    if (isActive('plan') && !_hasTypingFocus('#page-plan')) renderPlan();
+    // renderPlan() rebuilds the schedule + meals + notes; the calendar grid only needs its
+    // chip class state refreshed (the rest of the grid is trip-driven, not weekplan-driven),
+    // so we update just those instead of the much heavier renderDates()/renderCalendar() path.
+    if (isActive('dates') && !_hasTypingFocus('#page-dates')) {
+      renderPlan();
+      _refreshCalendarChips();
+    }
   });
 
   ref('countdowns').onSnapshot(snap => {
@@ -1828,7 +2020,28 @@ function _removeFromDoc(docName, item) {
     items: firebase.firestore.FieldValue.arrayRemove(item)
   }).catch(_onSaveErr);
 }
-function saveTrips()     { db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);            }
+// Debounced trips writer. Field-level edits (notes/itinerary/links/etc) flush as one Firestore
+// write at the trailing edge so a flurry of blurs across the detail page collapses to a single
+// document write. _lastTripWrite is consulted by the trips onSnapshot to skip the echo re-render
+// of the trip page while the user is actively editing — partner edits still come through after
+// the quiet period.
+let _saveTripsTimer = null;
+let _lastTripWrite = 0;
+const TRIP_SAVE_DEBOUNCE_MS = 400;
+const TRIP_ECHO_GUARD_MS = 1500;
+function saveTrips(opts) {
+  _lastTripWrite = Date.now();
+  if (opts && opts.immediate) {
+    if (_saveTripsTimer) { clearTimeout(_saveTripsTimer); _saveTripsTimer = null; }
+    db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
+    return;
+  }
+  if (_saveTripsTimer) clearTimeout(_saveTripsTimer);
+  _saveTripsTimer = setTimeout(() => {
+    _saveTripsTimer = null;
+    db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
+  }, TRIP_SAVE_DEBOUNCE_MS);
+}
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
 function _getPlanWeekKey() {
@@ -1880,6 +2093,8 @@ document.addEventListener('click', e => {
 });
 
 function showPage(name) {
+  // Legacy 'plan' navigation (from older bookmarks, home stats, etc.) now lands on the merged Calendar tab.
+  if (name === 'plan') name = 'dates';
   const doSwitch = () => {
     document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.opacity = ''; p.style.transition = ''; });
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -1888,10 +2103,10 @@ function showPage(name) {
     if (name === 'todos')   renderTodos();
     if (name === 'history') renderHistory();
     if (name === 'home')    renderHome();
-    if (name === 'dates')   renderDates();
-    if (name === 'plan')    renderPlan();
+    if (name === 'dates')   { renderDates(); renderPlan(); }
     if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); checkRecurringReminder(); }
     if (name === 'review')  loadReviewDraft();
+    if (name === 'trip')    renderTrip();
     // Only run the 1Hz Japan countdown ticker when the home page is mounted — saves battery
     // on mobile and avoids wasted getElementById calls on other pages.
     if (name === 'home') startJapanTicker(); else stopJapanTicker();
@@ -1902,14 +2117,14 @@ function showPage(name) {
       newPage.style.transition = 'opacity 0.2s ease';
       newPage.style.opacity = '1';
     }));
-    const map = {home:-1, review:0, plan:1, todos:2, dates:3, budget:4, history:5};
+    const map = {home:-1, review:0, todos:1, dates:2, budget:3, history:4};
     if (map[name] >= 0) document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
-    const menuMap = {home:0, review:1, plan:2, todos:3, dates:4, budget:5, history:6};
+    const menuMap = {home:0, review:1, todos:2, dates:3, budget:4, history:5};
     document.querySelectorAll('#nav-menu .menu-item').forEach(i => i.classList.remove('active'));
     if (menuMap[name] !== undefined) document.querySelectorAll('#nav-menu .menu-item')[menuMap[name]]?.classList.add('active');
     closeNavMenu();
     // Sync bottom nav
-    const bnavMap = {home:'bnav-home', review:'bnav-review', plan:'bnav-plan', todos:'bnav-todos'};
+    const bnavMap = {home:'bnav-home', review:'bnav-review', dates:'bnav-dates', todos:'bnav-todos'};
     document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
     const bId = bnavMap[name];
     if (bId) document.getElementById(bId)?.classList.add('active');
@@ -2682,22 +2897,254 @@ function addCategoryDragListeners() {
 
 // ─── DATES ───────────────────────────────────────────────────────────────────
 function _setDatesYear(y) { _datesYear = y; renderDates(); }
+
+// Calendar grid view state — initialized lazily in renderCalendar to YYYY-MM of today.
+let _calMonth = null;
+let _datesView = localStorage.getItem('ow-dates-view') || 'cal'; // 'cal' | 'grid'
+
+function setDatesView(view) {
+  _datesView = view;
+  localStorage.setItem('ow-dates-view', view);
+  renderDates();
+}
+
+function navCalMonth(delta) {
+  if (!_calMonth) _calMonth = _fmtMonth(new Date());
+  const [y, m] = _calMonth.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  _calMonth = _fmtMonth(d);
+  renderCalendar();
+}
+
+function navCalToday() {
+  _calMonth = _fmtMonth(new Date());
+  renderCalendar();
+}
+
+function _fmtMonth(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+// Returns the Mon-first 6-week grid (always 42 days) for the given YYYY-MM. Using a fixed
+// 42-cell grid (instead of variable 35/42) keeps the calendar height stable across months.
+function _calMonthDays(monthStr) {
+  const [y, m] = monthStr.split('-').map(Number);
+  const first = new Date(y, m-1, 1);
+  const dow = first.getDay();
+  const daysBack = dow === 0 ? 6 : dow - 1; // Mon-first
+  const start = new Date(y, m-1, 1 - daysBack);
+  const out = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    out.push(d);
+  }
+  return out;
+}
+
+// For a 7-day week (Mon-Sun), figure out which trips overlap and which lane each occupies so
+// multi-day trips render as a continuous strip across days without colliding with other trips.
+function _assignLanesForWeek(weekDays, weekTrips) {
+  const segments = [];
+  for (const t of weekTrips) {
+    if (!t.sortDate) continue;
+    const tStart = new Date(t.sortDate + 'T00:00:00');
+    const endICS = parseICSEndDateMemo(t.dates, t.sortDate);
+    const tEndIso = `${endICS.slice(0,4)}-${endICS.slice(4,6)}-${endICS.slice(6,8)}`;
+    const tEnd = new Date(tEndIso + 'T00:00:00');
+    let startCol = -1, endCol = -1;
+    for (let i = 0; i < 7; i++) {
+      if (weekDays[i] >= tStart && weekDays[i] < tEnd) {
+        if (startCol === -1) startCol = i;
+        endCol = i;
+      }
+    }
+    if (startCol >= 0) {
+      // tripStartsThisWeek: the trip's actual first day falls in this week (label rendering)
+      const tripStartsThisWeek = weekDays[startCol].getTime() === tStart.getTime();
+      const tripEndsThisWeek = weekDays[endCol].getTime() === new Date(tEnd.getTime() - 86400000).getTime();
+      segments.push({ trip: t, startCol, endCol, tripStartsThisWeek, tripEndsThisWeek });
+    }
+  }
+  // Earlier-starting + longer-spanning segments take lower lanes to keep visual continuity.
+  segments.sort((a, b) => a.startCol - b.startCol || (b.endCol - b.startCol) - (a.endCol - a.startCol));
+  const lanes = []; // lanes[laneIdx][col] = { trip, isLeftEnd, isRightEnd, showLabel }
+  for (const seg of segments) {
+    let laneIdx = 0;
+    while (true) {
+      if (!lanes[laneIdx]) lanes[laneIdx] = Array(7).fill(null);
+      let conflict = false;
+      for (let i = seg.startCol; i <= seg.endCol; i++) {
+        if (lanes[laneIdx][i]) { conflict = true; break; }
+      }
+      if (!conflict) {
+        for (let i = seg.startCol; i <= seg.endCol; i++) {
+          lanes[laneIdx][i] = {
+            trip: seg.trip,
+            isLeftEnd:  i === seg.startCol && seg.tripStartsThisWeek,
+            isRightEnd: i === seg.endCol   && seg.tripEndsThisWeek,
+            isWeekStart: i === seg.startCol,    // left rounded in this week regardless
+            isWeekEnd:   i === seg.endCol,      // right rounded in this week regardless
+            showLabel: i === seg.startCol,      // only label on first day of THIS week's segment
+          };
+        }
+        break;
+      }
+      laneIdx++;
+    }
+  }
+  return lanes;
+}
+
+// Map a JS getDay() value to the weekPlan day key (Mon-first).
+const _DOW_TO_KEY = ['sun','mon','tue','wed','thu','fri','sat'];
+
+// Surgical refresh for calendar chip on/off state when only weekPlan changes — avoids the full
+// 42-cell innerHTML rebuild that renderCalendar() does. Reads each chip's data-day attribute
+// and toggles the .on class against the latest weekPlan values.
+function _refreshCalendarChips() {
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+  grid.querySelectorAll('.cal-chip').forEach(el => {
+    const dayKey = el.dataset.day;
+    const type = el.dataset.chipType;
+    if (!dayKey || !type) return;
+    const on = !!(weekPlan && weekPlan[dayKey] && weekPlan[dayKey][type]);
+    el.classList.toggle('on', on);
+    el.classList.toggle('cal-chip-off', !on);
+  });
+}
+
+function renderCalendar() {
+  const gridEl = document.getElementById('cal-grid');
+  if (!gridEl) return;
+  if (!_calMonth) _calMonth = _fmtMonth(new Date());
+
+  const [y, m] = _calMonth.split('-').map(Number);
+  const monthDate = new Date(y, m-1, 1);
+  const labelEl = document.getElementById('cal-month-label');
+  if (labelEl) labelEl.textContent = monthDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = _calMonthDays(_calMonth);
+  const currentMonth = m;
+
+  // Only trips with sortDate can be placed on the grid.
+  const datedTrips = trips.filter(t => t.sortDate);
+
+  // Pre-compute which trips overlap each day of this calendar window for chip-vs-trip layout.
+  const winStart = days[0];
+  const winEnd = new Date(days[41]); winEnd.setDate(days[41].getDate() + 1);
+  const visibleTrips = datedTrips.filter(t => {
+    const tStart = new Date(t.sortDate + 'T00:00:00');
+    const endICS = parseICSEndDateMemo(t.dates, t.sortDate);
+    const tEndIso = `${endICS.slice(0,4)}-${endICS.slice(4,6)}-${endICS.slice(6,8)}`;
+    const tEnd = new Date(tEndIso + 'T00:00:00');
+    return tEnd > winStart && tStart < winEnd;
+  });
+
+  // Day chips only render on days in the current weekPlan week — chip data is per-day-of-week
+  // and only one Mon–Sun has values at a time.
+  const planMon = _planMondayDate();
+  const planSun = new Date(planMon); planSun.setDate(planMon.getDate() + 7);
+
+  // Render week-by-week to assign per-row trip lanes
+  let html = '';
+  for (let w = 0; w < 6; w++) {
+    const weekDays = days.slice(w*7, w*7 + 7);
+    const lanes = _assignLanesForWeek(weekDays, visibleTrips);
+    for (let i = 0; i < 7; i++) {
+      const d = weekDays[i];
+      const isToday = d.getTime() === today.getTime();
+      const inMonth = d.getMonth() + 1 === currentMonth;
+      const isPlanWeek = d >= planMon && d < planSun;
+      const dKey = _DOW_TO_KEY[d.getDay()];
+
+      // Lane segments for this column
+      let barsHtml = '';
+      for (let lane = 0; lane < lanes.length; lane++) {
+        const slot = lanes[lane]?.[i];
+        if (slot) {
+          const t = slot.trip;
+          const cls = ['cal-bar', tripColor(t.id)];
+          if (slot.isWeekStart) cls.push('cal-bar-start');
+          if (slot.isWeekEnd)   cls.push('cal-bar-end');
+          const label = slot.showLabel ? escHtml(t.label) : '&nbsp;';
+          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}">${label}</div>`;
+        } else {
+          barsHtml += `<div class="cal-bar-empty"></div>`;
+        }
+      }
+
+      // Chips for current-plan-week days only
+      let chipsHtml = '';
+      if (isPlanWeek) {
+        const dp = (weekPlan && weekPlan[dKey]) || {};
+        chipsHtml = `<div class="cal-day-chips">
+          <span class="cal-chip gym ${dp.gym?'on':'cal-chip-off'}" data-day="${dKey}" data-chip-type="gym" onclick="toggleChip('${dKey}','gym');event.stopPropagation()" title="Gym">💪</span>
+          <span class="cal-chip date ${dp.date?'on':'cal-chip-off'}" data-day="${dKey}" data-chip-type="date" onclick="toggleChip('${dKey}','date');event.stopPropagation()" title="Night together">🌙</span>
+          <span class="cal-chip friends ${dp.friends?'on':'cal-chip-off'}" data-day="${dKey}" data-chip-type="friends" onclick="toggleChip('${dKey}','friends');event.stopPropagation()" title="Friends">👫</span>
+        </div>`;
+      }
+
+      const cellCls = ['cal-day'];
+      if (!inMonth) cellCls.push('cal-day-other');
+      if (isToday)  cellCls.push('cal-day-today');
+      html += `<div class="${cellCls.join(' ')}" data-date="${_fmtDateKey(d)}">
+        <div class="cal-day-num">${d.getDate()}</div>
+        <div class="cal-day-bars">${barsHtml}</div>
+        ${chipsHtml}
+      </div>`;
+    }
+  }
+  gridEl.innerHTML = html;
+}
+
+let _thisWeekStateApplied = false;
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
   const isPast = t => t.sortDate && new Date(t.sortDate + 'T00:00:00') < today;
   const sortByDate = (a, b) => (a.sortDate || '9999').localeCompare(b.sortDate || '9999');
 
+  // Restore saved expand/collapse state of the This Week section on first render. The body
+  // element is static, so applying once is enough — subsequent toggles update it directly.
+  if (!_thisWeekStateApplied) {
+    const open = localStorage.getItem('ow-this-week-open') !== '0';
+    const body = document.getElementById('this-week-body');
+    const chev = document.getElementById('this-week-chev');
+    if (body) body.style.display = open ? '' : 'none';
+    if (chev) chev.textContent = open ? '▼' : '▶';
+    _thisWeekStateApplied = true;
+  }
+
+  // View toggle: calendar grid vs. trip cards. Hidden containers don't render their year picker.
+  const calBtn  = document.getElementById('cal-view-cal');
+  const gridBtn = document.getElementById('cal-view-grid');
+  const calBox  = document.getElementById('cal-view-container');
+  const gridBox = document.getElementById('trip-grid');
+  if (calBtn && gridBtn) {
+    calBtn.classList.toggle('active', _datesView === 'cal');
+    gridBtn.classList.toggle('active', _datesView === 'grid');
+  }
+  if (calBox)  calBox.style.display  = _datesView === 'cal' ? '' : 'none';
+  if (gridBox) gridBox.style.display = _datesView === 'cal' ? 'none' : '';
+
+  if (_datesView === 'cal') {
+    renderCalendar();
+  }
+
   // Year picker
   const allYears = [...new Set(trips.filter(t => t.sortDate).map(t => +t.sortDate.slice(0,4)))].sort();
   if (allYears.length && !allYears.includes(_datesYear)) _datesYear = allYears[allYears.length - 1];
   const yearStr = String(_datesYear);
-  const yearPickerHtml = allYears.length > 1 ? `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+  const yearPickerHtml = (allYears.length > 1 && _datesView === 'grid') ? `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
     ${allYears.map(y => `<button onclick="_setDatesYear(${y})" style="padding:5px 16px;border-radius:20px;border:1px solid ${y===_datesYear?'var(--amber)':'var(--border)'};background:${y===_datesYear?'var(--amber)':'transparent'};color:${y===_datesYear?'white':'var(--text-2)'};font-size:13px;font-weight:600;cursor:pointer;transition:all .15s">${y}</button>`).join('')}
   </div>` : '';
 
-  // Update page title
+  // Page title stays "Calendar" — the calendar view's month-nav and the cards view's year picker
+  // each carry their own date context, so the title doesn't need to repeat it.
   const titleEl = document.getElementById('dates-page-title');
-  if (titleEl) titleEl.textContent = _datesYear + ' Dates';
+  if (titleEl) titleEl.textContent = 'Calendar';
 
   // Filter trips to selected year
   const yearTrips = trips.filter(t => !t.sortDate || t.sortDate.startsWith(yearStr));
@@ -2710,7 +3157,7 @@ function renderDates() {
   const ranges = upcoming.filter(t => t.sortDate).map(t => ({
     id: t.id,
     start: t.sortDate,
-    endExcl: icsToIso(parseICSEndDate(t.dates, t.sortDate)),
+    endExcl: icsToIso(parseICSEndDateMemo(t.dates, t.sortDate)),
   }));
   _overlapPairs = [];
   const overlapping = new Set();
@@ -2747,7 +3194,7 @@ function renderDates() {
       if (days <= 7) pulse = ' trip-pulse';
     }
     const colorCls = done || overlapping.has(t.id) ? '' : ' ' + tripColor(t.id);
-    return `<div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}${colorCls}${pulse}" data-id="${t.id}" onclick="editTripInline('${t.id}')" style="cursor:pointer">
+    return `<div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}${colorCls}${pulse}" data-id="${t.id}" onclick="openTrip('${t.id}')" style="cursor:pointer">
       <button class="trip-del" onclick="deleteTrip('${t.id}');event.stopPropagation()">×</button>
       <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
@@ -2755,19 +3202,11 @@ function renderDates() {
     </div>`;
   };
 
-  document.getElementById('trip-grid').innerHTML = yearPickerHtml + upcoming.map(t => tripCardHtml(t, false)).join('');
-
-  const pastCard = document.getElementById('past-adventures-card');
-  const pastGrid = document.getElementById('past-grid');
-  const pastTitle = document.getElementById('past-adventures-title');
-  if (past.length) {
-    pastCard.style.display = '';
-    pastTitle.textContent = `✅ Past Adventures (${past.length})`;
-    pastGrid.innerHTML = past.map(t => tripCardHtml(t, true)).join('');
-  } else {
-    pastCard.style.display = 'none';
-  }
-
+  // Cards view: show past trips inline (faded via .past class) below upcoming so they're not lost
+  // when there's no Past Adventures collapsible. Calendar view shows past trips via month navigation.
+  document.getElementById('trip-grid').innerHTML = yearPickerHtml
+    + upcoming.map(t => tripCardHtml(t, false)).join('')
+    + past.map(t => tripCardHtml(t, true)).join('');
 
   const listItemHtml = (item, type, editFn) => {
     const pClass = item.priority === 'critical' ? ' priority-critical' : item.priority === 'urgent' ? ' priority-urgent' : '';
@@ -2801,7 +3240,8 @@ function renderDates() {
       <button onclick="addListItem('bucket')">+ Add</button>
     </div>`;
 
-  setTimeout(addListDragListeners, 50);
+  // Drag handlers are now delegated on the stable parent containers — attach once, idempotent.
+  addListDragListeners();
 }
 
 function cycleListPriority(type, id) {
@@ -2815,26 +3255,39 @@ function cycleListPriority(type, id) {
 }
 
 let _listDragId = null, _listDragType = null;
+let _listDragDelegated = false;
+// Delegated drag handlers on the two stable parent containers. Attached once — survives all
+// renderDates() rerenders without needing to re-bind to each newly-rendered row.
 function addListDragListeners() {
-  document.querySelectorAll('.list-item[draggable]').forEach(el => {
-    el.addEventListener('dragstart', e => {
+  if (_listDragDelegated) return;
+  ['logistics-list', 'bucket-list'].forEach(parentId => {
+    const parent = document.getElementById(parentId);
+    if (!parent) return;
+    parent.addEventListener('dragstart', e => {
+      const el = e.target.closest('.list-item[draggable]');
+      if (!el || !parent.contains(el)) return;
       _listDragId = el.dataset.id;
       _listDragType = el.dataset.type;
       setTimeout(() => el.classList.add('dragging'), 0);
-      e.dataTransfer.effectAllowed = 'move';
+      if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
     });
-    el.addEventListener('dragend', () => {
-      el.classList.remove('dragging');
+    parent.addEventListener('dragend', e => {
+      const el = e.target.closest('.list-item[draggable]');
+      if (el) el.classList.remove('dragging');
       document.querySelectorAll('.list-item.drag-over').forEach(x => x.classList.remove('drag-over'));
     });
-    el.addEventListener('dragover', e => {
+    parent.addEventListener('dragover', e => {
+      const el = e.target.closest('.list-item[draggable]');
+      if (!el || !parent.contains(el)) return;
       e.preventDefault();
       if (!_listDragId || el.dataset.id === _listDragId || el.dataset.type !== _listDragType) return;
-      e.dataTransfer.dropEffect = 'move';
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
       document.querySelectorAll('.list-item.drag-over').forEach(x => x.classList.remove('drag-over'));
       el.classList.add('drag-over');
     });
-    el.addEventListener('drop', e => {
+    parent.addEventListener('drop', e => {
+      const el = e.target.closest('.list-item[draggable]');
+      if (!el || !parent.contains(el)) return;
       e.preventDefault();
       if (!_listDragId || el.dataset.id === _listDragId || el.dataset.type !== _listDragType) return;
       const arr = _listDragType === 'logistics' ? logisticsList : bucketList;
@@ -2850,6 +3303,7 @@ function addListDragListeners() {
       renderDates();
     });
   });
+  _listDragDelegated = true;
 }
 
 // ─── REVIEW DRAFT ────────────────────────────────────────────────────────────
@@ -2989,12 +3443,27 @@ function renderPlan() {
 
   document.getElementById('plan-week-label').textContent = formatPlanLabel();
 
-  // Theme from most recent review entry
+  // Theme from a review entry whose date falls in the currently-displayed plan week. Previously
+  // we showed themes from the most-recent non-seed entry, which carried stale themes forward
+  // into weeks the user hadn't reviewed yet ("active" / "slow week" showing on an unrelated week).
   const themeBanner = document.getElementById('plan-theme-banner');
-  const lastTheme = newEntries.find(e => !e.id.startsWith('seed-') && e.theme)?.theme;
   if (themeBanner) {
-    if (lastTheme) {
-      const themePills = lastTheme.split(',').map(t=>t.trim()).filter(Boolean).slice(0,2)
+    const weekStart = weekPlan?._weekKey;
+    let currentWeekTheme = '';
+    if (weekStart) {
+      const [wy, wm, wd] = weekStart.split('-').map(Number);
+      const start = new Date(wy, wm - 1, wd);
+      const endExcl = new Date(start); endExcl.setDate(start.getDate() + 7);
+      const weekEntry = newEntries.find(e => {
+        if (e.id?.startsWith('seed-') || !e.theme || !e.date) return false;
+        const [ey, em, ed] = e.date.split('-').map(Number);
+        const eDate = new Date(ey, em - 1, ed);
+        return eDate >= start && eDate < endExcl;
+      });
+      currentWeekTheme = weekEntry?.theme || '';
+    }
+    if (currentWeekTheme) {
+      const themePills = currentWeekTheme.split(',').map(t=>t.trim()).filter(Boolean).slice(0,2)
         .map(t=>`<span style="display:inline-block;padding:6px 18px;background:var(--surface);border:1.5px solid var(--amber);color:var(--amber-dark);border-radius:20px;font-size:13px;font-weight:700;letter-spacing:.03em;box-shadow:0 1px 6px rgba(0,0,0,.07)">${escHtml(t)}</span>`).join('');
       themeBanner.innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">${themePills}</div>`;
       themeBanner.style.display = 'block';
@@ -3017,7 +3486,7 @@ function renderPlan() {
     const dayStr = dayDate.toISOString().slice(0,10); // YYYY-MM-DD
     _tripsByDay[key] = trips.filter(t => {
       if (!t.sortDate) return false;
-      const endICS = parseICSEndDate(t.dates, t.sortDate); // YYYYMMDD exclusive
+      const endICS = parseICSEndDateMemo(t.dates, t.sortDate); // YYYYMMDD exclusive
       const endStr = endICS.slice(0,4)+'-'+endICS.slice(4,6)+'-'+endICS.slice(6,8);
       return dayStr >= t.sortDate && dayStr < endStr;
     });
@@ -3368,6 +3837,20 @@ function tripEmoji(label) {
 // trip labels with ⭐ / ⌚ / ▶️ / ♥ don't get a duplicate auto-emoji appended.
 const _hasEmoji = s => /\p{Extended_Pictographic}/u.test(s);
 
+// Memoize parseICSEndDate — calendar grid + plan view call it many times per render (6 weeks ×
+// N trips × multiple paths) with stable inputs. Keyed by (datesStr|sortDate); cache grows by
+// at most the count of distinct trip date pairs.
+const _icsEndDateCache = new Map();
+function parseICSEndDateMemo(datesStr, sortDate) {
+  const key = (datesStr || '') + '|' + (sortDate || '');
+  let v = _icsEndDateCache.get(key);
+  if (v === undefined) { v = parseICSEndDate(datesStr, sortDate); _icsEndDateCache.set(key, v); }
+  return v;
+}
+// Invalidate cache when a trip's dates change — saves us from holding a stale end date for an
+// edited trip. Called from saveTripField when the dates field changes.
+function _invalidateIcsEndCache() { _icsEndDateCache.clear(); }
+
 function parseICSEndDate(datesStr, sortDate) {
   // ICS all-day DTEND is exclusive (day after last day)
   const addOne = s => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().slice(0,10).replace(/-/g,''); };
@@ -3398,6 +3881,81 @@ function parseICSEndDate(datesStr, sortDate) {
     }
   }
   return addOne(sortDate);
+}
+
+// ─── iPhone / Google Calendar live subscribe ─────────────────────────────────
+// Public URL for the deployed Firebase Function. Region defaults to us-central1; keep this in
+// sync with functions/index.js if you ever change the region.
+const ICS_FUNCTION_URL = 'https://us-central1-our-weekly.cloudfunctions.net/ics';
+
+async function _getOrCreateIcsToken() {
+  const ref = db.collection('state').doc('settings');
+  const snap = await ref.get();
+  const existing = snap.exists ? (snap.data().icsToken || '') : '';
+  if (existing) return existing;
+  // Generate a token: 32-char URL-safe random. crypto.randomUUID is available in modern browsers.
+  const fresh = (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : (Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2)).slice(0, 32));
+  await ref.set({ icsToken: fresh }, { merge: true });
+  return fresh;
+}
+
+function openIcsSubscribeModal() {
+  const overlay = document.getElementById('ics-overlay');
+  const stateEl = document.getElementById('ics-url-state');
+  const block = document.getElementById('ics-url-block');
+  const input = document.getElementById('ics-url-input');
+  const confirmEl = document.getElementById('ics-copy-confirm');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  if (confirmEl) confirmEl.textContent = '';
+  block.style.display = 'none';
+  stateEl.textContent = 'Generating your subscription URL…';
+  _getOrCreateIcsToken().then(token => {
+    const url = `${ICS_FUNCTION_URL}?token=${encodeURIComponent(token)}`;
+    input.value = url;
+    stateEl.textContent = '';
+    block.style.display = '';
+  }).catch(err => {
+    console.error('ICS token error', err);
+    stateEl.innerHTML = '<span style="color:var(--coral)">Could not generate URL. The Firebase Function may not be deployed yet — see deploy steps in the project README.</span>';
+  });
+}
+
+function closeIcsSubscribeModal() {
+  const overlay = document.getElementById('ics-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function copyIcsUrl() {
+  const input = document.getElementById('ics-url-input');
+  const confirmEl = document.getElementById('ics-copy-confirm');
+  if (!input || !input.value) return;
+  const showOk = () => { if (confirmEl) { confirmEl.textContent = '✓ Copied to clipboard'; setTimeout(() => { if (confirmEl.textContent.startsWith('✓')) confirmEl.textContent = ''; }, 2500); } };
+  const showFail = () => { if (confirmEl) confirmEl.innerHTML = '<span style="color:var(--coral)">Copy failed — long-press the URL to copy manually</span>'; };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(showOk).catch(() => { _fallbackCopy(input); showOk(); });
+  } else {
+    try { _fallbackCopy(input); showOk(); } catch (e) { showFail(); }
+  }
+}
+
+function _fallbackCopy(input) {
+  // execCommand is deprecated but is the only reliable fallback when navigator.clipboard isn't
+  // available (older Safari, file:// origin, etc.). Browsers still honor it for user-initiated calls.
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+}
+
+function regenIcsToken() {
+  showConfirm('Regenerate the subscription URL? The old URL will stop working — you\'ll need to re-subscribe on any device using it.', async () => {
+    const ref = db.collection('state').doc('settings');
+    const fresh = (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : (Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2)).slice(0, 32));
+    await ref.set({ icsToken: fresh }, { merge: true });
+    // Refresh the URL shown in the modal
+    openIcsSubscribeModal();
+    showToast('🔄 New URL generated — re-subscribe on your phone');
+  }, 'Regenerate');
 }
 
 function exportToCalendar() {
@@ -3522,66 +4080,402 @@ function deleteTrip(id) {
   const item = trips.find(t => t.id === id);
   trips = trips.filter(t => t.id !== id);
   renderDates();
-  if (item) {
-    db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayRemove(item) }).catch(_onSaveErr);
-    showToast('Trip deleted', () => {
-      trips.push(item);
-      db.collection('state').doc('trips').update({ items: firebase.firestore.FieldValue.arrayUnion(item) }).catch(_onSaveErr);
-      renderDates();
-    });
+  if (!item) { saveTrips(); return; }
+  // arrayRemove matches by deep equality. If the partner edited any field on this trip after
+  // our last snapshot, the in-memory `item` won't match the stored version and the remove
+  // becomes a no-op (trip reappears on next snapshot). Write the full array instead — slightly
+  // racier on shared writes but correct for deletion of trips identified by id.
+  saveTrips({ immediate: true });
+  showToast('Trip deleted', () => {
+    trips.push(item);
+    saveTrips({ immediate: true });
+    renderDates();
+  });
+}
+
+let _overlapPairs = [];
+
+// ─── TRIP DETAIL PAGE ────────────────────────────────────────────────────────
+let _currentTripId = null;
+const TRIP_STATUS_CYCLE = ['idea', 'planning', 'confirmed'];
+const TRIP_STATUS_EMOJI = { idea: '💭', planning: '📝', confirmed: '✅' };
+
+function openTrip(id) {
+  if (!id || !trips.find(t => t.id === id)) return;
+  _currentTripId = id;
+  showPage('trip');
+}
+
+function closeTrip() {
+  // Flush any debounced trip save so navigating away never silently drops a pending blur.
+  if (_saveTripsTimer) {
+    clearTimeout(_saveTripsTimer);
+    _saveTripsTimer = null;
+    db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
+  }
+  _currentTripId = null;
+  showPage('dates');
+}
+
+// Resolve "current" trip — return null if it was deleted (e.g. by partner).
+function _currentTrip() { return trips.find(t => t.id === _currentTripId) || null; }
+
+// Build an array of YYYY-MM-DD strings spanning the trip's days (inclusive start, exclusive ICS end).
+function _tripDayKeys(t) {
+  if (!t.sortDate) return [];
+  const endICS = parseICSEndDateMemo(t.dates, t.sortDate); // YYYYMMDD exclusive
+  const endIso = `${endICS.slice(0,4)}-${endICS.slice(4,6)}-${endICS.slice(6,8)}`;
+  const out = [];
+  let d = new Date(t.sortDate + 'T00:00:00');
+  const stop = new Date(endIso + 'T00:00:00');
+  // Guard against pathological ranges (e.g. typo'd dates) — cap at 60 days.
+  let safety = 60;
+  while (d < stop && safety-- > 0) {
+    out.push(d.toISOString().slice(0,10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function renderTrip() {
+  const t = _currentTrip();
+  const body = document.getElementById('trip-detail-body');
+  if (!body) return;
+  if (!t) {
+    body.innerHTML = `<div class="card" style="text-align:center;padding:40px 20px;color:var(--text-3)">This trip was deleted.</div>`;
+    return;
+  }
+  const id = t.id;
+  // Normalize any legacy status values (e.g. "booked" from an earlier 4-state cycle) to the current 3-state set.
+  const status = TRIP_STATUS_CYCLE.includes(t.status) ? t.status : 'planning';
+  const colorCls = tripColor(id);
+  const dayKeys = _tripDayKeys(t);
+
+  const dayShort = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtDay = iso => {
+    const d = new Date(iso + 'T00:00:00');
+    return `${dayShort[d.getDay()]} ${monthShort[d.getMonth()]} ${d.getDate()}`;
+  };
+
+  // ── Header ──
+  const headerHtml = `
+    <div class="td-header ${colorCls}">
+      <button class="td-delete" onclick="deleteTripFromDetail()">🗑️ Delete</button>
+      <input class="td-dates-input" id="td-dates" value="${escHtml(t.dates)}"
+        placeholder="Dates (e.g. Jun 5–7)"
+        onblur="saveTripField('dates', this.value)"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${escHtml(t.dates).replace(/'/g,"\\'")}';this.blur()}">
+      <input class="td-name-input" id="td-name" value="${escHtml(t.label)}"
+        placeholder="Trip name"
+        onblur="saveTripField('label', this.value)"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${escHtml(t.label).replace(/'/g,"\\'")}';this.blur()}">
+      <div class="td-meta-row">
+        <button class="td-status-pill td-status-${status}" onclick="cycleTripStatus()" title="Click to change status">
+          ${TRIP_STATUS_EMOJI[status]} ${status}
+        </button>
+        <div class="td-meta-item">📍 <input id="td-location" value="${escHtml(t.location || '')}"
+          placeholder="Add location"
+          onblur="saveTripField('location', this.value)"></div>
+        <div class="td-meta-item">👥 <input id="td-who" value="${escHtml(t.who || '')}"
+          placeholder="Who's going"
+          onblur="saveTripField('who', this.value)"></div>
+      </div>
+    </div>`;
+
+  // ── Notes ──
+  const notesHtml = `
+    <div class="card td-section">
+      <div class="td-section-title">📝 Notes</div>
+      <textarea class="td-textarea" id="td-notes"
+        placeholder="Plans, ideas, things to remember..."
+        oninput="_growNotes(this)"
+        onblur="saveTripField('notes', this.value)">${escHtml(t.notes || '')}</textarea>
+    </div>`;
+
+  // ── Itinerary ──
+  let itineraryInner = '';
+  if (dayKeys.length === 0) {
+    itineraryInner = `<div style="font-size:13px;color:var(--text-3);font-style:italic">Add specific dates above to enable per-day itinerary.</div>`;
   } else {
-    saveTrips();
+    const itinMap = {};
+    (t.itinerary || []).forEach(d => { itinMap[d.day] = d.text; });
+    itineraryInner = dayKeys.map((iso, i) => `
+      <div class="td-day">
+        <div class="td-day-label">Day ${i+1} · ${fmtDay(iso)}</div>
+        <textarea class="td-day-textarea" data-day="${iso}"
+          placeholder="Plans for this day..."
+          oninput="_growNotes(this)"
+          onblur="saveItineraryDay('${iso}', this.value)">${escHtml(itinMap[iso] || '')}</textarea>
+      </div>
+    `).join('');
+  }
+  const itineraryHtml = `
+    <div class="card td-section">
+      <div class="td-section-title">🗓️ Itinerary</div>
+      ${itineraryInner}
+    </div>`;
+
+  // ── Packing list ──
+  const packing = t.packingList || [];
+  const packingItemsHtml = packing.map(p => `
+    <div class="td-pack-item${p.packed ? ' packed' : ''}" data-id="${p.id}">
+      <button class="td-pack-check${p.packed ? ' checked' : ''}" onclick="togglePackItem('${p.id}')">${p.packed ? '✓' : ''}</button>
+      <input class="td-pack-text" value="${escHtml(p.text)}"
+        onblur="savePackText('${p.id}', this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      <button class="td-item-del" onclick="deletePackItem('${p.id}')" title="Remove">×</button>
+    </div>
+  `).join('');
+  const packingHtml = `
+    <div class="card td-section">
+      <div class="td-section-title" data-pack-title>🎒 Packing List ${packing.length ? `<span style="color:var(--sage);margin-left:8px;font-weight:600">${packing.filter(p=>p.packed).length}/${packing.length} packed</span>` : ''}</div>
+      ${packingItemsHtml}
+      <div class="td-add-row">
+        <input type="text" id="td-pack-new" placeholder="Add packing item..."
+          onkeydown="if(event.key==='Enter')addPackItem()">
+        <button onclick="addPackItem()">+ Add</button>
+      </div>
+    </div>`;
+
+  // ── Links ──
+  const links = t.links || [];
+  const linksItemsHtml = links.map(l => `
+    <div class="td-link-item" data-id="${l.id}">
+      <span class="td-link-icon">🔗</span>
+      <input class="td-link-label" value="${escHtml(l.label)}" placeholder="Label"
+        onblur="saveLinkField('${l.id}', 'label', this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      <input class="td-link-url" value="${escHtml(l.url)}" placeholder="https://..."
+        onblur="saveLinkField('${l.id}', 'url', this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      ${l.url ? `<a class="td-link-go" href="${escHtml(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open link">↗</a>` : ''}
+      <button class="td-item-del" onclick="deleteLink('${l.id}')" title="Remove">×</button>
+    </div>
+  `).join('');
+  const linksHtml = `
+    <div class="card td-section">
+      <div class="td-section-title">🔗 Links</div>
+      ${linksItemsHtml}
+      <div class="td-add-row">
+        <input type="text" id="td-link-new-label" placeholder="Label (e.g. Airbnb)" style="flex:0 0 160px">
+        <input type="text" id="td-link-new-url" placeholder="https://..."
+          onkeydown="if(event.key==='Enter')addLink()">
+        <button onclick="addLink()">+ Add</button>
+      </div>
+    </div>`;
+
+  // ── Budget estimate ──
+  const budget = t.budgetEstimate || 0;
+  const budgetHtml = `
+    <div class="card td-section">
+      <div class="td-section-title">💰 Budget Estimate</div>
+      <div class="td-budget-row">
+        <span style="font-size:20px;color:var(--text-2)">$</span>
+        <input type="number" id="td-budget" value="${budget || ''}" placeholder="0" min="0" step="50"
+          onblur="saveTripField('budgetEstimate', Number(this.value) || 0)"
+          onkeydown="if(event.key==='Enter')this.blur()">
+      </div>
+    </div>`;
+
+  body.innerHTML = headerHtml + notesHtml + itineraryHtml + packingHtml + linksHtml + budgetHtml;
+
+  // Auto-size all textareas after they're in the DOM
+  body.querySelectorAll('textarea').forEach(_growNotes);
+}
+
+function saveTripField(field, value) {
+  const t = _currentTrip();
+  if (!t) return;
+  const v = typeof value === 'string' ? value.trim() : value;
+  if (field === 'label') {
+    if (!v) { renderTrip(); return; } // bail on empty
+    t.label = _hasEmoji(v) ? v : `${v} ${tripEmoji(v)}`;
+  } else if (field === 'dates') {
+    if (!v) { renderTrip(); return; }
+    t.dates = v;
+    t.sortDate = parseSortDate(v) || t.sortDate;
+    _invalidateIcsEndCache(); // dates string changed → memoized end date is stale
+    // Clear any dismissed overlap so re-overlaps re-warn
+    const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
+    dismissed.delete(t.id);
+    localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
+  } else {
+    t[field] = v;
+  }
+  saveTrips();
+  // Full re-render only for fields that change layout (dates affect itinerary day list, label
+  // affects header color via emoji, status changes the pill). Other fields don't need it.
+  if (field === 'label' || field === 'dates') renderTrip();
+}
+
+function cycleTripStatus() {
+  const t = _currentTrip();
+  if (!t) return;
+  const current = TRIP_STATUS_CYCLE.includes(t.status) ? t.status : 'planning';
+  const idx = TRIP_STATUS_CYCLE.indexOf(current);
+  t.status = TRIP_STATUS_CYCLE[(idx + 1) % TRIP_STATUS_CYCLE.length];
+  saveTrips();
+  // Surgically update the pill instead of rebuilding the entire detail page.
+  const pill = document.querySelector('.td-status-pill');
+  if (pill) {
+    pill.className = 'td-status-pill td-status-' + t.status;
+    pill.innerHTML = `${TRIP_STATUS_EMOJI[t.status]} ${t.status}`;
   }
 }
 
-function editTripInline(id) {
-  const t = trips.find(x => x.id === id);
+function saveItineraryDay(dayKey, text) {
+  const t = _currentTrip();
   if (!t) return;
-  const card = document.querySelector(`.trip-card[data-id="${id}"]`);
-  if (!card) return;
-  _tripSaved = false;
-  const isOverlap = card.classList.contains('overlap');
-  card.innerHTML = `
-    <div class="trip-edit-form">
-      <input id="tedit-dates-${id}" value="${escHtml(t.dates)}" placeholder="Dates (e.g. Jun 5–7)"
-        onclick="event.stopPropagation()"
-        onkeydown="if(event.key==='Enter'){saveTripEdit('${id}');event.preventDefault()}if(event.key==='Escape'){renderDates();event.stopPropagation()}"
-        onblur="setTimeout(()=>saveTripEditIfActive('${id}'),120)">
-      <input id="tedit-name-${id}"  value="${escHtml(t.label)}"  placeholder="Trip name"
-        onclick="event.stopPropagation()"
-        onkeydown="if(event.key==='Enter'){saveTripEdit('${id}');event.preventDefault()}if(event.key==='Escape'){renderDates();event.stopPropagation()}"
-        onblur="setTimeout(()=>saveTripEditIfActive('${id}'),120)">
-      ${isOverlap ? `<button class="overlap-dismiss" onclick="dismissOverlap('${id}');event.stopPropagation()">⚠️ dismiss overlap warning</button>` : ''}
-    </div>`;
-  document.getElementById('tedit-name-' + id).focus();
+  const v = (text || '').trim();
+  if (!t.itinerary) t.itinerary = [];
+  const existing = t.itinerary.find(d => d.day === dayKey);
+  if (v) {
+    if (existing) existing.text = v;
+    else t.itinerary.push({ day: dayKey, text: v });
+  } else if (existing) {
+    t.itinerary = t.itinerary.filter(d => d.day !== dayKey);
+  }
+  saveTrips();
 }
 
-let _tripSaved = false;
-let _overlapPairs = [];
-function saveTripEditIfActive(id) {
-  if (_tripSaved) return;
-  const focused = document.activeElement;
-  if (focused && (focused.id === 'tedit-dates-'+id || focused.id === 'tedit-name-'+id)) return;
-  saveTripEdit(id);
+function addPackItem() {
+  const input = document.getElementById('td-pack-new');
+  const text = input.value.trim();
+  if (!text) return;
+  const t = _currentTrip();
+  if (!t) return;
+  if (!t.packingList) t.packingList = [];
+  t.packingList.push({ id: 'pk-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), text, packed: false });
+  saveTrips();
+  renderTrip();
+  // Re-focus the new-item input so adding several items in a row stays quick
+  setTimeout(() => document.getElementById('td-pack-new')?.focus(), 50);
 }
 
-function saveTripEdit(id) {
-  if (_tripSaved) return;
-  const t = trips.find(x => x.id === id);
+function togglePackItem(id) {
+  const t = _currentTrip();
+  if (!t || !t.packingList) return;
+  const item = t.packingList.find(p => p.id === id);
+  if (!item) return;
+  item.packed = !item.packed;
+  saveTrips();
+  // Surgical update — toggling a checkbox shouldn't reflow the whole detail page.
+  const row = document.querySelector(`.td-pack-item[data-id="${id}"]`);
+  if (row) {
+    row.classList.toggle('packed', item.packed);
+    const btn = row.querySelector('.td-pack-check');
+    if (btn) {
+      btn.classList.toggle('checked', item.packed);
+      btn.textContent = item.packed ? '✓' : '';
+    }
+  }
+  _updatePackCounter(t);
+}
+
+function _updatePackCounter(t) {
+  const pack = t.packingList || [];
+  const titleEl = document.querySelector('.td-section-title[data-pack-title]');
+  if (!titleEl) return;
+  const packed = pack.filter(p => p.packed).length;
+  titleEl.innerHTML = pack.length
+    ? `🎒 Packing List <span style="color:var(--sage);margin-left:8px;font-weight:600">${packed}/${pack.length} packed</span>`
+    : '🎒 Packing List';
+}
+
+function savePackText(id, value) {
+  const t = _currentTrip();
+  if (!t || !t.packingList) return;
+  const item = t.packingList.find(p => p.id === id);
+  if (!item) return;
+  const v = (value || '').trim();
+  if (!v) {
+    // Empty input deletes the item — structural change, full rerender is fine.
+    t.packingList = t.packingList.filter(p => p.id !== id);
+    saveTrips();
+    renderTrip();
+    return;
+  }
+  if (v === item.text) return; // no change, no save, no rerender
+  item.text = v;
+  saveTrips();
+  // The input already shows the new text; nothing else to update.
+}
+
+function deletePackItem(id) {
+  const t = _currentTrip();
+  if (!t || !t.packingList) return;
+  t.packingList = t.packingList.filter(p => p.id !== id);
+  saveTrips();
+  renderTrip();
+}
+
+function addLink() {
+  const labelInput = document.getElementById('td-link-new-label');
+  const urlInput = document.getElementById('td-link-new-url');
+  const label = labelInput.value.trim();
+  const url = urlInput.value.trim();
+  if (!label && !url) return;
+  const t = _currentTrip();
   if (!t) return;
-  const dates = document.getElementById('tedit-dates-' + id)?.value.trim();
-  const label = document.getElementById('tedit-name-'  + id)?.value.trim();
-  // Empty label bails BEFORE flipping the saved flag so the user can retype and retry —
-  // previously the flag was set unconditionally and later retries silently no-op'd.
-  if (!label) return;
-  _tripSaved = true;
-  t.dates = dates || t.dates;
-  t.label = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
-  if (dates) t.sortDate = parseSortDate(dates) || t.sortDate;
-  const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
-  dismissed.delete(id);
-  localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
-  saveTrips(); renderDates();
+  if (!t.links) t.links = [];
+  t.links.push({ id: 'lk-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), label: label || 'Link', url });
+  saveTrips();
+  renderTrip();
+}
+
+function saveLinkField(id, field, value) {
+  const t = _currentTrip();
+  if (!t || !t.links) return;
+  const link = t.links.find(l => l.id === id);
+  if (!link) return;
+  const v = (value || '').trim();
+  if (link[field] === v) return;
+  link[field] = v;
+  saveTrips();
+  // Surgical update — only the ↗ open-link affordance needs to appear/disappear when the URL
+  // toggles between empty and non-empty. Everything else is already accurate in the inputs.
+  if (field === 'url') {
+    const row = document.querySelector(`.td-link-item[data-id="${id}"]`);
+    if (row) {
+      const existingGo = row.querySelector('.td-link-go');
+      if (v && !existingGo) {
+        const a = document.createElement('a');
+        a.className = 'td-link-go';
+        a.href = v;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.title = 'Open link';
+        a.textContent = '↗';
+        a.addEventListener('click', e => e.stopPropagation());
+        // Insert before the delete button (which is the last child).
+        const del = row.querySelector('.td-item-del');
+        row.insertBefore(a, del);
+      } else if (!v && existingGo) {
+        existingGo.remove();
+      } else if (v && existingGo) {
+        existingGo.href = v;
+      }
+    }
+  }
+}
+
+function deleteLink(id) {
+  const t = _currentTrip();
+  if (!t || !t.links) return;
+  t.links = t.links.filter(l => l.id !== id);
+  saveTrips();
+  renderTrip();
+}
+
+function deleteTripFromDetail() {
+  const t = _currentTrip();
+  if (!t) return;
+  showConfirm(`Delete "${t.label}"? This can be undone for a few seconds.`, () => {
+    const id = t.id;
+    closeTrip();
+    deleteTrip(id);
+  });
 }
 
 function addListItem(type) {
@@ -4996,15 +5890,15 @@ function toggleAddDate() {
   if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
-function togglePastAdventures() {
-  const body = document.getElementById('past-grid');
-  const chev = document.getElementById('past-chev');
+function toggleThisWeekSection() {
+  const body = document.getElementById('this-week-body');
+  const chev = document.getElementById('this-week-chev');
+  if (!body) return;
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
+  localStorage.setItem('ow-this-week-open', open ? '1' : '0');
   if (chev) chev.textContent = open ? '▼' : '▶';
 }
-
-
 
 function addExpense() {
   const person   = document.getElementById('b-person').value;
@@ -5667,7 +6561,7 @@ document.getElementById('login-password').addEventListener('keydown', e => {
 
 // ─── SWIPE NAV (mobile) ──────────────────────────────────────────────────────
 (function initSwipeNav() {
-  const PAGES = ['home','review','plan','todos','dates','budget','history'];
+  const PAGES = ['home','review','todos','dates','budget','history'];
   let sx = null, sy = null;
   document.addEventListener('touchstart', e => {
     if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
@@ -5735,7 +6629,7 @@ if ('serviceWorker' in navigator) {
 <nav id="bottom-nav">
   <div class="bnav-item active" id="bnav-home"   onclick="showPage('home')">🏠<span>Home</span></div>
   <div class="bnav-item" id="bnav-review" onclick="showPage('review')">✏️<span>Review</span></div>
-  <div class="bnav-item" id="bnav-plan"   onclick="showPage('plan')">🗓️<span>Plan</span></div>
+  <div class="bnav-item" id="bnav-dates"  onclick="showPage('dates')">📅<span>Calendar</span></div>
   <div class="bnav-item" id="bnav-todos"  onclick="showPage('todos')">✅<span>To-Dos</span></div>
   <div class="bnav-item" id="bnav-more"   onclick="toggleNavMenu()">☰<span>More</span></div>
 </nav>
