@@ -87,7 +87,11 @@ async function _expectedToken() {
 }
 
 exports.ics = onRequest(
-  { region: 'us-central1', cors: false, memory: '256MiB' },
+  // invoker: 'public' is required for Gen 2 functions — without it Cloud Run rejects all
+  // unauthenticated requests at the infra level (before the request even reaches our handler),
+  // and iPhone Calendar / Google Calendar can't subscribe. Token check inside the handler is
+  // the actual security boundary.
+  { region: 'us-central1', cors: false, memory: '256MiB', invoker: 'public' },
   async (req, res) => {
     try {
       const expectedToken = await _expectedToken();
