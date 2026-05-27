@@ -2921,6 +2921,29 @@ function navCalToday() {
   renderCalendar();
 }
 
+// Click any day cell in the calendar → prefill the "Add a Date" form with that day and scroll
+// to it. Range trips (e.g. "Jun 5–7") can still be created by typing a range into the dates
+// field after the prefill — this is just a shortcut for the single-day case.
+const _MONTH_NAMES_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function addEventForDay(isoDate) {
+  if (!isoDate) return;
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return;
+  const formatted = `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+  const datesInput = document.getElementById('new-trip-dates');
+  const nameInput  = document.getElementById('new-trip-name');
+  const form       = document.getElementById('add-date-form');
+  const chev       = document.getElementById('add-date-chev');
+  if (form && form.style.display === 'none') {
+    form.style.display = '';
+    if (chev) chev.textContent = '▼';
+  }
+  if (datesInput) datesInput.value = formatted;
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Focus the name input so the user can type immediately. The scroll smooth-finishes by then.
+  setTimeout(() => nameInput?.focus(), 250);
+}
+
 function _fmtMonth(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
@@ -3090,7 +3113,8 @@ function renderCalendar() {
       const cellCls = ['cal-day'];
       if (!inMonth) cellCls.push('cal-day-other');
       if (isToday)  cellCls.push('cal-day-today');
-      html += `<div class="${cellCls.join(' ')}" data-date="${_fmtDateKey(d)}">
+      const cellIso = _fmtDateKey(d);
+      html += `<div class="${cellCls.join(' ')}" data-date="${cellIso}" onclick="addEventForDay('${cellIso}')">
         <div class="cal-day-num">${d.getDate()}</div>
         <div class="cal-day-bars">${barsHtml}</div>
         ${chipsHtml}
