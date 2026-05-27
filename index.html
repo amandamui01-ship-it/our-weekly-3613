@@ -3913,7 +3913,13 @@ function openIcsSubscribeModal() {
   block.style.display = 'none';
   stateEl.textContent = 'Generating your subscription URL…';
   _getOrCreateIcsToken().then(token => {
-    const url = `${ICS_FUNCTION_URL}?token=${encodeURIComponent(token)}`;
+    // Use the webcal:// scheme so iPhone Calendar accepts the subscription without the
+    // "cannot connect using SSL" error that affects plain https:// .ics URLs on iOS. Both
+    // iPhone Calendar and Google Calendar accept webcal:// — it's just an alias scheme that
+    // tells the calendar client "this is a subscription feed", and the client fetches it
+    // over https under the hood.
+    const httpsUrl = `${ICS_FUNCTION_URL}?token=${encodeURIComponent(token)}`;
+    const url = httpsUrl.replace(/^https:\/\//, 'webcal://');
     input.value = url;
     stateEl.textContent = '';
     block.style.display = '';
