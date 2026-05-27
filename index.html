@@ -366,11 +366,16 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .cal-bar-start{border-radius:4px 0 0 4px;padding-left:8px;margin-left:1px}
 .cal-bar-end{border-radius:0 4px 4px 0;padding-right:8px;margin-right:1px}
 .cal-bar-start.cal-bar-end{border-radius:4px}
-.cal-bar-past{opacity:.45;filter:saturate(.7)}
+/* Past trips: heavily desaturated + dimmed so they read clearly as "already happened"
+   vs the vivid future bars. Color hint stays just barely so you can still recognize them. */
+.cal-bar-past{opacity:.35;filter:grayscale(.9) saturate(.4)}
+.cal-bar-past:hover{opacity:.7;filter:grayscale(.6) saturate(.7)}
 .cal-bar-empty{height:16px;background:transparent;cursor:default}
 .cal-event{font-size:10px;font-weight:600;padding:1px 6px;margin:2px 0 0;background:var(--surface-warm);color:var(--text-2);border-left:2px solid var(--amber);border-radius:0 3px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
-.cal-day-past .cal-event{opacity:.5}
-.cal-day-past .cal-day-num{opacity:.55}
+.cal-day-past{background:var(--bg)}
+.cal-day-past .cal-event{opacity:.35;filter:grayscale(.7);border-left-color:var(--text-3)}
+.cal-day-past .cal-day-num{opacity:.4}
+.cal-day-past .cal-chip{opacity:.5;filter:grayscale(.5)}
 .cal-day-chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:auto;padding-top:3px}
 .cal-chip{font-size:11px;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;background:var(--surface-warm);border:1px solid var(--border-light);transition:all .12s;line-height:1}
 .cal-chip:hover{transform:scale(1.15)}
