@@ -318,6 +318,19 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 @keyframes trip-pulse{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 4px 24px rgba(217,106,82,.4)}}
 .trip-pulse{animation:trip-pulse 2.5s ease-in-out infinite}
 
+/* ── Today at-a-glance banner above calendar ── */
+.today-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:11px 14px;margin-bottom:14px;background:linear-gradient(135deg,var(--amber-bg) 0%,var(--surface-warm) 100%);border:1px solid var(--amber);border-radius:10px;font-size:13px;line-height:1.4}
+.today-banner-label{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:14px;color:var(--amber-dark);letter-spacing:-.01em;flex-shrink:0}
+.today-banner-sep{color:var(--text-3);opacity:.5;flex-shrink:0}
+.today-banner-empty{font-style:italic;color:var(--text-3);font-size:12px}
+.today-banner-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.02em;background:var(--surface);border:1px solid var(--border)}
+.today-banner-chip.gym{color:#2e5233;border-color:#c3ddc7;background:#eaf2eb}
+.today-banner-chip.date{color:#8a2a18;border-color:#f5cfc7;background:#fdf0ed}
+.today-banner-chip.friends{color:#1a3d6e;border-color:#c5d8fc;background:#eef4fc}
+.today-banner-event{padding:2px 10px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface);color:var(--text);border-left:2px solid var(--amber)}
+.today-banner-trip{display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;font-size:11px;font-weight:700;color:white;background:var(--tc,var(--amber));cursor:pointer;border:none;font-family:inherit}
+.today-banner-trip:hover{filter:brightness(1.08)}
+
 /* ── This Week section inner blocks ── */
 .tw-section{padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid var(--border-light)}
 .tw-section-last{padding-bottom:0;margin-bottom:0;border-bottom:none}
@@ -370,6 +383,9 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
    vs the vivid future bars. Color hint stays just barely so you can still recognize them. */
 .cal-bar-past{opacity:.35;filter:grayscale(.9) saturate(.4)}
 .cal-bar-past:hover{opacity:.7;filter:grayscale(.6) saturate(.7)}
+.cal-bar-cd{display:inline-block;margin-left:6px;font-size:9px;font-weight:800;padding:0 5px;background:rgba(255,255,255,.28);border-radius:6px;letter-spacing:.02em;text-transform:lowercase;vertical-align:middle}
+.cal-bar-cd-soon{background:rgba(255,255,255,.5);animation:cal-cd-pulse 1.8s ease-in-out infinite}
+@keyframes cal-cd-pulse{0%,100%{opacity:.85}50%{opacity:1}}
 .cal-bar-empty{height:16px;background:transparent;cursor:default}
 .cal-event{font-size:10px;font-weight:600;padding:1px 6px;margin:2px 0 0;background:var(--surface-warm);color:var(--text-2);border-left:2px solid var(--amber);border-radius:0 3px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
 .cal-day-past{background:var(--bg)}
@@ -1283,6 +1299,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       </div>
     </div>
     <div id="cal-view-container">
+      <div id="today-banner" class="today-banner" style="display:none"></div>
       <div class="cal-header">
         <div class="cal-nav-group">
           <button class="cal-nav-btn" onclick="navCalMonth(-1)" title="Previous month">◀</button>
@@ -1969,6 +1986,8 @@ function initFirestore() {
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) {
       renderPlan();
       _refreshCalendarChips();
+      const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
+      _renderTodayBanner(todayLocal);
     }
   });
 
@@ -3060,6 +3079,54 @@ function _assignLanesForWeek(weekDays, weekTrips) {
 // Map a JS getDay() value to the weekPlan day key (Mon-first).
 const _DOW_TO_KEY = ['sun','mon','tue','wed','thu','fri','sat'];
 
+// Compact "Today at a glance" banner above the calendar — shows today's date plus any active
+// chips, freeform events, and trips overlapping today. Designed to make the calendar feel
+// alive without scanning the grid. Pulls from weekPlan + trips so it stays in sync with edits.
+function _renderTodayBanner(today) {
+  const el = document.getElementById('today-banner');
+  if (!el) return;
+  const todayIso = _fmtDateKey(today);
+  const planMon = _planMondayDate();
+  const planSun = new Date(planMon); planSun.setDate(planMon.getDate() + 7);
+  const todayInPlanWeek = today >= planMon && today < planSun;
+  const dKey = _DOW_TO_KEY[today.getDay()];
+  const dp = (todayInPlanWeek && weekPlan && weekPlan[dKey]) || {};
+
+  // Trips overlapping today
+  const todayTrips = trips.filter(t => {
+    if (!t.sortDate) return false;
+    const tStart = new Date(t.sortDate + 'T00:00:00');
+    if (today < tStart) return false;
+    const endICS = parseICSEndDateMemo(t.dates, t.sortDate);
+    const tEndIso = `${endICS.slice(0,4)}-${endICS.slice(4,6)}-${endICS.slice(6,8)}`;
+    const tEnd = new Date(tEndIso + 'T00:00:00');
+    return today < tEnd;
+  });
+
+  const chipsHtml = [
+    dp.gym ? '<span class="today-banner-chip gym">💪 Gym</span>' : '',
+    dp.date ? '<span class="today-banner-chip date">🌙 Night Together</span>' : '',
+    dp.friends ? '<span class="today-banner-chip friends">👫 Friends</span>' : '',
+  ].filter(Boolean).join('');
+
+  const eventsArr = dp.events || (dp.notesList && dp.notesList.length ? dp.notesList : dp.notes ? [dp.notes] : []);
+  const eventsHtml = eventsArr.map(e => `<span class="today-banner-event">${escHtml(e)}</span>`).join('');
+
+  const tripsHtml = todayTrips.map(t => `<button class="today-banner-trip ${tripColor(t.id)}" onclick="openTrip('${t.id}')">${escHtml(t.label)}</button>`).join('');
+
+  const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+  const dateLabel = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const labelHtml = `<span class="today-banner-label">Today · ${dayName}, ${dateLabel}</span>`;
+
+  const hasAnything = chipsHtml || eventsHtml || tripsHtml;
+  if (!hasAnything) {
+    el.innerHTML = labelHtml + '<span class="today-banner-empty">Nothing scheduled — enjoy it ✨</span>';
+  } else {
+    el.innerHTML = labelHtml + tripsHtml + eventsHtml + chipsHtml;
+  }
+  el.style.display = '';
+}
+
 // Surgical refresh for calendar chip on/off state when only weekPlan changes — avoids the full
 // 42-cell innerHTML rebuild that renderCalendar() does. Reads each chip's data-day attribute
 // and toggles the .on class against the latest weekPlan values.
@@ -3087,6 +3154,7 @@ function renderCalendar() {
   if (labelEl) labelEl.textContent = monthDate.toLocaleDateString('en-US', { month:'long', year:'numeric' });
 
   const today = new Date(); today.setHours(0,0,0,0);
+  _renderTodayBanner(today);
   const days = _calMonthDays(_calMonth);
   const currentMonth = m;
 
@@ -3131,8 +3199,20 @@ function renderCalendar() {
           if (slot.isWeekStart) cls.push('cal-bar-start');
           if (slot.isWeekEnd)   cls.push('cal-bar-end');
           if (slot.isPast)      cls.push('cal-bar-past');
+          // Countdown badge on the trip's first day in the calendar window when within 14 days.
+          // Shows on hover to keep the bar compact; matches the Cards-view "in N days" affordance.
+          let countdownChip = '';
+          if (!slot.isPast && slot.showLabel && t.sortDate) {
+            const tStart = new Date(t.sortDate + 'T00:00:00');
+            const days = Math.ceil((tStart - today) / 864e5);
+            if (days >= 0 && days <= 14) {
+              const txt = days === 0 ? 'today!' : days === 1 ? 'tomorrow!' : `in ${days}d`;
+              const urgent = days <= 7 ? ' cal-bar-cd-soon' : '';
+              countdownChip = `<span class="cal-bar-cd${urgent}">${txt}</span>`;
+            }
+          }
           const label = slot.showLabel ? escHtml(t.label) : '&nbsp;';
-          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}">${label}</div>`;
+          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}">${label}${countdownChip}</div>`;
         } else {
           barsHtml += `<div class="cal-bar-empty"></div>`;
         }
@@ -4420,13 +4500,20 @@ function cycleTripStatus() {
   if (!t) return;
   const current = TRIP_STATUS_CYCLE.includes(t.status) ? t.status : 'planning';
   const idx = TRIP_STATUS_CYCLE.indexOf(current);
-  t.status = TRIP_STATUS_CYCLE[(idx + 1) % TRIP_STATUS_CYCLE.length];
+  const next = TRIP_STATUS_CYCLE[(idx + 1) % TRIP_STATUS_CYCLE.length];
+  const justConfirmed = next === 'confirmed' && current !== 'confirmed';
+  t.status = next;
   saveTrips();
   // Surgically update the pill instead of rebuilding the entire detail page.
   const pill = document.querySelector('.td-status-pill');
   if (pill) {
     pill.className = 'td-status-pill td-status-' + t.status;
     pill.innerHTML = `${TRIP_STATUS_EMOJI[t.status]} ${t.status}`;
+    if (justConfirmed) {
+      // Celebrate the moment a trip gets locked in. Burst from the pill itself, not the page center.
+      const r = pill.getBoundingClientRect();
+      burstAt(r.left + r.width / 2, r.top + r.height / 2, 32, 110);
+    }
   }
 }
 
