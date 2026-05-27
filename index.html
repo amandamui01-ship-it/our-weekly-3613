@@ -3884,9 +3884,11 @@ function parseICSEndDate(datesStr, sortDate) {
 }
 
 // ─── iPhone / Google Calendar live subscribe ─────────────────────────────────
-// Public URL for the deployed Firebase Function. Region defaults to us-central1; keep this in
-// sync with functions/index.js if you ever change the region.
-const ICS_FUNCTION_URL = 'https://us-central1-our-weekly.cloudfunctions.net/ics';
+// Public URL for the deployed Firebase Function (Gen 2 — Cloud Run backed). Region us-central1.
+// If you ever redeploy and the URL changes, update this constant to whatever `firebase deploy`
+// prints under "Function URL (ics(us-central1)):". The URL stays stable across redeploys of the
+// same project + region + function name, so you shouldn't need to touch this often.
+const ICS_FUNCTION_URL = 'https://ics-ev25s5uucq-uc.a.run.app';
 
 async function _getOrCreateIcsToken() {
   const ref = db.collection('state').doc('settings');
