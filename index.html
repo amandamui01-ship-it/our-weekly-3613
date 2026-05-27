@@ -370,6 +370,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .cal-day:hover{background:var(--surface-warm)}
 .cal-day-other{background:var(--bg)}
 .cal-day-other .cal-day-num{color:var(--text-3);opacity:.55}
+.cal-day-drag-select{background:var(--amber-bg);box-shadow:inset 0 0 0 2px var(--amber)}
 .cal-day-today{background:var(--amber-bg)}
 .cal-day-today .cal-day-num{background:var(--amber);color:white;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:800}
 .cal-day-num{font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:3px;line-height:22px;height:22px;display:inline-block}
@@ -2987,15 +2988,26 @@ function navCalToday() {
   renderCalendar();
 }
 
-// Click any day cell in the calendar → prefill the "Add a Date" form with that day and scroll
-// to it. Range trips (e.g. "Jun 5–7") can still be created by typing a range into the dates
-// field after the prefill — this is just a shortcut for the single-day case.
+// Click a day → prefill the Add-a-Date form with that day. Drag across days → prefill with a
+// range (e.g. "Jul 30 – Aug 2"). Range trips can still be edited freely after the prefill.
 const _MONTH_NAMES_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function addEventForDay(isoDate) {
-  if (!isoDate) return;
+function _fmtIsoToShort(isoDate) {
   const [y, m, d] = isoDate.split('-').map(Number);
-  if (!y || !m || !d) return;
-  const formatted = `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+  if (!y || !m || !d) return '';
+  return `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+}
+function addEventForDay(isoStart, isoEnd) {
+  if (!isoStart) return;
+  let formatted = _fmtIsoToShort(isoStart);
+  if (isoEnd && isoEnd !== isoStart) {
+    const [sy, sm] = isoStart.split('-').map(Number);
+    const [ey, em, ed] = isoEnd.split('-').map(Number);
+    if (!ey || !em || !ed) return;
+    // Same month → "Jun 5–7". Cross-month → "Jul 30 – Aug 2".
+    formatted = (sy === ey && sm === em)
+      ? `${_MONTH_NAMES_SHORT[sm - 1]} ${isoStart.split('-')[2].replace(/^0/, '')}–${ed}`
+      : `${formatted} – ${_MONTH_NAMES_SHORT[em - 1]} ${ed}`;
+  }
   const datesInput = document.getElementById('new-trip-dates');
   const nameInput  = document.getElementById('new-trip-name');
   const form       = document.getElementById('add-date-form');
@@ -3006,8 +3018,61 @@ function addEventForDay(isoDate) {
   }
   if (datesInput) datesInput.value = formatted;
   if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  // Focus the name input so the user can type immediately. The scroll smooth-finishes by then.
   setTimeout(() => nameInput?.focus(), 250);
+}
+
+// Delegated click + drag-select for the calendar grid. mousedown on a day cell starts a range;
+// mouseover during drag highlights the range; mouseup commits — either a single-day prefill
+// (no drag) or a range prefill. Bind once; survives renderCalendar() rebuilds via delegation.
+let _calDragBound = false;
+let _calDragStart = null;
+let _calDragLast = null;
+function _bindCalDragSelect() {
+  if (_calDragBound) return;
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+  const isInteractive = el => el && (el.closest('.cal-bar') || el.closest('.cal-chip') || el.closest('.cal-event'));
+  const paintRange = (startIso, endIso) => {
+    // Normalize start ≤ end
+    const [a, b] = [startIso, endIso].sort();
+    grid.querySelectorAll('.cal-day').forEach(cell => {
+      const iso = cell.dataset.date;
+      cell.classList.toggle('cal-day-drag-select', iso >= a && iso <= b);
+    });
+  };
+  const clearRange = () => {
+    grid.querySelectorAll('.cal-day-drag-select').forEach(c => c.classList.remove('cal-day-drag-select'));
+  };
+  grid.addEventListener('mousedown', e => {
+    if (e.button !== 0) return; // primary button only
+    if (isInteractive(e.target)) return;
+    const cell = e.target.closest('.cal-day');
+    if (!cell) return;
+    _calDragStart = cell.dataset.date;
+    _calDragLast = _calDragStart;
+    paintRange(_calDragStart, _calDragStart);
+    e.preventDefault();
+  });
+  grid.addEventListener('mouseover', e => {
+    if (!_calDragStart) return;
+    if (isInteractive(e.target)) return;
+    const cell = e.target.closest('.cal-day');
+    if (!cell) return;
+    _calDragLast = cell.dataset.date;
+    paintRange(_calDragStart, _calDragLast);
+  });
+  // mouseup must be on window — releasing outside the grid still ends the drag cleanly.
+  window.addEventListener('mouseup', () => {
+    if (!_calDragStart) return;
+    const start = _calDragStart;
+    const end = _calDragLast || _calDragStart;
+    _calDragStart = null;
+    _calDragLast = null;
+    clearRange();
+    const [a, b] = [start, end].sort();
+    addEventForDay(a, a === b ? null : b);
+  });
+  _calDragBound = true;
 }
 
 function _fmtMonth(d) {
@@ -3141,6 +3206,51 @@ function _renderTodayBanner(today) {
     el.innerHTML = labelHtml + tripsHtml + eventsHtml + chipsHtml;
   }
   el.style.display = '';
+}
+
+// Click an event chip on the calendar grid to edit it in place. Saves on blur/Enter, deletes
+// the event if cleared. Mirrors the schedule view's editEvent flow but operates on .cal-event
+// nodes instead of the schedule chips.
+function editCalEvent(dayKey, idx) {
+  const el = document.querySelector(`.cal-event[data-day="${dayKey}"][data-idx="${idx}"]`);
+  if (!el || el.querySelector('input')) return;
+  const events = (weekPlan && weekPlan[dayKey] && weekPlan[dayKey].events) || [];
+  const current = events[idx] || el.textContent || '';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.style.cssText = 'width:100%;border:none;background:transparent;font-family:inherit;font-size:10px;font-weight:600;color:var(--text);outline:none;padding:0';
+  el.innerHTML = '';
+  el.appendChild(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const finish = (save) => {
+    if (done) return;
+    done = true;
+    const v = input.value.trim();
+    if (save) {
+      if (!weekPlan[dayKey]) weekPlan[dayKey] = {};
+      if (!weekPlan[dayKey].events) {
+        // Legacy notesList/notes → events migration on first edit so we have a writable array.
+        const dp = weekPlan[dayKey];
+        weekPlan[dayKey].events = dp.notesList && dp.notesList.length ? [...dp.notesList] : dp.notes ? [dp.notes] : [];
+      }
+      const evts = weekPlan[dayKey].events;
+      if (v) evts[idx] = v;
+      else evts.splice(idx, 1);
+      if (!evts.length) delete weekPlan[dayKey].events;
+      savePlan();
+    }
+    renderCalendar();
+    if (isActive('dates')) renderPlan();
+  };
+  input.onblur = () => finish(true);
+  input.onkeydown = e => {
+    if (e.key === 'Enter')  { e.preventDefault(); input.onblur = null; finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); input.onblur = null; finish(false); }
+  };
+  input.addEventListener('click', e => e.stopPropagation());
 }
 
 // Hover preview popover for trip bars (desktop only). Delegated on cal-grid so it survives
@@ -3294,13 +3404,14 @@ function renderCalendar() {
 
       // Freeform This Week events for current plan-week days. Pull from weekPlan[dayKey].events
       // (or the legacy notes/notesList shape) so anything written in the schedule grid surfaces
-      // on the calendar grid too.
+      // on the calendar grid too. Click → edit in place (stopPropagation prevents the cell click
+      // from also opening the Add-a-Date prefill flow).
       let eventsHtml = '';
       if (isPlanWeek) {
         const dp = (weekPlan && weekPlan[dKey]) || {};
         const events = dp.events || (dp.notesList && dp.notesList.length ? dp.notesList : dp.notes ? [dp.notes] : []);
         if (events && events.length) {
-          eventsHtml = events.map(evt => `<div class="cal-event" title="${escHtml(evt)}">${escHtml(evt)}</div>`).join('');
+          eventsHtml = events.map((evt, ei) => `<div class="cal-event" data-day="${dKey}" data-idx="${ei}" onclick="editCalEvent('${dKey}',${ei});event.stopPropagation()" title="${escHtml(evt)} (click to edit)">${escHtml(evt)}</div>`).join('');
         }
       }
 
@@ -3321,7 +3432,9 @@ function renderCalendar() {
       if (isToday)    cellCls.push('cal-day-today');
       else if (isPastDay) cellCls.push('cal-day-past');
       const cellIso = _fmtDateKey(d);
-      html += `<div class="${cellCls.join(' ')}" data-date="${cellIso}" onclick="addEventForDay('${cellIso}')">
+      // Click/drag handling is delegated on the grid (see _bindCalDragSelect). The cell only
+      // needs its data-date attribute — no inline onclick (so drag-vs-click can be disambiguated).
+      html += `<div class="${cellCls.join(' ')}" data-date="${cellIso}">
         <div class="cal-day-num">${d.getDate()}</div>
         <div class="cal-day-bars">${barsHtml}</div>
         ${eventsHtml}
@@ -3332,8 +3445,9 @@ function renderCalendar() {
   gridEl.innerHTML = html;
   // Entrance animation runs once per trip-add; clear so subsequent renders don't re-trigger it.
   _newTripIds.clear();
-  // First-time bind for hover-preview delegation (idempotent — checks its own bound flag).
+  // First-time bind for hover-preview + drag-select delegation (both idempotent).
   _bindCalPreview();
+  _bindCalDragSelect();
 }
 
 let _thisWeekStateApplied = false;
