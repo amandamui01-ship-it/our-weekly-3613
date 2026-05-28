@@ -127,7 +127,9 @@ exports.ics = onRequest(
         'REFRESH-INTERVAL;VALUE=DURATION:PT2H',
       ];
 
-      // ── Trip events (multi-day all-day) ──
+      // ── Trip events ──
+      // Multi-day trips always emit as all-day (VALUE=DATE) regardless of any time field.
+      // Single-day trips with a time emit as timed VEVENT (1h default duration, floating time).
       for (const t of trips) {
         if (!t.sortDate || isVague(t)) continue;
         const descParts = [];
@@ -142,14 +144,45 @@ exports.ics = onRequest(
           }
         }
 
+        const startCompact = t.sortDate.replace(/-/g, '');
+        const endCompact = parseICSEndDate(t.dates, t.sortDate);
+        const isSingleDay = (() => {
+          const sd = new Date(Date.UTC(
+            parseInt(startCompact.slice(0,4)), parseInt(startCompact.slice(4,6)) - 1, parseInt(startCompact.slice(6,8))
+          ));
+          const ed = new Date(Date.UTC(
+            parseInt(endCompact.slice(0,4)), parseInt(endCompact.slice(4,6)) - 1, parseInt(endCompact.slice(6,8))
+          ));
+          return Math.round((ed - sd) / 86400000) === 1;
+        })();
+
         const eventLines = [
           'BEGIN:VEVENT',
           `UID:our-weekly-trip-${t.id}@ourweekly`,
           `DTSTAMP:${dtstamp}`,
-          `DTSTART;VALUE=DATE:${t.sortDate.replace(/-/g, '')}`,
-          `DTEND;VALUE=DATE:${parseICSEndDate(t.dates, t.sortDate)}`,
-          `SUMMARY:${escIcs(t.label)}`,
         ];
+        if (isSingleDay && t.time && /^\d{2}:\d{2}$/.test(t.time)) {
+          const [hh, mm] = t.time.split(':').map(Number);
+          const startTs = `${startCompact}T${String(hh).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
+          let endH = hh + 1;
+          let endDateCompact = startCompact;
+          if (endH >= 24) {
+            endH -= 24;
+            const d = new Date(Date.UTC(
+              parseInt(startCompact.slice(0,4)), parseInt(startCompact.slice(4,6)) - 1,
+              parseInt(startCompact.slice(6,8)) + 1
+            ));
+            endDateCompact = d.toISOString().slice(0,10).replace(/-/g,'');
+          }
+          const endTs = `${endDateCompact}T${String(endH).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
+          eventLines.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
+        } else {
+          eventLines.push(
+            `DTSTART;VALUE=DATE:${startCompact}`,
+            `DTEND;VALUE=DATE:${endCompact}`,
+          );
+        }
+        eventLines.push(`SUMMARY:${escIcs(t.label)}`);
         if (descParts.length) eventLines.push(`DESCRIPTION:${escIcs(descParts.join('\n'))}`);
         if (t.location) eventLines.push(`LOCATION:${escIcs(t.location)}`);
         eventLines.push('CLASS:PRIVATE', 'CATEGORIES:Our Weekly · Trips', 'END:VEVENT');

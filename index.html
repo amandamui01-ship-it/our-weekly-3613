@@ -385,6 +385,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .cal-bar-past{opacity:.35;filter:grayscale(.9) saturate(.4)}
 .cal-bar-past:hover{opacity:.7;filter:grayscale(.6) saturate(.7)}
 .cal-bar-cd{display:inline-block;margin-left:6px;font-size:9px;font-weight:800;padding:0 5px;background:rgba(255,255,255,.28);border-radius:6px;letter-spacing:.02em;text-transform:lowercase;vertical-align:middle}
+.cal-bar-time{display:inline-block;font-size:9px;font-weight:800;padding:0 4px;margin-right:3px;background:rgba(255,255,255,.32);border-radius:4px;letter-spacing:.02em;text-transform:lowercase;vertical-align:middle}
 .cal-bar-cd-soon{background:rgba(255,255,255,.5);animation:cal-cd-pulse 1.8s ease-in-out infinite}
 @keyframes cal-cd-pulse{0%,100%{opacity:.85}50%{opacity:1}}
 @keyframes cal-bar-in{from{opacity:0;transform:scaleX(.7) translateY(-4px)}to{opacity:1;transform:scaleX(1) translateY(0)}}
@@ -2210,6 +2211,30 @@ function parseEventTextAndTime(input) {
   return { text, time };
 }
 
+// Parse a time string from a raw input (no @ prefix required). Accepts "7pm", "7:30pm",
+// "19:00", "7", "12am". Returns "HH:MM" 24-hour or null if unparseable.
+function parseTimeInput(raw) {
+  if (!raw) return null;
+  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if (!m) return null;
+  let hour = parseInt(m[1]);
+  const min = m[2] ? parseInt(m[2]) : 0;
+  const ampm = m[3] ? m[3].toLowerCase() : null;
+  if (ampm === 'pm' && hour < 12) hour += 12;
+  if (ampm === 'am' && hour === 12) hour = 0;
+  if (hour < 0 || hour > 23 || min < 0 || min > 59) return null;
+  return String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+}
+
+// Reject anything other than http/https/mailto schemes — guards link `↗` from javascript:
+// and data: URIs that would otherwise execute on click.
+function _safeUrl(url) {
+  if (!url) return '';
+  const s = String(url).trim();
+  if (/^\s*(javascript|data|vbscript|file):/i.test(s)) return '';
+  return s;
+}
+
 // Render a 24h "HH:MM" as a friendly "11:30am" / "2pm" / "12pm" string.
 function formatTimeDisplay(time24) {
   if (!time24) return '';
@@ -3358,7 +3383,10 @@ function _renderTodayBanner(today) {
     return `<span class="today-banner-event">${escHtml(prefix + e.text)}</span>`;
   }).join('');
 
-  const tripsHtml = todayTrips.map(t => `<button class="today-banner-trip ${tripColor(t.id)}" onclick="openTrip('${t.id}')">${escHtml(t.label)}</button>`).join('');
+  const tripsHtml = todayTrips.map(t => {
+    const timePrefix = t.time ? `${formatTimeDisplay(t.time)} · ` : '';
+    return `<button class="today-banner-trip ${tripColor(t.id)}" onclick="openTrip('${t.id}')">${escHtml(timePrefix + t.label)}</button>`;
+  }).join('');
 
   const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
   const dateLabel = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -3562,8 +3590,9 @@ function renderCalendar() {
               countdownChip = `<span class="cal-bar-cd${urgent}">${txt}</span>`;
             }
           }
+          const timePrefix = (slot.showLabel && t.time) ? `<span class="cal-bar-time">${formatTimeDisplay(t.time)}</span> ` : '';
           const label = slot.showLabel ? escHtml(t.label) : '&nbsp;';
-          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}">${label}${countdownChip}</div>`;
+          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}${t.time ? ' · ' + formatTimeDisplay(t.time) : ''}">${timePrefix}${label}${countdownChip}</div>`;
         } else {
           barsHtml += `<div class="cal-bar-empty"></div>`;
         }
@@ -4787,6 +4816,10 @@ function renderTrip() {
         <button class="td-status-pill td-status-${status}" onclick="cycleTripStatus()" title="Click to change status">
           ${TRIP_STATUS_EMOJI[status]} ${status}
         </button>
+        <div class="td-meta-item">🕐 <input id="td-time" value="${escHtml(t.time ? formatTimeDisplay(t.time) : '')}"
+          placeholder="Add time (e.g. 7pm)"
+          onblur="saveTripField('time', this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()"></div>
         <div class="td-meta-item">📍 <input id="td-location" value="${escHtml(t.location || '')}"
           placeholder="Add location"
           onblur="saveTripField('location', this.value)"></div>
@@ -4862,7 +4895,7 @@ function renderTrip() {
       <input class="td-link-url" value="${escHtml(l.url)}" placeholder="https://..."
         onblur="saveLinkField('${l.id}', 'url', this.value)"
         onkeydown="if(event.key==='Enter')this.blur()">
-      ${l.url ? `<a class="td-link-go" href="${escHtml(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open link">↗</a>` : ''}
+      ${_safeUrl(l.url) ? `<a class="td-link-go" href="${escHtml(_safeUrl(l.url))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open link">↗</a>` : ''}
       <button class="td-item-del" onclick="deleteLink('${l.id}')" title="Remove">×</button>
     </div>
   `).join('');
@@ -4886,7 +4919,7 @@ function renderTrip() {
       <div class="td-budget-row">
         <span style="font-size:20px;color:var(--text-2)">$</span>
         <input type="number" id="td-budget" value="${budget || ''}" placeholder="0" min="0" step="50"
-          onblur="saveTripField('budgetEstimate', Number(this.value) || 0)"
+          onblur="saveTripField('budgetEstimate', this.value)"
           onkeydown="if(event.key==='Enter')this.blur()">
       </div>
     </div>`;
@@ -4899,7 +4932,7 @@ function renderTrip() {
 
 function saveTripField(field, value) {
   const t = _currentTrip();
-  if (!t) return;
+  if (!t) { renderTrip(); return; } // trip was deleted (e.g. by partner) → show "deleted" state instead of silently dropping edits
   const v = typeof value === 'string' ? value.trim() : value;
   if (field === 'label') {
     if (!v) { renderTrip(); return; } // bail on empty
@@ -4913,12 +4946,22 @@ function saveTripField(field, value) {
     const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
     dismissed.delete(t.id);
     localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
+  } else if (field === 'time') {
+    if (!v) { t.time = null; }
+    else {
+      const parsed = parseTimeInput(v);
+      if (parsed) t.time = parsed;
+      else { renderTrip(); return; } // unparseable input → revert
+    }
+  } else if (field === 'budgetEstimate') {
+    // Clamp to non-negative even if HTML min was bypassed (typing/pasting "-100").
+    t[field] = Math.max(0, Number(v) || 0);
   } else {
     t[field] = v;
   }
   saveTrips();
   // Full re-render only for fields that change layout (dates affect itinerary day list, label
-  // affects header color via emoji, status changes the pill). Other fields don't need it.
+  // affects header color via emoji). Other fields don't need it.
   if (field === 'label' || field === 'dates') renderTrip();
 }
 
@@ -4946,7 +4989,7 @@ function cycleTripStatus() {
 
 function saveItineraryDay(dayKey, text) {
   const t = _currentTrip();
-  if (!t) return;
+  if (!t) { renderTrip(); return; }
   const v = (text || '').trim();
   if (!t.itinerary) t.itinerary = [];
   const existing = t.itinerary.find(d => d.day === dayKey);
@@ -4964,7 +5007,7 @@ function addPackItem() {
   const text = input.value.trim();
   if (!text) return;
   const t = _currentTrip();
-  if (!t) return;
+  if (!t) { renderTrip(); return; }
   if (!t.packingList) t.packingList = [];
   t.packingList.push({ id: 'pk-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), text, packed: false });
   saveTrips();
@@ -4975,7 +5018,8 @@ function addPackItem() {
 
 function togglePackItem(id) {
   const t = _currentTrip();
-  if (!t || !t.packingList) return;
+  if (!t) { renderTrip(); return; }
+  if (!t.packingList) return;
   const item = t.packingList.find(p => p.id === id);
   if (!item) return;
   item.packed = !item.packed;
@@ -5005,26 +5049,25 @@ function _updatePackCounter(t) {
 
 function savePackText(id, value) {
   const t = _currentTrip();
-  if (!t || !t.packingList) return;
+  if (!t) { renderTrip(); return; }
+  if (!t.packingList) return;
   const item = t.packingList.find(p => p.id === id);
   if (!item) return;
   const v = (value || '').trim();
   if (!v) {
-    // Empty input deletes the item — structural change, full rerender is fine.
-    t.packingList = t.packingList.filter(p => p.id !== id);
-    saveTrips();
+    // Don't silently delete on accidental clear+blur. Use the × button for explicit deletion.
     renderTrip();
     return;
   }
-  if (v === item.text) return; // no change, no save, no rerender
+  if (v === item.text) return;
   item.text = v;
   saveTrips();
-  // The input already shows the new text; nothing else to update.
 }
 
 function deletePackItem(id) {
   const t = _currentTrip();
-  if (!t || !t.packingList) return;
+  if (!t) { renderTrip(); return; }
+  if (!t.packingList) return;
   t.packingList = t.packingList.filter(p => p.id !== id);
   saveTrips();
   renderTrip();
@@ -5036,8 +5079,13 @@ function addLink() {
   const label = labelInput.value.trim();
   const url = urlInput.value.trim();
   if (!label && !url) return;
+  // Reject dangerous URL schemes at the add step too.
+  if (url && !_safeUrl(url)) {
+    showToast('⚠️ Only http/https URLs are allowed');
+    return;
+  }
   const t = _currentTrip();
-  if (!t) return;
+  if (!t) { renderTrip(); return; }
   if (!t.links) t.links = [];
   t.links.push({ id: 'lk-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), label: label || 'Link', url });
   saveTrips();
@@ -5046,10 +5094,19 @@ function addLink() {
 
 function saveLinkField(id, field, value) {
   const t = _currentTrip();
-  if (!t || !t.links) return;
+  if (!t) { renderTrip(); return; }
+  if (!t.links) return;
   const link = t.links.find(l => l.id === id);
   if (!link) return;
-  const v = (value || '').trim();
+  let v = (value || '').trim();
+  // Reject dangerous URL schemes — the `↗` anchor would otherwise execute them on click.
+  if (field === 'url' && v) {
+    if (!_safeUrl(v)) {
+      showToast('⚠️ Only http/https URLs are allowed');
+      renderTrip();
+      return;
+    }
+  }
   if (link[field] === v) return;
   link[field] = v;
   saveTrips();
@@ -5059,10 +5116,11 @@ function saveLinkField(id, field, value) {
     const row = document.querySelector(`.td-link-item[data-id="${id}"]`);
     if (row) {
       const existingGo = row.querySelector('.td-link-go');
-      if (v && !existingGo) {
+      const safe = _safeUrl(v);
+      if (safe && !existingGo) {
         const a = document.createElement('a');
         a.className = 'td-link-go';
-        a.href = v;
+        a.href = safe;
         a.target = '_blank';
         a.rel = 'noopener';
         a.title = 'Open link';
@@ -5071,10 +5129,10 @@ function saveLinkField(id, field, value) {
         // Insert before the delete button (which is the last child).
         const del = row.querySelector('.td-item-del');
         row.insertBefore(a, del);
-      } else if (!v && existingGo) {
+      } else if (!safe && existingGo) {
         existingGo.remove();
-      } else if (v && existingGo) {
-        existingGo.href = v;
+      } else if (safe && existingGo) {
+        existingGo.href = safe;
       }
     }
   }
@@ -5082,7 +5140,8 @@ function saveLinkField(id, field, value) {
 
 function deleteLink(id) {
   const t = _currentTrip();
-  if (!t || !t.links) return;
+  if (!t) { renderTrip(); return; }
+  if (!t.links) return;
   t.links = t.links.filter(l => l.id !== id);
   saveTrips();
   renderTrip();
