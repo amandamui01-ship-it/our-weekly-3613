@@ -66,12 +66,6 @@ function foldIcs(line) {
   return parts.join('\r\n');
 }
 
-// Vague dates ("Late Dec", "Early May") shouldn't be exported as concrete calendar events — they
-// have a placeholder sortDate that doesn't reflect a real day commitment.
-const isVague = t => !t.dates
-  || !/^[A-Za-z]+\s+\d/.test(t.dates.trim())
-  || /^(early|late|mid|end of)/i.test(t.dates.trim());
-
 // Cache the expected token in module scope across warm invocations so we don't pay a Firestore
 // read for every poll from every device. TTL is short — token regeneration takes effect within
 // a few minutes for any subscribed device.
@@ -130,8 +124,12 @@ exports.ics = onRequest(
       // ── Trip events ──
       // Multi-day trips always emit as all-day (VALUE=DATE) regardless of any time field.
       // Single-day trips with a time emit as timed VEVENT (1h default duration, floating time).
+      // Authoritative date is sortDate (ISO). The dates string is only used to compute the
+      // end-date when it parses as a range; otherwise parseICSEndDate falls back to sortDate+1
+      // (single-day all-day), so trips with freeform dates ("tonight", "Memorial Day weekend")
+      // still surface on the iPhone calendar instead of being silently filtered out.
       for (const t of trips) {
-        if (!t.sortDate || isVague(t)) continue;
+        if (!t.sortDate) continue;
         const descParts = [];
         if (t.location) descParts.push(`Location: ${t.location}`);
         if (t.who) descParts.push(`Who: ${t.who}`);
