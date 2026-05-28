@@ -2193,22 +2193,62 @@ function _eventsForDayKey(dayKey) {
   return _eventsForDate(_fmtDateKey(date));
 }
 
-// Parse "Volleyball @11:30am" / "Dentist @14:00" → { text, time:'HH:MM' 24h or null }.
-// The @clause must be at the end of the input. AM/PM optional (defaults to 24h interpretation).
+// Parse a time clause out of an event/trip input string. Accepts:
+//   "Volleyball @11:30am"   (@-syntax at end)
+//   "Volleyball 11:30am"    (time at end, no @)
+//   "3pm vet"               (time at start, no @)
+//   "@5pm dentist"          (time at start, with @)
+//   "11:30 volleyball"      (24h-ish at start)
+//   "vet appt 19:00"        (24h at end)
+// Returns { text, time:'HH:MM' (24h) | null }. A bare number with no am/pm and no colon is
+// treated as text (too ambiguous to be a time).
 function parseEventTextAndTime(input) {
   if (!input) return { text: '', time: null };
-  const m = input.match(/\s*@\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
-  if (!m) return { text: input.trim(), time: null };
-  let hour = parseInt(m[1]);
-  const min = m[2] ? parseInt(m[2]) : 0;
-  const ampm = m[3] ? m[3].toLowerCase() : null;
-  if (ampm === 'pm' && hour < 12) hour += 12;
-  if (ampm === 'am' && hour === 12) hour = 0;
-  if (hour < 0 || hour > 23 || min < 0 || min > 59) return { text: input.trim(), time: null };
-  const time = String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
-  const text = input.slice(0, m.index).trim();
-  if (!text) return { text: input.trim(), time: null };
-  return { text, time };
+  const trimmed = input.trim();
+
+  const buildTime = (hStr, mmStr, ampmStr) => {
+    const hasAmPm = !!ampmStr;
+    const hasMinutes = mmStr !== undefined && mmStr !== null && mmStr !== '';
+    // Bare digits with no am/pm AND no colon → ambiguous, treat as text.
+    if (!hasAmPm && !hasMinutes) return null;
+    let hour = parseInt(hStr);
+    const min = hasMinutes ? parseInt(mmStr) : 0;
+    const ap = ampmStr ? ampmStr.toLowerCase() : null;
+    if (ap === 'pm' && hour < 12) hour += 12;
+    if (ap === 'am' && hour === 12) hour = 0;
+    if (isNaN(hour) || hour < 0 || hour > 23 || min < 0 || min > 59) return null;
+    return String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+  };
+
+  // 1) @time at end — "vet @3pm", "vet @11:30"
+  let m = trimmed.match(/\s*@\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
+  if (m) {
+    const time = buildTime(m[1], m[2], m[3]);
+    if (time) {
+      const text = trimmed.slice(0, m.index).trim();
+      if (text) return { text, time };
+    }
+  }
+  // 2) Time at start (optional @) — "3pm vet", "@11:30 volleyball"
+  m = trimmed.match(/^@?\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s+(.+)$/i);
+  if (m) {
+    const time = buildTime(m[1], m[2], m[3]);
+    if (time) {
+      const text = m[4].trim();
+      if (text) return { text, time };
+    }
+  }
+  // 3) Time at end without @ — "vet 3pm", "volleyball 11:30". Uses lazy quantifier so the time
+  //    binds to the LAST run of digits, leaving everything else as text.
+  m = trimmed.match(/^(.+?)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
+  if (m) {
+    const time = buildTime(m[2], m[3], m[4]);
+    if (time) {
+      const text = m[1].trim();
+      if (text) return { text, time };
+    }
+  }
+  return { text: trimmed, time: null };
 }
 
 // Parse a time string from a raw input (no @ prefix required). Accepts "7pm", "7:30pm",
