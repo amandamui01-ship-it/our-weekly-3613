@@ -162,19 +162,24 @@ exports.ics = onRequest(
           `DTSTAMP:${dtstamp}`,
         ];
         if (isSingleDay && t.time && /^\d{2}:\d{2}$/.test(t.time)) {
-          const [hh, mm] = t.time.split(':').map(Number);
-          const startTs = `${startCompact}T${String(hh).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
-          let endH = hh + 1;
-          let endDateCompact = startCompact;
-          if (endH >= 24) {
-            endH -= 24;
+          const [sH, sM] = t.time.split(':').map(Number);
+          const startTs = `${startCompact}T${String(sH).padStart(2,'0')}${String(sM).padStart(2,'0')}00`;
+          // Use explicit endTime when set, otherwise +1h default. Handles day rollover.
+          let eH, eM, endDateCompact = startCompact;
+          if (t.endTime && /^\d{2}:\d{2}$/.test(t.endTime)) {
+            [eH, eM] = t.endTime.split(':').map(Number);
+          } else {
+            eH = sH + 1; eM = sM;
+          }
+          if (eH >= 24) {
+            eH -= 24;
             const d = new Date(Date.UTC(
               parseInt(startCompact.slice(0,4)), parseInt(startCompact.slice(4,6)) - 1,
               parseInt(startCompact.slice(6,8)) + 1
             ));
             endDateCompact = d.toISOString().slice(0,10).replace(/-/g,'');
           }
-          const endTs = `${endDateCompact}T${String(endH).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
+          const endTs = `${endDateCompact}T${String(eH).padStart(2,'0')}${String(eM).padStart(2,'0')}00`;
           eventLines.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
         } else {
           eventLines.push(
@@ -204,20 +209,24 @@ exports.ics = onRequest(
           `DTSTAMP:${dtstamp}`,
         ];
         if (e.time && /^\d{2}:\d{2}$/.test(e.time)) {
-          const [hh, mm] = e.time.split(':').map(Number);
-          const startTs = `${dateCompact}T${String(hh).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
-          // +1 hour, accounting for hour rollover within the same day
-          let endH = hh + 1;
-          let endDate = dateCompact;
-          if (endH >= 24) {
-            endH -= 24;
+          const [sH, sM] = e.time.split(':').map(Number);
+          const startTs = `${dateCompact}T${String(sH).padStart(2,'0')}${String(sM).padStart(2,'0')}00`;
+          // Use explicit endTime when set; otherwise +1h default. Handles day rollover.
+          let eH, eM, endDate = dateCompact;
+          if (e.endTime && /^\d{2}:\d{2}$/.test(e.endTime)) {
+            [eH, eM] = e.endTime.split(':').map(Number);
+          } else {
+            eH = sH + 1; eM = sM;
+          }
+          if (eH >= 24) {
+            eH -= 24;
             const d = new Date(Date.UTC(
               parseInt(dateCompact.slice(0,4)), parseInt(dateCompact.slice(4,6)) - 1,
               parseInt(dateCompact.slice(6,8)) + 1
             ));
             endDate = d.toISOString().slice(0,10).replace(/-/g,'');
           }
-          const endTs = `${endDate}T${String(endH).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
+          const endTs = `${endDate}T${String(eH).padStart(2,'0')}${String(eM).padStart(2,'0')}00`;
           lineSet.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
         } else {
           // All-day event: DTEND is exclusive (day after)

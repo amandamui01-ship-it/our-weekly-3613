@@ -2193,77 +2193,98 @@ function _eventsForDayKey(dayKey) {
   return _eventsForDate(_fmtDateKey(date));
 }
 
-// Parse a time clause out of an event/trip input string. Accepts:
-//   "Volleyball @11:30am"   (@-syntax at end)
-//   "Volleyball 11:30am"    (time at end, no @)
-//   "3pm vet"               (time at start, no @)
-//   "@5pm dentist"          (time at start, with @)
-//   "11:30 volleyball"      (24h-ish at start)
-//   "vet appt 19:00"        (24h at end)
-// Returns { text, time:'HH:MM' (24h) | null }. A bare number with no am/pm and no colon is
-// treated as text (too ambiguous to be a time).
-function parseEventTextAndTime(input) {
-  if (!input) return { text: '', time: null };
-  const trimmed = input.trim();
-
-  const buildTime = (hStr, mmStr, ampmStr) => {
-    const hasAmPm = !!ampmStr;
-    const hasMinutes = mmStr !== undefined && mmStr !== null && mmStr !== '';
-    // Bare digits with no am/pm AND no colon → ambiguous, treat as text.
-    if (!hasAmPm && !hasMinutes) return null;
-    let hour = parseInt(hStr);
-    const min = hasMinutes ? parseInt(mmStr) : 0;
-    const ap = ampmStr ? ampmStr.toLowerCase() : null;
-    if (ap === 'pm' && hour < 12) hour += 12;
-    if (ap === 'am' && hour === 12) hour = 0;
-    if (isNaN(hour) || hour < 0 || hour > 23 || min < 0 || min > 59) return null;
-    return String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
-  };
-
-  // 1) @time at end — "vet @3pm", "vet @11:30"
-  let m = trimmed.match(/\s*@\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
-  if (m) {
-    const time = buildTime(m[1], m[2], m[3]);
-    if (time) {
-      const text = trimmed.slice(0, m.index).trim();
-      if (text) return { text, time };
-    }
-  }
-  // 2) Time at start (optional @) — "3pm vet", "@11:30 volleyball"
-  m = trimmed.match(/^@?\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s+(.+)$/i);
-  if (m) {
-    const time = buildTime(m[1], m[2], m[3]);
-    if (time) {
-      const text = m[4].trim();
-      if (text) return { text, time };
-    }
-  }
-  // 3) Time at end without @ — "vet 3pm", "volleyball 11:30". Uses lazy quantifier so the time
-  //    binds to the LAST run of digits, leaving everything else as text.
-  m = trimmed.match(/^(.+?)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
-  if (m) {
-    const time = buildTime(m[2], m[3], m[4]);
-    if (time) {
-      const text = m[1].trim();
-      if (text) return { text, time };
-    }
-  }
-  return { text: trimmed, time: null };
+// Build "HH:MM" 24h from raw hour/minute/ampm parts. Returns null for ambiguous bare digits
+// (no am/pm and no colon → "5" alone won't be misread as a time).
+function _hhmm(hStr, mmStr, ampm) {
+  const hasAmPm = !!ampm;
+  const hasMinutes = mmStr !== undefined && mmStr !== null && mmStr !== '';
+  if (!hasAmPm && !hasMinutes) return null;
+  let hour = parseInt(hStr);
+  const min = hasMinutes ? parseInt(mmStr) : 0;
+  const ap = ampm ? ampm.toLowerCase() : null;
+  if (ap === 'pm' && hour < 12) hour += 12;
+  if (ap === 'am' && hour === 12) hour = 0;
+  if (isNaN(hour) || hour < 0 || hour > 23 || min < 0 || min > 59) return null;
+  return String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
 }
 
-// Parse a time string from a raw input (no @ prefix required). Accepts "7pm", "7:30pm",
-// "19:00", "7", "12am". Returns "HH:MM" 24-hour or null if unparseable.
+// Parse a time clause that may be a single time ("3pm", "11:30") or a range ("3-4pm", "3pm-4pm",
+// "11am-1pm"). Returns {startTime, endTime|null} or null if unparseable. Smart am/pm propagation:
+//   - "3-4pm"  → start=pm propagated from end → 15:00–16:00
+//   - "11-1pm" → tries pm for both first (would give 23:00-13:00 invalid), retries start=am → 11:00-13:00
+function parseTimeOrRange(raw) {
+  if (!raw) return null;
+  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?(?:\s*[-–—]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)?$/i);
+  if (!m) return null;
+  const [, sh, smm, sapRaw, eh, emm, eapRaw] = m;
+  if (!eh) {
+    const startTime = _hhmm(sh, smm, sapRaw);
+    if (!startTime) return null;
+    return { startTime, endTime: null };
+  }
+  // Range: propagate am/pm if one side is missing it
+  let startAp = sapRaw, endAp = eapRaw;
+  if (!startAp && endAp) startAp = endAp;
+  if (!endAp && startAp) endAp = startAp;
+  let startTime = _hhmm(sh, smm, startAp);
+  let endTime = _hhmm(eh, emm, endAp);
+  if (!startTime || !endTime) return null;
+  // Retry start=am if end=pm and the propagated range is invalid (e.g. "11-1pm")
+  if (startTime >= endTime && !sapRaw && (endAp || '').toLowerCase() === 'pm') {
+    const startAm = _hhmm(sh, smm, 'am');
+    if (startAm && startAm < endTime) startTime = startAm;
+  }
+  return { startTime, endTime };
+}
+
+// Parse a time-bearing event/trip input string. Returns { text, time, endTime } where
+// time/endTime are 24h "HH:MM" or null. Accepts time at start, at end, with or without @,
+// and supports ranges (3-4pm, 11am-1pm, 3pm-4:30pm).
+function parseEventTextAndTime(input) {
+  const empty = { text: '', time: null, endTime: null };
+  if (!input) return empty;
+  const trimmed = input.trim();
+  // Re-usable time-clause sub-pattern (single time OR range). Wrapped in a capture group.
+  const CLAUSE = '(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?(?:\\s*[-–—]\\s*\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)?)';
+  const patterns = [
+    // 0: text + " @clause" at end → text=$1, clause=$2
+    new RegExp('^(.+?)\\s*@\\s*' + CLAUSE + '\\s*$', 'i'),
+    // 1: "@clause text" or "clause text" → clause=$1, text=$2
+    new RegExp('^@?\\s*' + CLAUSE + '\\s+(.+)$', 'i'),
+    // 2: "text clause" at end without @ → text=$1, clause=$2
+    new RegExp('^(.+?)\\s+' + CLAUSE + '\\s*$', 'i'),
+  ];
+  for (let i = 0; i < patterns.length; i++) {
+    const m = trimmed.match(patterns[i]);
+    if (!m) continue;
+    const text = (i === 1 ? m[2] : m[1]).trim();
+    const clause = i === 1 ? m[1] : m[2];
+    const range = parseTimeOrRange(clause);
+    if (range && text) return { text, time: range.startTime, endTime: range.endTime };
+  }
+  return { text: trimmed, time: null, endTime: null };
+}
+
+// Parse a raw time field (no @ prefix). Accepts "7pm", "7:30pm", "19:00", "12am" and ranges
+// like "3pm-4pm" or "11am-1pm". Returns { startTime, endTime|null } or null if unparseable.
 function parseTimeInput(raw) {
   if (!raw) return null;
-  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
-  if (!m) return null;
-  let hour = parseInt(m[1]);
-  const min = m[2] ? parseInt(m[2]) : 0;
-  const ampm = m[3] ? m[3].toLowerCase() : null;
-  if (ampm === 'pm' && hour < 12) hour += 12;
-  if (ampm === 'am' && hour === 12) hour = 0;
-  if (hour < 0 || hour > 23 || min < 0 || min > 59) return null;
-  return String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+  return parseTimeOrRange(raw);
+}
+
+// Format "HH:MM" + optional end "HH:MM" as a display string.
+// Compresses shared am/pm: 15:00 + 16:00 → "3-4pm" (not "3pm-4pm").
+function formatTimeRange(time, endTime) {
+  if (!time) return '';
+  const t1 = formatTimeDisplay(time);
+  if (!endTime) return t1;
+  const t2 = formatTimeDisplay(endTime);
+  const t1Period = t1.match(/(am|pm)$/i)?.[1]?.toLowerCase();
+  const t2Period = t2.match(/(am|pm)$/i)?.[1]?.toLowerCase();
+  if (t1Period && t2Period && t1Period === t2Period) {
+    return `${t1.replace(/(am|pm)$/i, '')}-${t2}`;
+  }
+  return `${t1}-${t2}`;
 }
 
 // Reject anything other than http/https/mailto schemes — guards link `↗` from javascript:
@@ -3229,6 +3250,7 @@ function quickAddEventInline(iso) {
       date: iso,
       text: parsed.text,
       time: parsed.time,
+      endTime: parsed.endTime || null,
     });
     saveDatedEvents();
     renderCalendar();
@@ -3419,12 +3441,12 @@ function _renderTodayBanner(today) {
   // Pull from the date-keyed events collection so today's items work even outside the plan week.
   const eventsArr = _eventsForDate(todayIso);
   const eventsHtml = eventsArr.map(e => {
-    const prefix = e.time ? `${formatTimeDisplay(e.time)} · ` : '';
+    const prefix = e.time ? `${formatTimeRange(e.time, e.endTime)} · ` : '';
     return `<span class="today-banner-event">${escHtml(prefix + e.text)}</span>`;
   }).join('');
 
   const tripsHtml = todayTrips.map(t => {
-    const timePrefix = t.time ? `${formatTimeDisplay(t.time)} · ` : '';
+    const timePrefix = t.time ? `${formatTimeRange(t.time, t.endTime)} · ` : '';
     return `<button class="today-banner-trip ${tripColor(t.id)}" onclick="openTrip('${t.id}')">${escHtml(timePrefix + t.label)}</button>`;
   }).join('');
 
@@ -3450,7 +3472,7 @@ function editCalEvent(isoDate, idx) {
   const events = _eventsForDate(isoDate);
   const target = events[idx];
   if (!target) return;
-  const rawText = target.time ? `${target.text} @${formatTimeDisplay(target.time)}` : target.text;
+  const rawText = target.time ? `${target.text} @${formatTimeRange(target.time, target.endTime)}` : target.text;
   const input = document.createElement('input');
   input.type = 'text';
   input.value = rawText;
@@ -3469,7 +3491,7 @@ function editCalEvent(isoDate, idx) {
         datedEvents = datedEvents.filter(e => e.id !== target.id);
       } else {
         const parsed = parseEventTextAndTime(raw);
-        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; }
+        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; target.endTime = parsed.endTime || null; }
       }
       saveDatedEvents();
     }
@@ -3508,7 +3530,7 @@ function _bindCalPreview() {
     const status = TRIP_STATUS_CYCLE.includes(t.status) ? t.status : 'planning';
     const parts = [];
     parts.push(`<div class="cal-trip-preview-title">${escHtml(t.label)}</div>`);
-    parts.push(`<div class="cal-trip-preview-dates">${escHtml(t.dates || '')}</div>`);
+    parts.push(`<div class="cal-trip-preview-dates">${escHtml(t.dates || '')}${t.time ? ' · ' + escHtml(formatTimeRange(t.time, t.endTime)) : ''}</div>`);
     if (t.location) parts.push(`<div class="cal-trip-preview-row"><span class="cal-trip-preview-row-icon">📍</span><span>${escHtml(t.location)}</span></div>`);
     if (t.who) parts.push(`<div class="cal-trip-preview-row"><span class="cal-trip-preview-row-icon">👥</span><span>${escHtml(t.who)}</span></div>`);
     parts.push(`<div><span class="cal-trip-preview-status td-status-${status}">${TRIP_STATUS_EMOJI[status]} ${status}</span></div>`);
@@ -3630,9 +3652,9 @@ function renderCalendar() {
               countdownChip = `<span class="cal-bar-cd${urgent}">${txt}</span>`;
             }
           }
-          const timePrefix = (slot.showLabel && t.time) ? `<span class="cal-bar-time">${formatTimeDisplay(t.time)}</span> ` : '';
+          const timePrefix = (slot.showLabel && t.time) ? `<span class="cal-bar-time">${formatTimeRange(t.time, t.endTime)}</span> ` : '';
           const label = slot.showLabel ? escHtml(t.label) : '&nbsp;';
-          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}${t.time ? ' · ' + formatTimeDisplay(t.time) : ''}">${timePrefix}${label}${countdownChip}</div>`;
+          barsHtml += `<div class="${cls.join(' ')}" onclick="openTrip('${t.id}');event.stopPropagation()" title="${escHtml(t.label)} · ${escHtml(t.dates)}${t.time ? ' · ' + formatTimeRange(t.time, t.endTime) : ''}">${timePrefix}${label}${countdownChip}</div>`;
         } else {
           barsHtml += `<div class="cal-bar-empty"></div>`;
         }
@@ -3646,8 +3668,8 @@ function renderCalendar() {
       const cellEvents = _eventsForDate(cellIsoForEvents);
       if (cellEvents.length) {
         eventsHtml = cellEvents.map((evt, ei) => {
-          const timePrefix = evt.time ? `<span class="cal-event-time">${formatTimeDisplay(evt.time)}</span> ` : '';
-          const fullText = (evt.time ? formatTimeDisplay(evt.time) + ' · ' : '') + evt.text;
+          const timePrefix = evt.time ? `<span class="cal-event-time">${formatTimeRange(evt.time, evt.endTime)}</span> ` : '';
+          const fullText = (evt.time ? formatTimeRange(evt.time, evt.endTime) + ' · ' : '') + evt.text;
           return `<div class="cal-event" data-date="${cellIsoForEvents}" data-idx="${ei}" onclick="editCalEvent('${cellIsoForEvents}',${ei});event.stopPropagation()" title="${escHtml(fullText)} (click to edit)">${timePrefix}${escHtml(evt.text)}</div>`;
         }).join('');
       }
@@ -4099,7 +4121,7 @@ function renderPlan() {
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
           ${autoTrips.map(t => `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`).join('')}
           ${dayEvents.map((evt, i) => {
-            const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeDisplay(evt.time)}</span>` : '';
+            const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeRange(evt.time, evt.endTime)}</span>` : '';
             return `<div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`;
           }).join('')}
           <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event… (try @11:30am)" style="display:none"
@@ -4293,6 +4315,7 @@ function commitEvent(key) {
     date: _fmtDateKey(date),
     text: parsed.text,
     time: parsed.time,
+    endTime: parsed.endTime || null,
   });
   saveDatedEvents();
   renderDayEvents(key);
@@ -4316,7 +4339,7 @@ function editEvent(key, idx) {
   if (del) del.style.visibility = 'hidden';
   if (timeEl) timeEl.style.display = 'none';
   // Replace existing text content with the raw editable form: "text [@HH:MMam/pm]"
-  const rawText = target.time ? `${target.text} @${formatTimeDisplay(target.time)}` : target.text;
+  const rawText = target.time ? `${target.text} @${formatTimeRange(target.time, target.endTime)}` : target.text;
   [...chip.childNodes].forEach(n => { if (n.nodeType === Node.TEXT_NODE) n.remove(); });
   const textNode = document.createTextNode(rawText);
   if (del) chip.insertBefore(textNode, del);
@@ -4345,7 +4368,7 @@ function editEvent(key, idx) {
         datedEvents = datedEvents.filter(e => e.id !== target.id);
       } else {
         const parsed = parseEventTextAndTime(raw);
-        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; }
+        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; target.endTime = parsed.endTime || null; }
       }
       saveDatedEvents();
     }
@@ -4390,7 +4413,7 @@ function renderDayEvents(key) {
     chip.className = `plan-slot-event ec${i%5}`;
     chip.id = 'evt-' + key + '-' + i;
     chip.setAttribute('onclick', `editEvent('${key}',${i})`);
-    const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeDisplay(evt.time)}</span>` : '';
+    const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeRange(evt.time, evt.endTime)}</span>` : '';
     chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
     slot.insertBefore(chip, addInput);
   });
@@ -4720,13 +4743,14 @@ function addTrip() {
       date: sortDate,
       text: parsedName.text,
       time: parsedName.time,
+      endTime: parsedName.endTime || null,
     });
     saveDatedEvents();
     document.getElementById('new-trip-dates').value = '';
     document.getElementById('new-trip-name').value = '';
     burst();
     renderDates();
-    showToast(`📌 Event added — ${formatTimeDisplay(parsedName.time)} on ${dates}`);
+    showToast(`📌 Event added — ${formatTimeRange(parsedName.time, parsedName.endTime)} on ${dates}`);
     return;
   }
 
@@ -4856,8 +4880,8 @@ function renderTrip() {
         <button class="td-status-pill td-status-${status}" onclick="cycleTripStatus()" title="Click to change status">
           ${TRIP_STATUS_EMOJI[status]} ${status}
         </button>
-        <div class="td-meta-item">🕐 <input id="td-time" value="${escHtml(t.time ? formatTimeDisplay(t.time) : '')}"
-          placeholder="Add time (e.g. 7pm)"
+        <div class="td-meta-item">🕐 <input id="td-time" value="${escHtml(formatTimeRange(t.time, t.endTime))}"
+          placeholder="Add time (e.g. 7pm or 7-9pm)"
           onblur="saveTripField('time', this.value)"
           onkeydown="if(event.key==='Enter')this.blur()"></div>
         <div class="td-meta-item">📍 <input id="td-location" value="${escHtml(t.location || '')}"
@@ -4987,10 +5011,10 @@ function saveTripField(field, value) {
     dismissed.delete(t.id);
     localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   } else if (field === 'time') {
-    if (!v) { t.time = null; }
+    if (!v) { t.time = null; t.endTime = null; }
     else {
       const parsed = parseTimeInput(v);
-      if (parsed) t.time = parsed;
+      if (parsed) { t.time = parsed.startTime; t.endTime = parsed.endTime || null; }
       else { renderTrip(); return; } // unparseable input → revert
     }
   } else if (field === 'budgetEstimate') {
