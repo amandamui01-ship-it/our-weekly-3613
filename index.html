@@ -401,6 +401,8 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 @media(hover:none){.cal-trip-preview{display:none!important}}
 .cal-bar-empty{height:16px;background:transparent;cursor:default}
 .cal-event{font-size:10px;font-weight:600;padding:1px 6px;margin:2px 0 0;background:var(--surface-warm);color:var(--text-2);border-left:2px solid var(--amber);border-radius:0 3px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+.cal-quick-add-input{display:block;width:calc(100% - 4px);margin:3px 2px 0;border:1px solid var(--amber);background:var(--surface);font-family:inherit;font-size:11px;font-weight:600;color:var(--text);padding:3px 6px;border-radius:5px;outline:none;box-shadow:0 2px 8px rgba(191,124,54,.15)}
+.cal-quick-add-input::placeholder{color:var(--text-3);font-weight:500;font-style:italic}
 .cal-day-past{background:var(--bg)}
 .cal-day-past .cal-event{opacity:.35;filter:grayscale(.7);border-left-color:var(--text-3)}
 .cal-day-past .cal-day-num{opacity:.4}
@@ -3094,8 +3096,11 @@ function navCalToday() {
   renderCalendar();
 }
 
-// Click a day → prefill the Add-a-Date form with that day. Drag across days → prefill with a
-// range (e.g. "Jul 30 – Aug 2"). Range trips can still be edited freely after the prefill.
+// Single day click → inline quick-add for an EVENT (with @-syntax for time).
+// Drag across days → prefill the Add-a-Date form for a TRIP (multi-day intent).
+// This split matches the actual data model: trips are heavyweight (status, packing, itinerary,
+// notes), events are lightweight day-anchored items. The day-click defaults to the lightweight
+// path so casual additions don't accidentally spawn full trip records.
 const _MONTH_NAMES_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function _fmtIsoToShort(isoDate) {
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -3104,8 +3109,9 @@ function _fmtIsoToShort(isoDate) {
 }
 function addEventForDay(isoStart, isoEnd) {
   if (!isoStart) return;
-  let formatted = _fmtIsoToShort(isoStart);
   if (isoEnd && isoEnd !== isoStart) {
+    // Multi-day drag → trip form prefill with the range
+    let formatted = _fmtIsoToShort(isoStart);
     const [sy, sm] = isoStart.split('-').map(Number);
     const [ey, em, ed] = isoEnd.split('-').map(Number);
     if (!ey || !em || !ed) return;
@@ -3113,18 +3119,67 @@ function addEventForDay(isoStart, isoEnd) {
     formatted = (sy === ey && sm === em)
       ? `${_MONTH_NAMES_SHORT[sm - 1]} ${isoStart.split('-')[2].replace(/^0/, '')}–${ed}`
       : `${formatted} – ${_MONTH_NAMES_SHORT[em - 1]} ${ed}`;
+    const datesInput = document.getElementById('new-trip-dates');
+    const nameInput  = document.getElementById('new-trip-name');
+    const form       = document.getElementById('add-date-form');
+    const chev       = document.getElementById('add-date-chev');
+    if (form && form.style.display === 'none') {
+      form.style.display = '';
+      if (chev) chev.textContent = '▼';
+    }
+    if (datesInput) datesInput.value = formatted;
+    if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => nameInput?.focus(), 250);
+  } else {
+    // Single day click → inline event quick-add at the cell
+    quickAddEventInline(isoStart);
   }
-  const datesInput = document.getElementById('new-trip-dates');
-  const nameInput  = document.getElementById('new-trip-name');
-  const form       = document.getElementById('add-date-form');
-  const chev       = document.getElementById('add-date-chev');
-  if (form && form.style.display === 'none') {
-    form.style.display = '';
-    if (chev) chev.textContent = '▼';
+}
+
+// Inline event quick-add — slot an input into the day cell. Enter to save (with @-syntax parsing
+// for time), Escape or blur-with-empty-text cancels. Creates an entry in datedEvents.
+function quickAddEventInline(iso) {
+  const cell = document.querySelector(`.cal-day[data-date="${iso}"]`);
+  if (!cell) return;
+  if (cell.querySelector('.cal-quick-add-input')) {
+    cell.querySelector('.cal-quick-add-input').focus();
+    return;
   }
-  if (datesInput) datesInput.value = formatted;
-  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(() => nameInput?.focus(), 250);
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'Add event… try @3pm';
+  input.className = 'cal-quick-add-input';
+  cell.appendChild(input);
+  setTimeout(() => input.focus(), 30);
+  let done = false;
+  const finish = (save) => {
+    if (done) return; done = true;
+    const raw = input.value.trim();
+    if (input.isConnected) input.remove();
+    if (!save || !raw) return;
+    const parsed = parseEventTextAndTime(raw);
+    if (!parsed.text) return;
+    datedEvents.push({
+      id: 'evt-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+      date: iso,
+      text: parsed.text,
+      time: parsed.time,
+    });
+    saveDatedEvents();
+    renderCalendar();
+    if (isActive('dates')) {
+      renderPlan();
+      const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
+      _renderTodayBanner(todayLocal);
+    }
+  };
+  input.onblur = () => finish(true);
+  input.onkeydown = e => {
+    if (e.key === 'Enter')  { e.preventDefault(); input.onblur = null; finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); input.onblur = null; finish(false); }
+  };
+  input.addEventListener('click', e => e.stopPropagation());
+  input.addEventListener('mousedown', e => e.stopPropagation());
 }
 
 // Delegated click + drag-select for the calendar grid. mousedown on a day cell starts a range;
