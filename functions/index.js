@@ -105,8 +105,13 @@ exports.ics = onRequest(
         return;
       }
 
-      const tripsSnap = await db.collection('state').doc('trips').get();
+      // Fetch trips + dated events in parallel — both feed the calendar.
+      const [tripsSnap, eventsSnap] = await Promise.all([
+        db.collection('state').doc('trips').get(),
+        db.collection('state').doc('datedEvents').get(),
+      ]);
       const trips = tripsSnap.exists ? (tripsSnap.data().items || []) : [];
+      const events = eventsSnap.exists ? (eventsSnap.data().items || []) : [];
 
       const now = new Date();
       const dtstamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '').slice(0, 15) + 'Z';
@@ -122,6 +127,7 @@ exports.ics = onRequest(
         'REFRESH-INTERVAL;VALUE=DURATION:PT2H',
       ];
 
+      // ── Trip events (multi-day all-day) ──
       for (const t of trips) {
         if (!t.sortDate || isVague(t)) continue;
         const descParts = [];
@@ -138,7 +144,7 @@ exports.ics = onRequest(
 
         const eventLines = [
           'BEGIN:VEVENT',
-          `UID:our-weekly-${t.id}@ourweekly`,
+          `UID:our-weekly-trip-${t.id}@ourweekly`,
           `DTSTAMP:${dtstamp}`,
           `DTSTART;VALUE=DATE:${t.sortDate.replace(/-/g, '')}`,
           `DTEND;VALUE=DATE:${parseICSEndDate(t.dates, t.sortDate)}`,
@@ -146,10 +152,54 @@ exports.ics = onRequest(
         ];
         if (descParts.length) eventLines.push(`DESCRIPTION:${escIcs(descParts.join('\n'))}`);
         if (t.location) eventLines.push(`LOCATION:${escIcs(t.location)}`);
-        eventLines.push('CLASS:PRIVATE', 'CATEGORIES:Our Weekly', 'END:VEVENT');
+        eventLines.push('CLASS:PRIVATE', 'CATEGORIES:Our Weekly · Trips', 'END:VEVENT');
 
         lines.push(...eventLines);
       }
+
+      // ── Dated freeform events (single-day, timed or all-day) ──
+      // time format: "HH:MM" (24-hour). When set, emit floating-time DTSTART/DTEND with 1h default
+      // duration. When unset, emit as a VALUE=DATE all-day event. Floating time = no TZID; the
+      // calendar client interprets in the device's local time, matching how Amanda enters them.
+      for (const e of events) {
+        if (!e || !e.date || !e.text) continue;
+        const dateCompact = e.date.replace(/-/g, '');
+        if (!/^\d{8}$/.test(dateCompact)) continue;
+        const lineSet = [
+          'BEGIN:VEVENT',
+          `UID:our-weekly-evt-${e.id}@ourweekly`,
+          `DTSTAMP:${dtstamp}`,
+        ];
+        if (e.time && /^\d{2}:\d{2}$/.test(e.time)) {
+          const [hh, mm] = e.time.split(':').map(Number);
+          const startTs = `${dateCompact}T${String(hh).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
+          // +1 hour, accounting for hour rollover within the same day
+          let endH = hh + 1;
+          let endDate = dateCompact;
+          if (endH >= 24) {
+            endH -= 24;
+            const d = new Date(Date.UTC(
+              parseInt(dateCompact.slice(0,4)), parseInt(dateCompact.slice(4,6)) - 1,
+              parseInt(dateCompact.slice(6,8)) + 1
+            ));
+            endDate = d.toISOString().slice(0,10).replace(/-/g,'');
+          }
+          const endTs = `${endDate}T${String(endH).padStart(2,'0')}${String(mm).padStart(2,'0')}00`;
+          lineSet.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
+        } else {
+          // All-day event: DTEND is exclusive (day after)
+          const d = new Date(Date.UTC(
+            parseInt(dateCompact.slice(0,4)), parseInt(dateCompact.slice(4,6)) - 1,
+            parseInt(dateCompact.slice(6,8)) + 1
+          ));
+          const endDate = d.toISOString().slice(0,10).replace(/-/g,'');
+          lineSet.push(`DTSTART;VALUE=DATE:${dateCompact}`, `DTEND;VALUE=DATE:${endDate}`);
+        }
+        lineSet.push(`SUMMARY:${escIcs(e.text)}`);
+        lineSet.push('CLASS:PRIVATE', 'CATEGORIES:Our Weekly · Events', 'END:VEVENT');
+        lines.push(...lineSet);
+      }
+
       lines.push('END:VCALENDAR');
 
       res.set('Content-Type', 'text/calendar; charset=utf-8');

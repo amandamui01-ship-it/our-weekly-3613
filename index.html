@@ -563,9 +563,11 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-slot-chip.friends.on {background:#1a3d6e;color:white;border-color:#1a3d6e}
 .plan-slot-event{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;border:1.5px solid transparent}
 .plan-slot-event-emoji{user-select:none;pointer-events:none}
+.plan-slot-event-time{user-select:none;font-size:10px;font-weight:800;padding:1px 6px;border-radius:99px;background:rgba(255,255,255,.85);color:var(--text);letter-spacing:.02em;text-transform:lowercase;line-height:1.3;flex-shrink:0;margin-right:2px}
 .plan-slot-event-del{font-size:13px;line-height:1;cursor:pointer;opacity:0;transition:opacity .1s}
 .plan-slot-event:hover .plan-slot-event-del{opacity:.7}
 .plan-slot-event-del:hover{opacity:1!important}
+.cal-event-time{font-weight:800;color:var(--amber-dark);margin-right:3px}
 .plan-slot-event.ec0{background:#92590f;color:white;border-color:#92590f}
 .plan-slot-event.ec1{background:#2e5233;color:white;border-color:#2e5233}
 .plan-slot-event.ec2{background:#1a3d6e;color:white;border-color:#1a3d6e}
@@ -1889,7 +1891,8 @@ let _reviewPhotos = [];
 let todos = [];
 let newEntries = [];
 let trips = [], logisticsList = [], bucketList = [];
-let weekPlan = {}; // { mon: { gym:false, date:false, notes:'' }, ... }
+let weekPlan = {}; // { mon: { gym:false, date:false, notes:'' }, ... } — chips + meals only now
+let datedEvents = []; // [{id, date:'YYYY-MM-DD', text, time?:'HH:MM'}] — permanent timed/all-day events
 let expenses = [];
 let recurringItems = [];
 let mood = { amanda: '', aidan: '', week: '' };
@@ -1988,6 +1991,24 @@ function initFirestore() {
       bucketList = snap.data().items || [];
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
+  });
+
+  ref('datedEvents').onSnapshot(snap => {
+    if (!snap.exists) {
+      // First-load migration: move any existing weekPlan events into the dated collection so
+      // nothing the user has typed gets lost. Future writes go straight to datedEvents.
+      const migrated = _migrateEventsFromWeekPlan();
+      datedEvents = migrated;
+      if (migrated.length) ref('datedEvents').set({ items: migrated });
+    } else {
+      datedEvents = snap.data().items || [];
+    }
+    if (isActive('dates') && !_hasTypingFocus('#page-dates')) {
+      renderPlan();
+      renderCalendar();
+      const today = new Date(); today.setHours(0,0,0,0);
+      _renderTodayBanner(today);
+    }
   });
 
   ref('weekplan').onSnapshot(snap => {
@@ -2111,6 +2132,91 @@ function saveTrips(opts) {
 }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
+function saveDatedEvents(){ db.collection('state').doc('datedEvents').set({items: datedEvents}).catch(_onSaveErr); }
+
+// ─── DATED EVENTS HELPERS ────────────────────────────────────────────────────
+const _DAY_OFF = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
+
+// One-time migration: move legacy weekPlan-day-keyed events into the dated collection. Each
+// dayKey gets resolved to an actual date based on weekPlan._weekKey (or current Monday). Runs
+// once when the datedEvents doc is missing — subsequent writes go to datedEvents directly.
+function _migrateEventsFromWeekPlan() {
+  if (!weekPlan || typeof weekPlan !== 'object') return [];
+  const weekKey = weekPlan._weekKey || _getPlanWeekKey();
+  if (!weekKey) return [];
+  const [y, m, d] = weekKey.split('-').map(Number);
+  if (!y || !m || !d) return [];
+  const monday = new Date(y, m-1, d);
+  const out = [];
+  Object.keys(_DAY_OFF).forEach(dayKey => {
+    const dp = weekPlan[dayKey] || {};
+    const events = dp.events && dp.events.length ? dp.events
+                 : dp.notesList && dp.notesList.length ? dp.notesList
+                 : dp.notes ? [dp.notes] : null;
+    if (!events) return;
+    const date = new Date(monday); date.setDate(monday.getDate() + _DAY_OFF[dayKey]);
+    const iso = _fmtDateKey(date);
+    events.forEach((e, i) => {
+      const text = typeof e === 'string' ? e : (e?.text || '');
+      const time = typeof e === 'object' && e ? (e.time || null) : null;
+      if (!text) return;
+      out.push({
+        id: 'evt-mig-' + iso + '-' + i + '-' + Math.random().toString(36).slice(2,5),
+        date: iso, text, time,
+      });
+    });
+  });
+  return out;
+}
+
+// Look up events by an ISO date. Sorted by time (timed first, ascending), then by id.
+function _eventsForDate(iso) {
+  return datedEvents
+    .filter(e => e && e.date === iso)
+    .sort((a, b) => {
+      if (a.time && b.time) return a.time.localeCompare(b.time);
+      if (a.time) return -1;
+      if (b.time) return 1;
+      return (a.id || '').localeCompare(b.id || '');
+    });
+}
+
+// Day key (mon/tue/...) in the currently-displayed plan week → actual ISO date → events.
+function _eventsForDayKey(dayKey) {
+  const off = _DAY_OFF[dayKey];
+  if (off === undefined) return [];
+  const monday = _planMondayDate();
+  const date = new Date(monday); date.setDate(monday.getDate() + off);
+  return _eventsForDate(_fmtDateKey(date));
+}
+
+// Parse "Volleyball @11:30am" / "Dentist @14:00" → { text, time:'HH:MM' 24h or null }.
+// The @clause must be at the end of the input. AM/PM optional (defaults to 24h interpretation).
+function parseEventTextAndTime(input) {
+  if (!input) return { text: '', time: null };
+  const m = input.match(/\s*@\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i);
+  if (!m) return { text: input.trim(), time: null };
+  let hour = parseInt(m[1]);
+  const min = m[2] ? parseInt(m[2]) : 0;
+  const ampm = m[3] ? m[3].toLowerCase() : null;
+  if (ampm === 'pm' && hour < 12) hour += 12;
+  if (ampm === 'am' && hour === 12) hour = 0;
+  if (hour < 0 || hour > 23 || min < 0 || min > 59) return { text: input.trim(), time: null };
+  const time = String(hour).padStart(2,'0') + ':' + String(min).padStart(2,'0');
+  const text = input.slice(0, m.index).trim();
+  if (!text) return { text: input.trim(), time: null };
+  return { text, time };
+}
+
+// Render a 24h "HH:MM" as a friendly "11:30am" / "2pm" / "12pm" string.
+function formatTimeDisplay(time24) {
+  if (!time24) return '';
+  const [h, mm] = time24.split(':').map(Number);
+  if (isNaN(h) || isNaN(mm)) return '';
+  const period = h >= 12 ? 'pm' : 'am';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return mm === 0 ? `${h12}${period}` : `${h12}:${String(mm).padStart(2,'0')}${period}`;
+}
 function _getPlanWeekKey() {
   // Most-recent Monday for the auto-rollover floor. The actual displayed plan week is driven
   // by weekPlan._weekKey, which the user can advance to next Monday via clearPlan on Sat/Sun.
@@ -3190,8 +3296,12 @@ function _renderTodayBanner(today) {
     dp.friends ? '<span class="today-banner-chip friends">👫 Friends</span>' : '',
   ].filter(Boolean).join('');
 
-  const eventsArr = dp.events || (dp.notesList && dp.notesList.length ? dp.notesList : dp.notes ? [dp.notes] : []);
-  const eventsHtml = eventsArr.map(e => `<span class="today-banner-event">${escHtml(e)}</span>`).join('');
+  // Pull from the date-keyed events collection so today's items work even outside the plan week.
+  const eventsArr = _eventsForDate(todayIso);
+  const eventsHtml = eventsArr.map(e => {
+    const prefix = e.time ? `${formatTimeDisplay(e.time)} · ` : '';
+    return `<span class="today-banner-event">${escHtml(prefix + e.text)}</span>`;
+  }).join('');
 
   const tripsHtml = todayTrips.map(t => `<button class="today-banner-trip ${tripColor(t.id)}" onclick="openTrip('${t.id}')">${escHtml(t.label)}</button>`).join('');
 
@@ -3208,17 +3318,19 @@ function _renderTodayBanner(today) {
   el.style.display = '';
 }
 
-// Click an event chip on the calendar grid to edit it in place. Saves on blur/Enter, deletes
-// the event if cleared. Mirrors the schedule view's editEvent flow but operates on .cal-event
-// nodes instead of the schedule chips.
-function editCalEvent(dayKey, idx) {
-  const el = document.querySelector(`.cal-event[data-day="${dayKey}"][data-idx="${idx}"]`);
+// Click an event chip on the calendar grid → edit in place. Uses ISO date + idx within that
+// date's events (sorted) to find the target in datedEvents. Saves to datedEvents; @-syntax in
+// the input gets parsed (e.g. "Volleyball @11:30am" → text + time).
+function editCalEvent(isoDate, idx) {
+  const el = document.querySelector(`.cal-event[data-date="${isoDate}"][data-idx="${idx}"]`);
   if (!el || el.querySelector('input')) return;
-  const events = (weekPlan && weekPlan[dayKey] && weekPlan[dayKey].events) || [];
-  const current = events[idx] || el.textContent || '';
+  const events = _eventsForDate(isoDate);
+  const target = events[idx];
+  if (!target) return;
+  const rawText = target.time ? `${target.text} @${formatTimeDisplay(target.time)}` : target.text;
   const input = document.createElement('input');
   input.type = 'text';
-  input.value = current;
+  input.value = rawText;
   input.style.cssText = 'width:100%;border:none;background:transparent;font-family:inherit;font-size:10px;font-weight:600;color:var(--text);outline:none;padding:0';
   el.innerHTML = '';
   el.appendChild(input);
@@ -3228,22 +3340,22 @@ function editCalEvent(dayKey, idx) {
   const finish = (save) => {
     if (done) return;
     done = true;
-    const v = input.value.trim();
     if (save) {
-      if (!weekPlan[dayKey]) weekPlan[dayKey] = {};
-      if (!weekPlan[dayKey].events) {
-        // Legacy notesList/notes → events migration on first edit so we have a writable array.
-        const dp = weekPlan[dayKey];
-        weekPlan[dayKey].events = dp.notesList && dp.notesList.length ? [...dp.notesList] : dp.notes ? [dp.notes] : [];
+      const raw = input.value.trim();
+      if (!raw) {
+        datedEvents = datedEvents.filter(e => e.id !== target.id);
+      } else {
+        const parsed = parseEventTextAndTime(raw);
+        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; }
       }
-      const evts = weekPlan[dayKey].events;
-      if (v) evts[idx] = v;
-      else evts.splice(idx, 1);
-      if (!evts.length) delete weekPlan[dayKey].events;
-      savePlan();
+      saveDatedEvents();
     }
     renderCalendar();
-    if (isActive('dates')) renderPlan();
+    if (isActive('dates')) {
+      renderPlan();
+      const today = new Date(); today.setHours(0,0,0,0);
+      _renderTodayBanner(today);
+    }
   };
   input.onblur = () => finish(true);
   input.onkeydown = e => {
@@ -3402,17 +3514,18 @@ function renderCalendar() {
         }
       }
 
-      // Freeform This Week events for current plan-week days. Pull from weekPlan[dayKey].events
-      // (or the legacy notes/notesList shape) so anything written in the schedule grid surfaces
-      // on the calendar grid too. Click → edit in place (stopPropagation prevents the cell click
-      // from also opening the Add-a-Date prefill flow).
+      // Freeform date-anchored events for this cell. datedEvents persists across week rollover,
+      // so past + future weeks' events stick around. Click → edit in place; cell click goes to
+      // Add-a-Date prefill (stopPropagation on the chip prevents that).
       let eventsHtml = '';
-      if (isPlanWeek) {
-        const dp = (weekPlan && weekPlan[dKey]) || {};
-        const events = dp.events || (dp.notesList && dp.notesList.length ? dp.notesList : dp.notes ? [dp.notes] : []);
-        if (events && events.length) {
-          eventsHtml = events.map((evt, ei) => `<div class="cal-event" data-day="${dKey}" data-idx="${ei}" onclick="editCalEvent('${dKey}',${ei});event.stopPropagation()" title="${escHtml(evt)} (click to edit)">${escHtml(evt)}</div>`).join('');
-        }
+      const cellIsoForEvents = _fmtDateKey(d);
+      const cellEvents = _eventsForDate(cellIsoForEvents);
+      if (cellEvents.length) {
+        eventsHtml = cellEvents.map((evt, ei) => {
+          const timePrefix = evt.time ? `<span class="cal-event-time">${formatTimeDisplay(evt.time)}</span> ` : '';
+          const fullText = (evt.time ? formatTimeDisplay(evt.time) + ' · ' : '') + evt.text;
+          return `<div class="cal-event" data-date="${cellIsoForEvents}" data-idx="${ei}" onclick="editCalEvent('${cellIsoForEvents}',${ei});event.stopPropagation()" title="${escHtml(fullText)} (click to edit)">${timePrefix}${escHtml(evt.text)}</div>`;
+        }).join('');
       }
 
       // Chips for current-plan-week days only
@@ -3851,6 +3964,8 @@ function renderPlan() {
     const isPast  = dayDate < _planToday;
     const isToday = dayDate.getTime() === _planToday.getTime();
     const autoTrips = _tripsByDay[key] || [];
+    // Pull events for this day from the date-keyed collection — survives week rollover, can hold times.
+    const dayEvents = _eventsForDayKey(key);
     return `<div class="plan-day${isPast?' plan-day-past':isToday?' plan-day-today':''}" id="plan-day-${key}">
       <div class="plan-day-label"><span class="day-full">${full}</span><span class="day-short">${label}</span></div>
       <div class="plan-day-slots">
@@ -3859,9 +3974,11 @@ function renderPlan() {
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
           ${autoTrips.map(t => `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`).join('')}
-          ${(d.events || (d.notesList?.length ? d.notesList : d.notes ? [d.notes] : [])).map((evt, i) => `
-            <div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`).join('')}
-          <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event…" style="display:none"
+          ${dayEvents.map((evt, i) => {
+            const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeDisplay(evt.time)}</span>` : '';
+            return `<div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`;
+          }).join('')}
+          <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event… (try @11:30am)" style="display:none"
             onkeydown="handleEventKey(event,'${key}')" onblur="commitEvent('${key}')">
           <button class="plan-add-event-btn" id="add-btn-${key}" onclick="showAddEvent('${key}')">+</button>
         </div>
@@ -4036,22 +4153,24 @@ function handleEventKey(e, key) {
 
 function commitEvent(key) {
   const input = document.getElementById('add-input-' + key);
-  // Guard: if already hidden, blur fired after we already committed — ignore
   if (!input || input.style.display === 'none') return;
-  const val = input.value.trim();
-  // Hide first so the blur this triggers finds display:none and returns
+  const raw = input.value.trim();
   input.style.display = 'none';
   document.getElementById('add-btn-' + key).style.display = '';
-  if (!val) return;
-  if (!weekPlan[key]) weekPlan[key] = {};
-  if (!weekPlan[key].events) {
-    // Migrate old notesList/notes format so we don't lose existing events
-    const old = weekPlan[key].notesList?.length ? weekPlan[key].notesList
-              : weekPlan[key].notes ? [weekPlan[key].notes] : [];
-    weekPlan[key].events = [...old];
-  }
-  weekPlan[key].events.push(val);
-  savePlan();
+  if (!raw) return;
+  const parsed = parseEventTextAndTime(raw);
+  if (!parsed.text) return;
+  const off = _DAY_OFF[key];
+  if (off === undefined) return;
+  const monday = _planMondayDate();
+  const date = new Date(monday); date.setDate(monday.getDate() + off);
+  datedEvents.push({
+    id: 'evt-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+    date: _fmtDateKey(date),
+    text: parsed.text,
+    time: parsed.time,
+  });
+  saveDatedEvents();
   renderDayEvents(key);
 }
 
@@ -4065,22 +4184,28 @@ function cancelAddEvent(key) {
 function editEvent(key, idx) {
   const chip = document.getElementById('evt-' + key + '-' + idx);
   if (!chip || chip.isContentEditable) return;
+  const dayEvents = _eventsForDayKey(key);
+  const target = dayEvents[idx];
+  if (!target) return;
   const del = chip.querySelector('.plan-slot-event-del');
+  const timeEl = chip.querySelector('.plan-slot-event-time');
   if (del) del.style.visibility = 'hidden';
+  if (timeEl) timeEl.style.display = 'none';
+  // Replace existing text content with the raw editable form: "text [@HH:MMam/pm]"
+  const rawText = target.time ? `${target.text} @${formatTimeDisplay(target.time)}` : target.text;
+  [...chip.childNodes].forEach(n => { if (n.nodeType === Node.TEXT_NODE) n.remove(); });
+  const textNode = document.createTextNode(rawText);
+  if (del) chip.insertBefore(textNode, del);
+  else chip.appendChild(textNode);
   chip.contentEditable = 'true';
   chip.style.cursor = 'text';
   chip.onclick = null;
-  // Select all text after the click event finishes. Find the first text node rather than
-  // trusting a fixed childNodes index — Safari can split text nodes around inserted emoji.
   setTimeout(() => {
     chip.focus();
-    const textNode = [...chip.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
-    if (textNode) {
-      const range = document.createRange();
-      range.selectNodeContents(textNode);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-    }
+    const range = document.createRange();
+    range.selectNodeContents(textNode);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
   }, 0);
   const finish = (save) => {
     if (!chip.isConnected) return;
@@ -4088,17 +4213,25 @@ function editEvent(key, idx) {
     chip.onblur = null;
     chip.contentEditable = 'false';
     chip.style.cursor = '';
-    if (del) del.style.visibility = '';
-    // Clone chip, strip spans, read remaining text (robust against browser DOM rewriting)
-    const clone = chip.cloneNode(true);
-    clone.querySelectorAll('span').forEach(s => s.remove());
-    const val = clone.textContent.trim();
-    if (save && weekPlan[key]?.events) {
-      if (val) { weekPlan[key].events[idx] = val; }
-      else { weekPlan[key].events.splice(idx, 1); }
-      savePlan();
+    if (save) {
+      const clone = chip.cloneNode(true);
+      clone.querySelectorAll('span').forEach(s => s.remove());
+      const raw = clone.textContent.trim();
+      if (!raw) {
+        datedEvents = datedEvents.filter(e => e.id !== target.id);
+      } else {
+        const parsed = parseEventTextAndTime(raw);
+        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; }
+      }
+      saveDatedEvents();
     }
     renderDayEvents(key);
+    // Calendar grid + today banner share the event source; refresh them too if visible.
+    if (isActive('dates')) {
+      renderCalendar();
+      const today = new Date(); today.setHours(0,0,0,0);
+      _renderTodayBanner(today);
+    }
   };
   chip.onkeydown = e => {
     if (e.key === 'Enter') { e.preventDefault(); chip.onblur = null; finish(true); }
@@ -4108,17 +4241,24 @@ function editEvent(key, idx) {
 }
 
 function removeEvent(key, idx) {
-  if (!weekPlan[key]?.events) return;
-  weekPlan[key].events.splice(idx, 1);
-  savePlan();
+  const dayEvents = _eventsForDayKey(key);
+  const target = dayEvents[idx];
+  if (!target) return;
+  datedEvents = datedEvents.filter(e => e.id !== target.id);
+  saveDatedEvents();
   renderDayEvents(key);
+  if (isActive('dates')) {
+    renderCalendar();
+    const today = new Date(); today.setHours(0,0,0,0);
+    _renderTodayBanner(today);
+  }
 }
 
 function renderDayEvents(key) {
   const slot = document.getElementById('add-input-' + key)?.closest('.plan-slot');
   if (!slot) return;
   slot.querySelectorAll('.plan-slot-event').forEach(e => e.remove());
-  const events = weekPlan[key]?.events || [];
+  const events = _eventsForDayKey(key);
   const addInput = document.getElementById('add-input-' + key);
   const EVT_EMOJIS = ['⭐','🌿','🎉','💜','🔥'];
   events.forEach((evt, i) => {
@@ -4126,7 +4266,8 @@ function renderDayEvents(key) {
     chip.className = `plan-slot-event ec${i%5}`;
     chip.id = 'evt-' + key + '-' + i;
     chip.setAttribute('onclick', `editEvent('${key}',${i})`);
-    chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${escHtml(evt)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
+    const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeDisplay(evt.time)}</span>` : '';
+    chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
     slot.insertBefore(chip, addInput);
   });
 }
