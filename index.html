@@ -4628,8 +4628,43 @@ function addTrip() {
     }
     return;
   }
-  const sortDate       = parseSortDate(dates);
-  const labelWithEmoji = _hasEmoji(label) ? label : `${label} ${tripEmoji(label)}`;
+  const sortDate = parseSortDate(dates);
+
+  // Route based on what the user actually typed:
+  //  - "@time" in the name + single day → it's a quick timed event, not a trip
+  //  - multi-day → always a trip (@time stripped if present since trips are all-day)
+  //  - no @ + single day → trip (default; trip detail page covers all the rich planning fields)
+  const parsedName = parseEventTextAndTime(label);
+  let isSingleDay = false;
+  if (sortDate) {
+    const endICS = parseICSEndDate(dates, sortDate);
+    const start = new Date(sortDate + 'T00:00:00');
+    const endIso = `${endICS.slice(0,4)}-${endICS.slice(4,6)}-${endICS.slice(6,8)}`;
+    const end = new Date(endIso + 'T00:00:00');
+    isSingleDay = Math.round((end - start) / 86400000) === 1;
+  }
+
+  if (parsedName.time && isSingleDay && sortDate) {
+    // Quick timed event path
+    datedEvents.push({
+      id: 'evt-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+      date: sortDate,
+      text: parsedName.text,
+      time: parsedName.time,
+    });
+    saveDatedEvents();
+    document.getElementById('new-trip-dates').value = '';
+    document.getElementById('new-trip-name').value = '';
+    burst();
+    renderDates();
+    showToast(`📌 Event added — ${formatTimeDisplay(parsedName.time)} on ${dates}`);
+    return;
+  }
+
+  // Trip path. If the user typed @time on a multi-day trip, strip it — trips are all-day events
+  // and a single start time wouldn't carry meaning across the range.
+  const cleanLabel = parsedName.time ? parsedName.text : label;
+  const labelWithEmoji = _hasEmoji(cleanLabel) ? cleanLabel : `${cleanLabel} ${tripEmoji(cleanLabel)}`;
   const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
   trips.push(trip);
   _newTripIds.add(trip.id); // bar gets the entrance animation on the next renderCalendar
@@ -4638,6 +4673,9 @@ function addTrip() {
   document.getElementById('new-trip-name').value = '';
   burst();
   renderDates();
+  if (parsedName.time && !isSingleDay) {
+    showToast('⚠️ Multi-day trips are all-day — time was dropped. Use a single date for a timed event.');
+  }
 }
 
 function dismissOverlap(id) {
