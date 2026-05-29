@@ -194,7 +194,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .hw .hbg{filter:grayscale(1) opacity(.25)}
 .hw .hfill{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap;width:0%;pointer-events:none}
 .heart-rating{display:flex;gap:8px;margin:10px 0 20px}
-.heart-rating .hw{font-size:30px;cursor:pointer;transition:transform .15s}
+.heart-rating .hw{font-size:30px;cursor:pointer;transition:transform .15s;padding:6px 4px}
 .heart-rating .hw:hover{transform:scale(1.2)}
 
 /* ── Theme chips ── */
@@ -1117,7 +1117,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="card-title">Countdowns ⏳</div>
       <div id="custom-cd-list"></div>
       <div class="custom-cd-add">
-        <input type="text" id="cd-name" placeholder="Event name" onkeydown="if(event.key==='Enter')addCustomCountdown()">
+        <input type="text" id="cd-name" maxlength="100" placeholder="Event name" onkeydown="if(event.key==='Enter')addCustomCountdown()">
         <input type="date" id="cd-date" onkeydown="if(event.key==='Enter')addCustomCountdown()">
         <button onclick="addCustomCountdown()">+ Add</button>
       </div>
@@ -1501,7 +1501,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <div id="tx-search-total" style="font-size:12px;font-weight:700;color:var(--amber)"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input id="b-search" placeholder="🔍 Search..." oninput="renderBudget()" class="bq-input" style="width:140px">
+        <input id="b-search" placeholder="🔍 Search..." oninput="_debouncedBudgetSearch()" class="bq-input" style="width:140px">
         <select id="b-filter-cat" onchange="renderBudget()" class="bq-sel">
           <option value="">All Categories</option>
         </select>
@@ -1999,6 +1999,25 @@ let _firestoreInited = false;
 // listeners that fail silently against the new user's permissions.
 const _firestoreUnsubs = [];
 function _track(unsub) { _firestoreUnsubs.push(unsub); return unsub; }
+// Generic onSnapshot error callback. Without this, an error (token expiry after long-idle,
+// transient permission denial, network outage past internal retry) detaches the listener
+// silently — the user keeps seeing stale data forever. Surface a toast so the user knows
+// to reload.
+let _lostSyncWarned = false;
+function _onListenerErr(name) {
+  return err => {
+    console.warn('Snapshot listener error on', name, err && err.code);
+    if (!_lostSyncWarned && typeof showToast === 'function') {
+      _lostSyncWarned = true;
+      showToast('⚠️ Lost sync with the server — tap to reload', () => location.reload(), {duration: 30000});
+    }
+  };
+}
+// Sugar for attaching an error-aware listener that also gets unsubscribe-tracked. Replaces
+// the older `_track(ref('X').onSnapshot(cb))` pattern so error handlers are uniform.
+function _listen(name, cb) {
+  return _track(db.collection('state').doc(name).onSnapshot(cb, _onListenerErr(name)));
+}
 function teardownFirestore() {
   _firestoreUnsubs.forEach(u => { try { u(); } catch (e) {} });
   _firestoreUnsubs.length = 0;
@@ -2035,35 +2054,42 @@ function teardownFirestore() {
    'ow-dismissed-overlaps', 'ow-rec-dismissed', 'ow-rec-minimized'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
+  // DOM cleanup for the review-photo preview — the in-memory File array was already cleared
+  // above, but the rendered <img> thumbnails (now pointing at revoked blob URLs) stay in
+  // the DOM with broken images until the next renderReviewPhotos() call.
+  const photoPreview = document.getElementById('r-photo-preview');
+  if (photoPreview) { photoPreview.innerHTML = ''; photoPreview.style.display = 'none'; }
+  const photoPicker = document.getElementById('r-photo');
+  if (photoPicker) photoPicker.value = '';
 }
 function initFirestore() {
   if (_firestoreInited) return; // guard against onAuthStateChanged stacking listeners on token refresh
   _firestoreInited = true;
   const ref = key => db.collection('state').doc(key);
 
-  _track(ref('todoCategories').onSnapshot(snap => {
+  _listen('todoCategories', snap => {
     if (!snap.exists) { ref('todoCategories').set({items: todoCategories}); return; }
     const saved = snap.data().items;
     if (saved && saved.length) todoCategories = saved;
     if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
-  }));
+  });
 
-  _track(ref('mood').onSnapshot(snap => {
+  _listen('mood', snap => {
     if (!snap.exists) { ref('mood').set(mood); return; }
     mood = { amanda:'', aidan:'', week:'', ...snap.data() };
     if (isActive('home')) renderMoodWidget();
-  }));
+  });
 
-  _track(ref('todos').onSnapshot(snap => {
+  _listen('todos', snap => {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
     todos = snap.data().items || [];
     if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
     scheduleRenderHome();
     const el = document.getElementById('stat-todos');
     if (el) el.textContent = todos.filter(t=>!t.done).length;
-  }));
+  });
 
-  _track(ref('entries').onSnapshot(snap => {
+  _listen('entries', snap => {
     if (!snap.exists) { ref('entries').set({items:[]}); return; }
     newEntries = snap.data().items || [];
     // Skip the full re-render when:
@@ -2076,14 +2102,14 @@ function initFirestore() {
     if (snap.metadata.hasPendingWrites || editorOpen) { scheduleRenderHome(); return; }
     if (isActive('history') && !_hasTypingFocus('#page-history')) renderHistory();
     scheduleRenderHome();
-  }));
+  });
 
-  _track(ref('budgetTargets').onSnapshot(snap => {
+  _listen('budgetTargets', snap => {
     budgetTargets = snap.exists ? (snap.data().targets || {}) : {};
     if (isActive('budget')) renderBudget();
-  }));
+  });
 
-  _track(ref('trips').onSnapshot(snap => {
+  _listen('trips', snap => {
     if (!snap.exists) {
       trips = TRIPS_2026.map((x,i) => ({...x, id:'trip-'+i}));
       ref('trips').set({items: trips});
@@ -2132,9 +2158,9 @@ function initFirestore() {
       renderTrip();
     }
     scheduleRenderHome();
-  }));
+  });
 
-  _track(ref('logistics').onSnapshot(snap => {
+  _listen('logistics', snap => {
     if (!snap.exists) {
       logisticsList = LOGISTICS_LIST.map((text,i) => ({id:'log-'+i, text}));
       ref('logistics').set({items: logisticsList});
@@ -2142,9 +2168,9 @@ function initFirestore() {
       logisticsList = snap.data().items || [];
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
-  }));
+  });
 
-  _track(ref('bucket').onSnapshot(snap => {
+  _listen('bucket', snap => {
     if (!snap.exists) {
       bucketList = BUCKET_LIST.map((text,i) => ({id:'bkt-'+i, text}));
       ref('bucket').set({items: bucketList});
@@ -2152,9 +2178,9 @@ function initFirestore() {
       bucketList = snap.data().items || [];
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
-  }));
+  });
 
-  _track(ref('datedEvents').onSnapshot(snap => {
+  _listen('datedEvents', snap => {
     if (!snap.exists) {
       // First-load migration: move any existing weekPlan events into the dated collection so
       // nothing the user has typed gets lost. Future writes go straight to datedEvents.
@@ -2170,9 +2196,9 @@ function initFirestore() {
       const today = new Date(); today.setHours(0,0,0,0);
       _renderTodayBanner(today);
     }
-  }));
+  });
 
-  _track(ref('weekplan').onSnapshot(snap => {
+  _listen('weekplan', snap => {
     const incoming = snap.exists ? (snap.data().plan || {}) : {};
     // Defer the snapshot when the user is mid-typing on the Dates page AND the snapshot is
     // NOT an echo of our own write. Wholesale replacing `weekPlan` mid-typing would clobber
@@ -2197,14 +2223,14 @@ function initFirestore() {
       const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
       _renderTodayBanner(todayLocal);
     }
-  }));
+  });
 
-  _track(ref('countdowns').onSnapshot(snap => {
+  _listen('countdowns', snap => {
     customCountdowns = snap.exists ? (snap.data().items || []) : [];
     if (isActive('home')) renderCustomCountdowns();
-  }));
+  });
 
-  _track(ref('recurring').onSnapshot(snap => {
+  _listen('recurring', snap => {
     if (!snap.exists) {
       recurringItems = DEFAULT_RECURRING.map(r=>({...r}));
       ref('recurring').set({items: recurringItems});
@@ -2212,9 +2238,9 @@ function initFirestore() {
       recurringItems = snap.data().items || [];
     }
     if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderRecurring();
-  }));
+  });
 
-  _track(ref('expenses').onSnapshot(snap => {
+  _listen('expenses', snap => {
     if (!snap.exists) {
       expenses = [];
       ref('expenses').set({items: expenses});
@@ -2226,8 +2252,12 @@ function initFirestore() {
       // ensures only one row per id is rendered/computed against, even if the doc temporarily
       // contains duplicates.
       const seen = new Map();
-      for (const e of expenses) { if (e && e.id) seen.set(e.id, e); }
-      if (seen.size !== expenses.length) expenses = [...seen.values()];
+      const idless = [];
+      for (const e of expenses) {
+        if (e && e.id) seen.set(e.id, e);
+        else if (e) idless.push(e); // preserve id-less entries (legacy/migration artifacts)
+      }
+      if (seen.size + idless.length !== expenses.length) expenses = [...seen.values(), ...idless];
       // One-time backfill for the missing-month field. Only runs once per session — re-running
       // on every snapshot turns this into a full-array .set() that races with concurrent
       // arrayUnion writes from the other partner. Strict date-shape check avoids writing
@@ -2249,7 +2279,7 @@ function initFirestore() {
     }
     if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderBudget();
     scheduleRenderHome();
-  }));
+  });
 }
 
 // True when the user is mid-typing inside the matched container — used to suppress Firestore-
@@ -3253,7 +3283,14 @@ function toggleTodo(id) {
       burstAt(r.left + r.width / 2, r.top + r.height / 2, 28, 90);
       setTimeout(() => {
         el.classList.add('collapsing');
-        setTimeout(() => { t.done = true; saveTodos(); renderTodos(); }, 350);
+        setTimeout(() => {
+          // Re-resolve the todo by id inside the deferred callback — the captured `t`
+          // becomes orphaned if a partner snapshot replaced the `todos` array during the
+          // 1s animation. Without this, the done-flag mutation is silently lost.
+          const live = todos.find(x => x.id === id);
+          if (live) { live.done = true; saveTodos(); }
+          renderTodos();
+        }, 350);
       }, 650);
     } else {
       t.done = true; saveTodos(); renderTodos();
@@ -3803,7 +3840,10 @@ function _assignLanesForWeek(weekDays, weekTrips) {
     if (startCol >= 0) {
       // tripStartsThisWeek: the trip's actual first day falls in this week (label rendering)
       const tripStartsThisWeek = weekDays[startCol].getTime() === tStart.getTime();
-      const tripEndsThisWeek = weekDays[endCol].getTime() === new Date(tEnd.getTime() - 86400000).getTime();
+      // Day-diff math instead of subtracting 86400000ms — the latter is off by an hour on
+      // DST-transition days (23 or 25 wall-clock hours), incorrectly hiding the cal-bar-end
+      // cap on trips ending on the spring/fall transition Sunday.
+      const tripEndsThisWeek = _daysBetween(weekDays[endCol], tEnd) === 1;
       // Trip is fully past if its exclusive end <= today (i.e. last actual day was yesterday or earlier).
       const isPast = tEnd <= today;
       segments.push({ trip: t, startCol, endCol, tripStartsThisWeek, tripEndsThisWeek, isPast });
@@ -5372,13 +5412,13 @@ function deleteTrip(id) {
     // Undo: merge the captured snapshot copy of `item` with whatever version of this trip is
     // currently in `trips` (a partner may have edited the trip between delete and undo). If
     // we just push our stale captured copy, we'd clobber the partner's edit on the next write.
-    const current = trips.find(t => t.id === id);
-    if (current) {
-      // Trip already came back in via snapshot — merge fields, don't duplicate the row.
-      Object.assign(current, item, current);
-    } else {
-      trips.push(item);
+    if (trips.find(t => t.id === id)) {
+      // Trip already came back via snapshot (partner edited it during the undo window) —
+      // their version wins. We have nothing to add; just re-render so the row reappears.
+      renderDates();
+      return;
     }
+    trips.push(item);
     saveTrips({ immediate: true });
     renderDates();
   });
@@ -5420,7 +5460,11 @@ function _tripDayKeys(t) {
   // Guard against pathological ranges (e.g. typo'd dates) — cap at 60 days.
   let safety = 60;
   while (d < stop && safety-- > 0) {
-    out.push(d.toISOString().slice(0,10));
+    // Use the local-date key, not toISOString().slice(0,10). For users east of UTC (e.g.
+    // Tokyo, the actual Japan trip target), local midnight is the prior day in UTC, so
+    // toISOString() returns yesterday's date — itinerary day-1 labels would shift to day-0
+    // and writes would land under the wrong key.
+    out.push(_fmtDateKey(d));
     d.setDate(d.getDate() + 1);
   }
   return out;
@@ -5525,7 +5569,7 @@ function renderTrip() {
       <div class="td-section-title" data-pack-title>🎒 Packing List ${packing.length ? `<span style="color:var(--sage);margin-left:8px;font-weight:600">${packing.filter(p=>p.packed).length}/${packing.length} packed</span>` : ''}</div>
       ${packingItemsHtml}
       <div class="td-add-row">
-        <input type="text" id="td-pack-new" placeholder="Add packing item..."
+        <input type="text" id="td-pack-new" maxlength="200" placeholder="Add packing item..."
           onkeydown="if(event.key==='Enter')addPackItem()">
         <button onclick="addPackItem()">+ Add</button>
       </div>
@@ -5551,8 +5595,8 @@ function renderTrip() {
       <div class="td-section-title">🔗 Links</div>
       ${linksItemsHtml}
       <div class="td-add-row">
-        <input type="text" id="td-link-new-label" placeholder="Label (e.g. Airbnb)" style="flex:0 0 160px">
-        <input type="text" id="td-link-new-url" placeholder="https://..."
+        <input type="text" id="td-link-new-label" maxlength="100" placeholder="Label (e.g. Airbnb)" style="flex:0 0 160px">
+        <input type="text" id="td-link-new-url" maxlength="2000" placeholder="https://..."
           onkeydown="if(event.key==='Enter')addLink()">
         <button onclick="addLink()">+ Add</button>
       </div>
@@ -5877,7 +5921,9 @@ function deleteListItem(type, id) {
 
 // ─── HISTORY ─────────────────────────────────────────────────────────────────
 function getAllEntries() {
-  return [...newEntries, ...SEED_ENTRIES].sort((a,b) => b.date.localeCompare(a.date));
+  // Filter out entries without a `date` before sorting — one corrupt row would otherwise
+  // throw on .localeCompare and blank the entire history list.
+  return [...newEntries, ...SEED_ENTRIES].filter(e => e && e.date).sort((a,b) => b.date.localeCompare(a.date));
 }
 
 function buildHistoryBodyHtml(e) {
@@ -6365,14 +6411,19 @@ function removePicker() { document.getElementById('emoji-picker-popup')?.remove(
 function pickMood(person, emoji) {
   removePicker();
   const thisWeek = getISOWeek();
-  // Local optimistic update — write only this person's field. renderMoodWidget filters by
-  // mood.week so a stale partner pick from last week stays hidden until they re-pick. We do
-  // NOT clear the other person's field on week rollover even though it's now stale: if
-  // both partners pick simultaneously on a new-week boundary, each one's "clear other" would
-  // wipe the other person's just-set pick (the race the agent flagged).
-  mood = { ...mood, [person]: emoji, week: thisWeek };
+  const weekRolled = mood.week !== thisWeek;
+  const other = person === 'amanda' ? 'aidan' : 'amanda';
+  // On a new-week rollover we MUST clear the other partner's stale emoji from last week —
+  // otherwise the merge write keeps it attached to thisWeek's stamp, and the widget
+  // (which filters by mood.week) renders the stale pick as if it were a current pick.
+  // The simultaneous-pick race (both partners pick on the exact same Mon-morning boundary)
+  // is rare enough — and the worst case is one extra re-pick — that always-clearing on
+  // rollover is the better trade-off.
+  mood = { ...mood, [person]: emoji, [other]: weekRolled ? '' : mood[other], week: thisWeek };
   renderMoodWidget();
-  db.collection('state').doc('mood').set({ [person]: emoji, week: thisWeek }, {merge:true}).catch(_onSaveErr);
+  const patch = { [person]: emoji, week: thisWeek };
+  if (weekRolled) patch[other] = '';
+  db.collection('state').doc('mood').set(patch, {merge:true}).catch(_onSaveErr);
 }
 
 function spinMood() {
@@ -6574,6 +6625,15 @@ function _lsSet(key, value) {
   catch (e) { console.warn('localStorage write failed:', key, e && e.name); }
 }
 
+// Debounced budget-search re-render. The old `oninput="renderBudget()"` fired a full tab
+// rebuild (snapshot strip, trend chart, category breakdown, recurring panel, tx list) on
+// every keystroke; with ~hundreds of expenses that visibly stutters on mobile.
+let _bSearchTimer = null;
+function _debouncedBudgetSearch() {
+  clearTimeout(_bSearchTimer);
+  _bSearchTimer = setTimeout(() => { _bSearchTimer = null; renderBudget(); }, 150);
+}
+
 // Generate a collision-resistant id. The legacy pattern `Math.random().toString(36).slice(2)`
 // produced variable-length suffixes (0–11 chars), and inside a tight loop with identical
 // Date.now() values, two short suffixes can collide. crypto.randomUUID gives 122 bits of
@@ -6726,7 +6786,7 @@ function renderNextTrip() {
   // the Next Adventure card through its last day instead of vanishing the moment it begins.
   const next = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate))
     .find(t => {
-      if (t.label.includes('JAPAN')) return false;
+      if ((t.label || '').includes('JAPAN')) return false;
       const endCompact = parseICSEndDateMemo(t.dates, t.sortDate);
       if (!endCompact) return false;
       const endIso = `${endCompact.slice(0,4)}-${endCompact.slice(4,6)}-${endCompact.slice(6,8)}`;
@@ -7492,7 +7552,10 @@ function saveExpenseEdit(id) {
   const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value ?? '');
   const date    = document.getElementById('txe-date-'   + id)?.value;
   const shared  = document.getElementById('txe-shared-' + id)?.checked ?? false;
-  if (!desc || !Number.isFinite(amt)) return; // form gone or invalid — silently bail
+  // Date is required — without it `monthName(new Date(undefined + 'T12:00:00'))` yields
+  // undefined, Firestore rejects the write, and the user sees an opaque save-failed toast
+  // with no hint that the missing date was the cause.
+  if (!desc || !Number.isFinite(amt) || !date) return;
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
