@@ -2358,6 +2358,14 @@ function _getPlanWeekKey() {
 function _fmtDateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+// Calendar-day diff between two Date objects (ignoring time-of-day). Uses UTC arithmetic
+// so the DST transition days (which have 23 or 25 wall-clock hours, not 24) don't push
+// the result off by one — `Math.ceil((target - today) / 864e5)` was wrong once a year.
+function _daysBetween(from, to) {
+  const a = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const b = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((b - a) / 864e5);
+}
 // Monday Date for the currently-displayed plan week. Reads weekPlan._weekKey when set so
 // formatPlanLabel + the schedule grid stay in sync with whatever week the user advanced to.
 function _planMondayDate() {
@@ -3309,19 +3317,26 @@ function quickAddEventInline(iso) {
   input.addEventListener('mousedown', e => e.stopPropagation());
 }
 
-// Delegated click + drag-select for the calendar grid. mousedown on a day cell starts a range;
-// mouseover during drag highlights the range; mouseup commits — either a single-day prefill
-// (no drag) or a range prefill. Bind once; survives renderCalendar() rebuilds via delegation.
+// Delegated click + drag-select for the calendar grid. Uses Pointer Events so the same code
+// path covers mouse, pen, and touch. Mouse: drag commits past a small pixel threshold.
+// Touch/pen: a long-press activates drag mode (so a normal tap or scroll doesn't fire it);
+// once active, subsequent moves preventDefault to block page scroll.
 let _calDragBound = false;
 let _calDragStart = null;
 let _calDragLast = null;
 let _calDragOriginX = 0;
 let _calDragOriginY = 0;
 let _calDragMoved = false;
-// A click registered ≥6px of cursor travel before counts as a drag. Below that, treat as a
+let _calDragActive = false;
+let _calDragPointerType = null;
+let _calLongPressTimer = null;
+// A click that registered ≥6px of cursor travel counts as a drag. Below that, treat as a
 // stationary click on the original cell — keeps a tiny mouse-twitch across a cell boundary
 // from being treated as a multi-day selection.
 const _CAL_DRAG_THRESHOLD_PX = 6;
+// Long-press threshold for activating drag-select on touch/pen. Short enough to feel snappy,
+// long enough that a normal tap-to-add doesn't accidentally enter drag mode.
+const _CAL_TOUCH_LONGPRESS_MS = 350;
 function _bindCalDragSelect() {
   if (_calDragBound) return;
   const grid = document.getElementById('cal-grid');
@@ -3338,8 +3353,16 @@ function _bindCalDragSelect() {
   const clearRange = () => {
     grid.querySelectorAll('.cal-day-drag-select').forEach(c => c.classList.remove('cal-day-drag-select'));
   };
-  grid.addEventListener('mousedown', e => {
-    if (e.button !== 0) return; // primary button only
+  const resetDragState = () => {
+    if (_calLongPressTimer) { clearTimeout(_calLongPressTimer); _calLongPressTimer = null; }
+    _calDragStart = null;
+    _calDragLast = null;
+    _calDragMoved = false;
+    _calDragActive = false;
+    _calDragPointerType = null;
+  };
+  grid.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // primary mouse button only
     if (isInteractive(e.target)) return;
     const cell = e.target.closest('.cal-day');
     if (!cell) return;
@@ -3348,44 +3371,79 @@ function _bindCalDragSelect() {
     _calDragOriginX = e.clientX;
     _calDragOriginY = e.clientY;
     _calDragMoved = false;
+    _calDragPointerType = e.pointerType;
     paintRange(_calDragStart, _calDragStart);
-    e.preventDefault();
+    if (e.pointerType === 'mouse') {
+      // Mouse: active immediately. Threshold gate in pointermove decides click vs drag.
+      _calDragActive = true;
+      e.preventDefault();
+    } else {
+      // Touch/pen: stay inactive until a long-press fires. This lets normal taps and page
+      // scrolls behave normally. If the long-press fires while the finger is still down, we
+      // commit to drag mode (with a soft haptic) and start tracking range changes.
+      _calDragActive = false;
+      _calLongPressTimer = setTimeout(() => {
+        if (!_calDragStart) return;
+        _calDragActive = true;
+        _calDragMoved = true; // a long-press alone is enough — they might release without moving
+        if (navigator.vibrate) try { navigator.vibrate(35); } catch (_) {}
+      }, _CAL_TOUCH_LONGPRESS_MS);
+    }
   });
-  // Track which cell the cursor is currently over so mouseup knows the range endpoint, but
-  // only repaint after the user has actually started dragging (avoids flashing the range
-  // highlight onto an adjacent cell during a near-stationary click).
-  grid.addEventListener('mouseover', e => {
+  // pointermove on document so we keep getting events even when the pointer leaves the grid
+  // or wanders over a chip/bar mid-drag. passive:false so we can preventDefault on touch.
+  document.addEventListener('pointermove', e => {
     if (!_calDragStart) return;
-    if (isInteractive(e.target)) return;
-    const cell = e.target.closest('.cal-day');
-    if (!cell) return;
-    _calDragLast = cell.dataset.date;
-    if (_calDragMoved) paintRange(_calDragStart, _calDragLast);
-  });
-  // Pixel-level movement check — mouseover only fires on cell crossings, so we'd otherwise
-  // miss small intra-cell drift that should still suppress the drag interpretation.
-  window.addEventListener('mousemove', e => {
-    if (!_calDragStart || _calDragMoved) return;
     const dx = e.clientX - _calDragOriginX;
     const dy = e.clientY - _calDragOriginY;
-    if (dx*dx + dy*dy >= _CAL_DRAG_THRESHOLD_PX * _CAL_DRAG_THRESHOLD_PX) {
+    const distSq = dx*dx + dy*dy;
+    const past = distSq >= _CAL_DRAG_THRESHOLD_PX * _CAL_DRAG_THRESHOLD_PX;
+    if (_calDragPointerType !== 'mouse' && !_calDragActive) {
+      // Touch/pen: user moved before long-press activated → they're scrolling, not dragging.
+      // Abort the drag attempt entirely and let the browser handle the scroll.
+      if (past) { clearRange(); resetDragState(); }
+      return;
+    }
+    if (_calDragPointerType === 'mouse' && !_calDragMoved) {
+      if (!past) return;
       _calDragMoved = true;
       paintRange(_calDragStart, _calDragLast);
     }
-  });
-  // mouseup must be on window — releasing outside the grid still ends the drag cleanly.
-  window.addEventListener('mouseup', () => {
+    // Update the range endpoint based on whichever cell the pointer is currently over.
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    if (target && !isInteractive(target)) {
+      const cell = target.closest('.cal-day');
+      if (cell) {
+        _calDragLast = cell.dataset.date;
+        if (_calDragMoved) paintRange(_calDragStart, _calDragLast);
+      }
+    }
+    // Once we're committed to a touch drag, block page scroll for subsequent moves.
+    if (_calDragPointerType !== 'mouse' && _calDragActive) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('pointerup', () => {
     if (!_calDragStart) return;
     const start = _calDragStart;
-    // Below the drag threshold → treat as a click on the original cell, even if mouseover
-    // updated _calDragLast to an adjacent cell mid-click.
     const end = _calDragMoved ? (_calDragLast || _calDragStart) : _calDragStart;
-    _calDragStart = null;
-    _calDragLast = null;
-    _calDragMoved = false;
+    const wasActive = _calDragActive;
+    const pointerType = _calDragPointerType;
+    resetDragState();
     clearRange();
+    // Touch/pen tap that never activated (released before long-press) → still treat as
+    // a single-cell click so the user's tap-to-add gesture works.
+    if (!wasActive && pointerType !== 'mouse') {
+      addEventForDay(start, null);
+      return;
+    }
     const [a, b] = [start, end].sort();
     addEventForDay(a, a === b ? null : b);
+  });
+  // pointercancel fires when the OS takes the gesture away (e.g. a notification, or a
+  // touch becomes a system swipe). Treat it as an abort — no event creation.
+  document.addEventListener('pointercancel', () => {
+    if (!_calDragStart) return;
+    clearRange();
+    resetDragState();
   });
   _calDragBound = true;
 }
@@ -3721,7 +3779,7 @@ function renderCalendar() {
           let countdownChip = '';
           if (!slot.isPast && slot.showLabel && t.sortDate) {
             const tStart = new Date(t.sortDate + 'T00:00:00');
-            const days = Math.ceil((tStart - today) / 864e5);
+            const days = _daysBetween(today, tStart);
             if (days >= 0 && days <= 14) {
               const txt = days === 0 ? 'today!' : days === 1 ? 'tomorrow!' : `in ${days}d`;
               const urgent = days <= 7 ? ' cal-bar-cd-soon' : '';
@@ -3870,8 +3928,7 @@ function renderDates() {
     let badge = '';
     let pulse = '';
     if (!done && t.sortDate) {
-      const ms = new Date(t.sortDate + 'T00:00:00') - today;
-      const days = Math.ceil(ms / 864e5);
+      const days = _daysBetween(today, new Date(t.sortDate + 'T00:00:00'));
       if (days === 0) badge = `<div class="trip-countdown very-soon">today! 🎉</div>`;
       else if (days === 1) badge = `<div class="trip-countdown very-soon">tomorrow!</div>`;
       else if (days <= 14) badge = `<div class="trip-countdown soon">in ${days} days</div>`;
@@ -6157,7 +6214,7 @@ function renderNextTrip() {
   if (!next) { card.style.display = 'none'; return; }
   card.style.display = '';
   document.getElementById('next-trip-name').textContent = `${next.dates.replace(/\b[a-z]/g, c => c.toUpperCase())} — ${next.label}`;
-  const days = Math.ceil((new Date(next.sortDate + 'T00:00:00') - today) / 864e5);
+  const days = _daysBetween(today, new Date(next.sortDate + 'T00:00:00'));
   document.getElementById('next-trip-days').textContent = days || 'Today!';
   document.getElementById('next-trip-label').style.visibility = days ? '' : 'hidden';
 }
@@ -6182,7 +6239,7 @@ function renderCustomCountdowns() {
   const past     = customCountdowns.filter(c => c.date <  todayStr).sort((a,b) => b.date.localeCompare(a.date));
   const cards = [...upcoming, ...past].map(cd => {
     const d = new Date(cd.date + 'T00:00:00');
-    const days = Math.ceil((d - today) / 864e5);
+    const days = _daysBetween(today, d);
     const num  = days > 0 ? days : days === 0 ? '🎉' : Math.abs(days);
     const lbl  = days > 0 ? 'days away' : days === 0 ? 'today!' : 'days ago';
     return `<div class="custom-cd-widget">
@@ -6351,7 +6408,7 @@ function renderAnniversary() {
   const today = new Date(); today.setHours(0,0,0,0);
   let anniv = new Date(today.getFullYear(), 9, 1); // Oct 1
   if (anniv < today) anniv = new Date(today.getFullYear() + 1, 9, 1);
-  const days = Math.ceil((anniv - today) / 864e5);
+  const days = _daysBetween(today, anniv);
   document.getElementById('anniv-days').textContent = days || '🎉 Today!';
   document.getElementById('anniv-label').style.visibility = days ? '' : 'hidden';
 }
