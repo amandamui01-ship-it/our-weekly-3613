@@ -1523,7 +1523,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
           <option>Transportation</option><option>Travel</option><option>Utilities</option>
         </select>
         <input id="rec-desc" class="bq-input" style="flex:2;min-width:100px" placeholder="Description">
-        <input id="rec-amt" type="number" class="bq-input" style="width:80px" placeholder="$" min="0" step="0.01">
+        <input id="rec-amt" type="number" class="bq-input" style="width:80px" placeholder="$" step="0.01">
         <label class="bq-split"><input type="checkbox" id="rec-shared"> 50/50</label>
         <button class="btn btn-primary" style="font-size:12px;padding:6px 10px" onclick="addRecurring()">+ Save</button>
       </div>
@@ -1553,7 +1553,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <input class="bq-input bq-desc" id="b-desc" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
       </div>
       <div class="bqa-row2">
-        <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00" min="0" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
+        <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00 (or negative for refunds)" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
         <input type="date" class="bq-input bq-date" id="b-date">
         <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50 split</label>
         <button class="btn btn-primary bq-btn" onclick="addExpense()">+ Add</button>
@@ -2782,7 +2782,7 @@ function renderReviewPhotos() {
   preview.innerHTML = `<div class="review-photo-list">${
     _reviewPhotos.map((f, i) => {
       if (!f._owUrl) f._owUrl = URL.createObjectURL(f);
-      return `<div class="review-photo-thumb"><img src="${f._owUrl}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`;
+      return `<div class="review-photo-thumb"><img src="${escHtml(f._owUrl)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeReviewPhoto(${i})">✕</button></div>`;
     }).join('')
   }</div>`;
   if (addBtn) addBtn.style.display = _reviewPhotos.length >= 4 ? 'none' : '';
@@ -2869,11 +2869,11 @@ function getEntryPhotoUrls(e) {
 function buildHistoryPhotoSection(e) {
   const urls = getEntryPhotoUrls(e);
   if (!urls.length) return '';
-  if (urls.length === 1) return `<div class="history-photo-solo"><img class="history-photo photo-zoomable" src="${urls[0]}" alt="Memory photo" onclick="openLightbox(this.src);event.stopPropagation()"></div>`;
+  if (urls.length === 1) return `<div class="history-photo-solo"><img class="history-photo photo-zoomable" src="${escHtml(urls[0])}" alt="Memory photo" onclick="openLightbox(this.src);event.stopPropagation()"></div>`;
   return `<div class="history-photo-carousel" id="hpc-${e.id}" data-idx="0"
     ontouchstart="this._tx=event.touches[0].clientX"
     ontouchend="var d=event.changedTouches[0].clientX-this._tx;if(Math.abs(d)>40)shiftHistoryPhoto('${e.id}',d<0?1:-1)">
-    <img class="history-photo photo-zoomable" src="${urls[0]}" alt="Memory photo" onclick="openLightbox(this.src);event.stopPropagation()">
+    <img class="history-photo photo-zoomable" src="${escHtml(urls[0])}" alt="Memory photo" onclick="openLightbox(this.src);event.stopPropagation()">
     <div class="history-photo-nav">
       <button class="hpn-btn" onclick="shiftHistoryPhoto('${e.id}',-1);event.stopPropagation()">&#8249;</button>
       <span class="hpn-count">1 / ${urls.length}</span>
@@ -3080,13 +3080,22 @@ function deleteTodo(id) {
 }
 
 function clearCompletedTodos() {
-  const cleared = todos.filter(t => t.done);
-  if (!cleared.length) return;
+  // Capture each cleared todo together with its original index so undo can splice it back
+  // into the same position. The old undo did `[...todos, ...cleared]` which dumped them all
+  // at the end, silently reordering a user-sorted list.
+  const clearedWithIdx = todos
+    .map((t, i) => t.done ? { item: t, idx: i } : null)
+    .filter(Boolean);
+  if (!clearedWithIdx.length) return;
   todos = todos.filter(t => !t.done);
   saveTodos();
   renderTodos();
-  showToast(`Cleared ${cleared.length} completed item${cleared.length > 1 ? 's' : ''}`, () => {
-    todos = [...todos, ...cleared];
+  showToast(`Cleared ${clearedWithIdx.length} completed item${clearedWithIdx.length > 1 ? 's' : ''}`, () => {
+    // Splice back in order of original index so earlier slots get filled first; each splice
+    // shifts later items right by one, so the final positions match what the user saw.
+    for (const { item, idx } of clearedWithIdx) {
+      todos.splice(Math.min(idx, todos.length), 0, item);
+    }
     saveTodos();
     renderTodos();
   });
@@ -3111,7 +3120,9 @@ function addTodoSection() {
 function editTodoSection(id) {
   const cat = todoCategories.find(c => c.id === id);
   if (!cat) return;
-  const el = document.querySelector(`.todo-cat-title span[onclick*="${id}"]`);
+  // CSS.escape so an id containing CSS-special chars (e.g. quotes, brackets) doesn't throw
+  // and break the editor. Currently safe today, but defensive for future id schemes.
+  const el = document.querySelector(`.todo-cat-title span[onclick*="${CSS.escape(id)}"]`);
   if (!el) return;
   const input = document.createElement('input');
   input.className = 'todo-edit-input';
@@ -3784,6 +3795,11 @@ function _refreshCalendarChips() {
 function renderCalendar() {
   const gridEl = document.getElementById('cal-grid');
   if (!gridEl) return;
+  // Hide any open hover preview before rebuilding the grid. mouseout wouldn't fire for the
+  // destroyed cal-bar that triggered the show, so the popover would otherwise stay visible
+  // with stale content until the cursor moved outside the grid.
+  const preview = document.getElementById('cal-trip-preview');
+  if (preview) preview.classList.remove('visible');
   if (!_calMonth) _calMonth = _fmtMonth(new Date());
 
   const [y, m] = _calMonth.split('-').map(Number);
@@ -3959,7 +3975,7 @@ function renderDates() {
   const past     = yearTrips.filter(t =>  isPast(t)).sort(sortByDate);
 
   // Compute overlapping trip IDs (check upcoming trips only)
-  const dismissedOverlaps = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
+  const dismissedOverlaps = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
   const icsToIso = s => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
   const ranges = upcoming.filter(t => t.sortDate).map(t => ({
     id: t.id,
@@ -4116,7 +4132,7 @@ function addListDragListeners() {
 const _REVIEW_DRAFT_IDS = ['r-well','r-stress','r-adjust','r-misc','r-amanda','r-aidan','r-theme'];
 function loadReviewDraft() {
   try {
-    const draft = JSON.parse(localStorage.getItem('ow-review-draft') || '{}');
+    const draft = _safeJsonParse(localStorage.getItem('ow-review-draft'), {});
     _REVIEW_DRAFT_IDS.forEach(id => {
       const el = document.getElementById(id);
       if (el && draft[id] && !el.value) { el.value = draft[id]; _growNotes(el); }
@@ -4484,10 +4500,15 @@ function unpinTodo(id) {
 }
 
 function checkWeekTodo(id) {
-  // Marks the todo done in the main to-do list
+  // Marks the todo done in the main to-do list. toggleTodo runs an 800ms collapse animation
+  // when the source row is visible (Todos tab), then commits the state change at the end of
+  // the animation. From the week-todos panel (Calendar tab) the source row isn't on screen,
+  // toggleTodo's `if (el)` short-circuits the animation and commits immediately — so the
+  // animation-aligned setTimeout would leave the pinned chip out of sync for 800ms.
   toggleTodo(id);
-  // Re-render this week's list after the animation delay
-  setTimeout(renderWeekTodos, 800);
+  const sourceRow = document.getElementById('todo-' + id);
+  if (sourceRow) setTimeout(renderWeekTodos, 800);
+  else renderWeekTodos();
 }
 
 function toggleChip(dayKey, type) {
@@ -4542,6 +4563,13 @@ function commitEvent(key) {
   });
   saveDatedEvents();
   renderDayEvents(key);
+  // Also refresh the calendar grid + today banner above — they share the same source of truth
+  // and previously waited for the Firestore echo (~100-500ms) before reflecting the new event.
+  if (isActive('dates')) {
+    renderCalendar();
+    const today = new Date(); today.setHours(0,0,0,0);
+    _renderTodayBanner(today);
+  }
 }
 
 function cancelAddEvent(key) {
@@ -5058,7 +5086,7 @@ function addTrip() {
 }
 
 function dismissOverlap(id) {
-  const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
+  const dismissed = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
   dismissed.add(id);
   _overlapPairs.forEach(([a, b]) => {
     if (a === id) dismissed.add(b);
@@ -5161,14 +5189,14 @@ function renderTrip() {
   const headerHtml = `
     <div class="td-header ${colorCls}">
       <button class="td-delete" onclick="deleteTripFromDetail()">🗑️ Delete</button>
-      <input class="td-dates-input" id="td-dates" value="${escHtml(t.dates)}"
+      <input class="td-dates-input" id="td-dates" value="${escHtml(t.dates)}" data-original="${escHtml(t.dates)}"
         placeholder="Dates (e.g. Jun 5–7)"
         onblur="saveTripField('dates', this.value)"
-        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${escHtml(t.dates).replace(/'/g,"\\'")}';this.blur()}">
-      <input class="td-name-input" id="td-name" value="${escHtml(t.label)}"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value=this.dataset.original||'';this.blur()}">
+      <input class="td-name-input" id="td-name" value="${escHtml(t.label)}" data-original="${escHtml(t.label)}"
         placeholder="Trip name"
         onblur="saveTripField('label', this.value)"
-        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${escHtml(t.label).replace(/'/g,"\\'")}';this.blur()}">
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value=this.dataset.original||'';this.blur()}">
       <div class="td-meta-row">
         <button class="td-status-pill td-status-${status}" onclick="cycleTripStatus()" title="Click to change status">
           ${TRIP_STATUS_EMOJI[status]} ${status}
@@ -5252,7 +5280,7 @@ function renderTrip() {
       <input class="td-link-url" value="${escHtml(l.url)}" placeholder="https://..."
         onblur="saveLinkField('${l.id}', 'url', this.value)"
         onkeydown="if(event.key==='Enter')this.blur()">
-      ${_safeUrl(l.url) ? `<a class="td-link-go" href="${escHtml(_safeUrl(l.url))}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Open link">↗</a>` : ''}
+      ${_safeUrl(l.url) ? `<a class="td-link-go" href="${escHtml(_safeUrl(l.url))}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open link">↗</a>` : ''}
       <button class="td-item-del" onclick="deleteLink('${l.id}')" title="Remove">×</button>
     </div>
   `).join('');
@@ -5300,7 +5328,7 @@ function saveTripField(field, value) {
     t.sortDate = parseSortDate(v) || t.sortDate;
     _invalidateIcsEndCache(); // dates string changed → memoized end date is stale
     // Clear any dismissed overlap so re-overlaps re-warn
-    const dismissed = new Set(JSON.parse(localStorage.getItem('ow-dismissed-overlaps') || '[]'));
+    const dismissed = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
     dismissed.delete(t.id);
     localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   } else if (field === 'time') {
@@ -6186,6 +6214,13 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Safe JSON parse — return a fallback instead of throwing on corrupted input. iOS aggressively
+// evicts localStorage; truncated values turn JSON.parse into a render-killer error.
+function _safeJsonParse(str, fallback) {
+  if (!str) return fallback;
+  try { return JSON.parse(str); } catch (e) { return fallback; }
+}
+
 // Generate a collision-resistant id. The legacy pattern `Math.random().toString(36).slice(2)`
 // produced variable-length suffixes (0–11 chars), and inside a tight loop with identical
 // Date.now() values, two short suffixes can collide. crypto.randomUUID gives 122 bits of
@@ -6443,6 +6478,10 @@ function _hexToRgb(hex) {
   return { r: parseInt(hex.slice(1,3),16), g: parseInt(hex.slice(3,5),16), b: parseInt(hex.slice(5,7),16) };
 }
 function applyCustomAccent(hex) {
+  // Validate strict 6-digit hex before pushing into the CSS custom property. The value is
+  // persisted to localStorage and read back on next load; a tampered/corrupted localStorage
+  // entry could otherwise inject arbitrary CSS into the cascade.
+  if (typeof hex !== 'string' || !/^#[0-9a-f]{6}$/i.test(hex)) return;
   const {r,g,b} = _hexToRgb(hex);
   const mix = (ch, w) => Math.round(ch + w * (255 - ch));
   const dim = (ch, f) => Math.round(ch * f);
@@ -6493,7 +6532,7 @@ function toggleEditMode() {
 // executes.
 function applyWidgetOrder() {
   const DEFAULT_ORDER = ['stats','countdowns','japan','coffee-mood','coming-up','custom-countdowns','customize'];
-  const saved = JSON.parse(localStorage.getItem('ow-widget-order') || 'null');
+  const saved = _safeJsonParse(localStorage.getItem('ow-widget-order'), null);
   const container = document.getElementById('home-widgets');
   if (!container) return;
   // Fill in any widgets the user's saved order doesn't know about (added since they last saved).
@@ -6708,7 +6747,17 @@ function renderBudget() {
   const filtered = monthTx
     .filter(e => filterPerson === 'shared' ? e.shared : filterPerson ? e.person === filterPerson : true)
     .filter(e => filterCat ? e.category === filterCat : true)
-    .filter(e => searchQ ? (e.description.toLowerCase().includes(searchQ) || e.category.toLowerCase().includes(searchQ)) : true);
+    .filter(e => {
+      if (!searchQ) return true;
+      // Also match the raw amount string ("42", "42.50") so users can find "the $42 expense"
+      // by typing the number — previously only description and category were searched.
+      const amtStr = Math.abs(e.amount).toFixed(2);
+      const amtInt = String(Math.abs(Math.round(e.amount)));
+      return e.description.toLowerCase().includes(searchQ)
+        || e.category.toLowerCase().includes(searchQ)
+        || amtStr.includes(searchQ)
+        || amtInt.includes(searchQ);
+    });
 
   // Search/filter total
   const totalEl = document.getElementById('tx-search-total');
@@ -6774,7 +6823,12 @@ function renderBudget() {
     if (seen[mm] && seen[mm] !== k.slice(0,4)) monthsInMultipleYears.add(mm);
     seen[mm] = k.slice(0,4);
   }
-  document.getElementById('budget-trend').innerHTML = ymKeys.length ? ymKeys.map(ym => {
+  // Suppress the trend chart entirely when there's only one month of data — a single tall bar
+  // has no comparative meaning, and the min-height of 2px hides that it represents zero data
+  // for empty months.
+  document.getElementById('budget-trend').innerHTML = ymKeys.length < 2
+    ? '<div style="color:var(--text-3);font-size:13px">Need at least two months of data to chart trends.</div>'
+    : ymKeys.map(ym => {
     const pct = Math.round(monthlySpend[ym] / maxSpend * 100);
     const isActive = activeYms.has(ym) ? ' active' : '';
     const barPx = Math.max(2, Math.round(pct / 100 * 52));
@@ -6786,7 +6840,7 @@ function renderBudget() {
       <div class="btrend-bar" style="height:${barPx}px"></div>
       <div class="btrend-lbl">${mLabel.slice(0,3)}${showYear?` '${yr2}`:''}</div>
     </div>`;
-  }).join('') : '<div style="color:var(--text-3);font-size:13px">No data yet.</div>';
+  }).join('');
 
   // Category breakdown (spending only, no Income/Savings/Investments). Uses the SAME filtered
   // set as the snapshot tiles so the breakdown matches what the user sees in the tx list.
@@ -6983,7 +7037,7 @@ function addExpense() {
   const desc     = document.getElementById('b-desc').value.trim();
   const amount   = parseFloat(document.getElementById('b-amount').value);
   const shared   = document.getElementById('b-shared').checked;
-  if (!date || !category || !desc || isNaN(amount)) return;
+  if (!date || !category || !desc || !Number.isFinite(amount)) return;
   const month = monthName(new Date(date + 'T12:00:00'));
   const newItem = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date, month, person, category, description:desc, amount, shared};
   expenses.push(newItem);
@@ -7134,9 +7188,16 @@ const DEFAULT_RECURRING = [
 // The fallback also requires an approximate amount match (within $1) so a manual expense that
 // happens to share a description with a recurring template (e.g., "Epic Food") doesn't trigger
 // a false-positive "already loaded" and block the user from loading their actual recurring.
-function _isRecurringLoaded(r, month, year) {
+function _isRecurringLoaded(r, month, year, yearMonthPrefix) {
+  // Match by the date's YYYY-MM prefix rather than the derived `month` field. The month
+  // field can be missing or stale (a corrupted date during backfill leaves it empty); the
+  // date prefix is authoritative. Falls back to month-string for legacy expenses that lack
+  // a parseable date.
   return expenses.some(e => {
-    if (e.month !== month || !e.date || !e.date.startsWith(String(year))) return false;
+    const dateMatches = yearMonthPrefix && typeof e.date === 'string'
+      ? e.date.startsWith(yearMonthPrefix)
+      : (e.month === month && e.date && e.date.startsWith(String(year)));
+    if (!dateMatches) return false;
     if (e.recurringId) return e.recurringId === r.id;
     return e.person === r.person
       && e.description === r.description
@@ -7187,7 +7248,7 @@ function addRecurring() {
   const desc     = document.getElementById('rec-desc').value.trim();
   const amount   = parseFloat(document.getElementById('rec-amt').value);
   const shared   = document.getElementById('rec-shared').checked;
-  if (!person || !cat || !desc || isNaN(amount)) return;
+  if (!person || !cat || !desc || !Number.isFinite(amount)) return;
   recurringItems.push({id:'rec-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), person, category:cat, description:desc, amount, shared});
   saveRecurring();
   document.getElementById('rec-person-sel').value = '';
@@ -7234,7 +7295,7 @@ function saveRecurringEdit(id) {
   const r = recurringItems.find(x => x.id === id);
   if (!r) return;
   const amt = parseFloat(document.getElementById('rece-amt-' + id)?.value);
-  if (isNaN(amt)) return;
+  if (!Number.isFinite(amt)) return;
   r.person      = document.getElementById('rece-person-' + id)?.value;
   r.category    = document.getElementById('rece-cat-'    + id)?.value;
   r.description = document.getElementById('rece-desc-'   + id)?.value.trim();
@@ -7303,12 +7364,15 @@ function loadRecurringForMonth(year, month) {
   inputs.forEach(inp => { overrides[inp.dataset.recId] = parseFloat(inp.value); });
 
   // Build the 1st-of-month date directly from components (no UTC roundtrip via toISOString).
-  const firstDay = `${year}-${String(MONTHS_LIST.indexOf(month)+1).padStart(2,'0')}-01`;
+  const ymPrefix = `${year}-${String(MONTHS_LIST.indexOf(month)+1).padStart(2,'0')}`;
+  const firstDay = `${ymPrefix}-01`;
   const added = [];
   for (const r of recurringItems) {
-    if (_isRecurringLoaded(r, month, year)) continue;
-    const amt = isFinite(overrides[r.id]) ? overrides[r.id] : r.amount;
-    added.push({ id:_uid('exp-'),
+    if (_isRecurringLoaded(r, month, year, ymPrefix)) continue;
+    const amt = Number.isFinite(overrides[r.id]) ? overrides[r.id] : r.amount;
+    // Deterministic id — see loadRecurring() for rationale. Catches duplicate inserts when
+    // both partners click "Load <month>" simultaneously via arrayUnion's deep-equality dedup.
+    added.push({ id: `exp-rec-${r.id}-${ymPrefix}`,
       date: firstDay, month, person: r.person, category: r.category,
       description: r.description, amount: amt, shared: r.shared, recurringId: r.id });
   }
@@ -7322,14 +7386,14 @@ function loadRecurringForMonth(year, month) {
   showToast(`✅ Loaded ${added.length} recurring for ${month} ${year}`);
 }
 
-let _dismissedRecurring = new Set(JSON.parse(localStorage.getItem('ow-rec-dismissed') || '[]'));
+let _dismissedRecurring = new Set(_safeJsonParse(localStorage.getItem('ow-rec-dismissed'), []));
 function dismissRecurringReminder(key) {
   _dismissedRecurring.add(key);
   localStorage.setItem('ow-rec-dismissed', JSON.stringify([..._dismissedRecurring]));
   checkRecurringReminder();
 }
 
-let _minimizedRecurring = new Set(JSON.parse(localStorage.getItem('ow-rec-minimized') || '[]'));
+let _minimizedRecurring = new Set(_safeJsonParse(localStorage.getItem('ow-rec-minimized'), []));
 function toggleRecurringReminder(key) {
   if (_minimizedRecurring.has(key)) _minimizedRecurring.delete(key);
   else _minimizedRecurring.add(key);
@@ -7343,11 +7407,15 @@ function loadRecurring() {
   const now = new Date();
   const month = monthName(now);
   const year  = now.getFullYear().toString();
-  const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  const ymPrefix = `${year}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const dateStr = `${ymPrefix}-01`;
   let added = 0;
   for (const r of recurringItems) {
-    if (_isRecurringLoaded(r, month, year)) continue;
-    expenses.push({id:_uid('exp-'),
+    if (_isRecurringLoaded(r, month, year, ymPrefix)) continue;
+    // Deterministic id keyed on (recurringId, year-month). If both partners click "Load This
+    // Month" simultaneously, arrayUnion's deep-equality dedup catches the duplicate. With a
+    // random id, each device would generate a different id and both inserts would go through.
+    expenses.push({id: `exp-rec-${r.id}-${ymPrefix}`,
       date:dateStr, month, person:r.person, category:r.category,
       description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id});
     added++;
@@ -7370,9 +7438,10 @@ function loadSingleRecurring(id) {
   const now = new Date();
   const month = monthName(now);
   const year  = now.getFullYear().toString();
-  const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-  if (_isRecurringLoaded(r, month, year)) { showToast('Already loaded this month!'); return; }
-  const item = {id:_uid('exp-'),
+  const ymPrefix = `${year}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const dateStr = `${ymPrefix}-01`;
+  if (_isRecurringLoaded(r, month, year, ymPrefix)) { showToast('Already loaded this month!'); return; }
+  const item = {id: `exp-rec-${r.id}-${ymPrefix}`,
     date:dateStr, month, person:r.person, category:r.category,
     description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id};
   expenses.push(item);
@@ -7439,7 +7508,7 @@ function _parseBulkLine(line, fallback) {
   const description = hasDesc ? (parts[offset + 1] || '') : '';
   const amtIdx = offset + (hasDesc ? 2 : 1);
   const amount = _evalAmount(parts[amtIdx]);
-  if (isNaN(amount)) return {error: `couldn't parse amount "${parts[amtIdx] || ''}"`};
+  if (!Number.isFinite(amount)) return {error: `couldn't parse amount "${parts[amtIdx] || ''}"`};
   const shared = (parts[amtIdx + 1] || '').toLowerCase() === 'y';
   return {date, category, catRaw, warnMisc, warnAmbiguous, candidates, description, amount, shared};
 }
@@ -7462,7 +7531,7 @@ function renderBulkPreview() {
     const explicitDate = firstField ? _parseBulkDate(firstField) : null;
     const r = _parseBulkLine(line, _carryDate);
     if (explicitDate) _carryDate = explicitDate;
-    if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${line.replace(/</g,'&lt;')} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
+    if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${escHtml(line)} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
     const bg = (r.warnMisc || r.warnAmbiguous) ? 'var(--amber-bg)' : '';
     // Escape user-paste fields — a pasted line like `Din<img src=x onerror=alert(1)>, 5, n`
     // would otherwise inject markup into the preview row.
@@ -7536,8 +7605,12 @@ function _executeBulkImport() {
   const lines    = document.getElementById('bulk-text').value.trim().split('\n').filter(l => l.trim());
   const fallback = _todayLocal();
   let _carryDate = fallback;
-  let added = 0;
+  let added = 0, dupes = 0;
   const errorLines = [], miscWarns = [];
+  // Build a Set of existing-row signatures so a re-paste of the same statement doesn't
+  // silently double up. Signature = date + person + category + description + amount + shared.
+  const sigOf = e => `${e.date}|${e.person}|${e.category}|${(e.description||'').toLowerCase().trim()}|${e.amount}|${e.shared?1:0}`;
+  const existingSigs = new Set(expenses.map(sigOf));
   for (const line of lines) {
     const firstField = line.split(',')[0]?.trim();
     const explicitDate = firstField ? _parseBulkDate(firstField) : null;
@@ -7547,8 +7620,12 @@ function _executeBulkImport() {
     if (r.warnMisc) miscWarns.push(r.catRaw);
     if (r.warnAmbiguous) miscWarns.push(`${r.catRaw} (ambiguous: ${r.candidates.join(', ')})`);
     const month = monthName(new Date(r.date + 'T12:00:00'));
-    expenses.push({id: _uid('exp-'),
-      date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared});
+    const candidate = { id: _uid('exp-'),
+      date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared };
+    const sig = sigOf(candidate);
+    if (existingSigs.has(sig)) { dupes++; continue; }
+    existingSigs.add(sig);
+    expenses.push(candidate);
     added++;
   }
   if (added) {
@@ -7565,8 +7642,10 @@ function _executeBulkImport() {
   const hasProblems = errorLines.length || miscWarns.length;
   resultEl.style.color = !added && errorLines.length ? 'var(--coral)' : miscWarns.length ? 'var(--amber)' : 'var(--sage)';
   resultEl.textContent = added
-    ? `✓ Added ${added}${errorLines.length ? ' (' + errorLines.length + ' skipped)' : ''}${miscWarns.length ? ' · ' + miscWarns.length + ' → Misc' : ''}`
-    : `Could not parse any lines`;
+    ? `✓ Added ${added}${dupes ? ' (' + dupes + ' duplicates skipped)' : ''}${errorLines.length ? ' (' + errorLines.length + ' parse errors)' : ''}${miscWarns.length ? ' · ' + miscWarns.length + ' → Misc' : ''}`
+    : dupes
+      ? `Skipped ${dupes} duplicate${dupes !== 1 ? 's' : ''} — nothing new to add`
+      : `Could not parse any lines`;
   const errEl = document.getElementById('bulk-errors');
   const allProblems = [
     ...errorLines.map(({line, reason}) => ({line, reason, type:'error'})),
@@ -7578,7 +7657,7 @@ function _executeBulkImport() {
       const color = type === 'error' ? 'var(--coral)' : 'var(--amber)';
       const bg = type === 'error' ? 'rgba(217,106,82,.07)' : 'rgba(191,124,54,.07)';
       return `<div style="margin-bottom:6px;padding:6px 10px;background:${bg};border-radius:6px;border-left:3px solid ${color}">
-        ${line ? `<div style="font-family:monospace;color:var(--text);margin-bottom:2px">${line.replace(/</g,'&lt;')}</div>` : ''}
+        ${line ? `<div style="font-family:monospace;color:var(--text);margin-bottom:2px">${escHtml(line)}</div>` : ''}
         <div style="color:${color};font-size:11px">${reason}</div>
       </div>`;
     }).join('');
