@@ -1984,11 +1984,12 @@ function initFirestore() {
       }
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
-    // Skip trip-detail re-render right after a local save — the snapshot would otherwise
-    // rebuild the whole detail page (textarea remount, scroll loss) for the user's own write.
-    // Partner edits still re-render after the echo guard window.
-    const sinceLocalWrite = Date.now() - _lastTripWrite;
-    if (isActive('trip') && !_hasTypingFocus('#page-trip') && sinceLocalWrite > TRIP_ECHO_GUARD_MS) {
+    // Skip trip-detail re-render only when this snapshot is the echo of OUR OWN write
+    // (hasPendingWrites = true means our local mutation hasn't been acked by the server yet).
+    // Previously we used a 1.5s wall-clock window, which also suppressed real partner edits
+    // that happened to land inside the window — Amanda would keep editing on top of stale
+    // data and her next save would clobber Aidan's change.
+    if (isActive('trip') && !_hasTypingFocus('#page-trip') && !snap.metadata.hasPendingWrites) {
       renderTrip();
     }
     scheduleRenderHome();
@@ -2427,7 +2428,7 @@ function showPage(name) {
     if (name === 'todos')   renderTodos();
     if (name === 'history') renderHistory();
     if (name === 'home')    renderHome();
-    if (name === 'dates')   { renderDates(); renderPlan(); }
+    if (name === 'dates')   { _maybeRollPlanWeek(); renderDates(); renderPlan(); }
     if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); checkRecurringReminder(); }
     if (name === 'review')  loadReviewDraft();
     if (name === 'trip')    renderTrip();
@@ -2803,8 +2804,13 @@ function removeEditPhoto(event, id, idx) {
   if (!entry) return;
   const urls = getEntryPhotoUrls(entry);
   urls.splice(idx, 1);
-  entry.photoUrls = urls;
-  delete entry.photoUrl;
+  // Re-resolve immediately before the write — a partner snapshot during the click cycle could
+  // have replaced newEntries with a new array, leaving `entry` orphaned. Without this we'd
+  // mutate the orphan and the full-array set would write a copy without our removal.
+  const fresh = newEntries.find(e => e.id === id);
+  if (!fresh) return;
+  fresh.photoUrls = urls;
+  delete fresh.photoUrl;
   _updateEntryById(id);
   renderEditPhotos(id);
 }
@@ -4199,10 +4205,12 @@ function formatPlanLabel() {
   return fmt(mon) + ' – ' + fmt(sun);
 }
 
-function renderPlan() {
-  // Auto-reset when a new week begins, preserving only pinned to-dos. Use `<` so a user-
-  // advanced future key (set by clearPlan on Sat/Sun to plan next week) doesn't get rolled
-  // back to the current Monday floor.
+// Roll the plan week forward when the user navigates to a new week. Only call from explicit
+// user navigation (showPage('dates')) — never from inside a snapshot listener. Calling from a
+// snapshot can wipe a partner's just-typed weekplan if their write arrives right after midnight
+// Sun→Mon: our listener sees the new doc with the OLD _weekKey, our local _currentWeekKey
+// computes to the NEW Monday, and the rollover blanks the doc before the partner's data lands.
+function _maybeRollPlanWeek() {
   const _currentWeekKey = _getPlanWeekKey();
   if (weekPlan._weekKey && weekPlan._weekKey < _currentWeekKey) {
     weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: _currentWeekKey };
@@ -4211,6 +4219,11 @@ function renderPlan() {
   } else if (!weekPlan._weekKey) {
     weekPlan._weekKey = _currentWeekKey;
   }
+}
+
+function renderPlan() {
+  // Rollover used to happen here unconditionally — see _maybeRollPlanWeek comment for why
+  // that was wrong. renderPlan now just renders whatever's in weekPlan.
 
   const p = weekPlan;
 
@@ -4353,11 +4366,18 @@ function renderWeekTodos() {
   const listEl   = document.getElementById('week-todos-list');
   const pickerEl = document.getElementById('week-todo-picker');
   if (!listEl) return;
+  // GC orphan pin ids whose todo was deleted by the partner. Without this the array grows
+  // forever and a future randomly-collided id could rebind a stale pin to an unrelated todo.
   const pinned = weekPlan._pinnedTodos || [];
-  if (!pinned.length) {
+  const live = pinned.filter(id => todos.some(t => t.id === id));
+  if (live.length !== pinned.length) {
+    weekPlan._pinnedTodos = live;
+    savePlan();
+  }
+  if (!live.length) {
     listEl.innerHTML = '<div style="font-size:13px;color:var(--text-3);padding:4px 0">No to-dos selected — pick some with the button above.</div>';
   } else {
-    listEl.innerHTML = pinned.map(id => {
+    listEl.innerHTML = live.map(id => {
       const t = todos.find(x => x.id === id);
       if (!t) return '';
       const cat = todoCategories.find(c => c.id === t.cat);
@@ -5021,7 +5041,11 @@ function deleteTrip(id) {
   // racier on shared writes but correct for deletion of trips identified by id.
   saveTrips({ immediate: true });
   showToast('Trip deleted', () => {
-    trips.push(item);
+    // Undo: merge the captured snapshot copy of `item` with whatever version of this trip is
+    // currently in `trips` (a partner may have edited the trip between delete and undo). If
+    // we just push our stale captured copy, we'd clobber the partner's edit on the next write.
+    const current = trips.find(t => t.id === id);
+    trips.push(current ? {...item, ...current} : item);
     saveTrips({ immediate: true });
     renderDates();
   });
@@ -5042,6 +5066,9 @@ function openTrip(id) {
 
 function closeTrip() {
   // Flush any debounced trip save so navigating away never silently drops a pending blur.
+  // Only fire when a write is actually pending — an unconditional flush could clobber a
+  // partner edit that just arrived via snapshot but isn't reflected in our local `trips`
+  // array yet (we'd write our older copy back).
   if (_saveTripsTimer) {
     clearTimeout(_saveTripsTimer);
     _saveTripsTimer = null;
@@ -5932,22 +5959,14 @@ function removePicker() { document.getElementById('emoji-picker-popup')?.remove(
 function pickMood(person, emoji) {
   removePicker();
   const thisWeek = getISOWeek();
-  const weekRolled = mood.week !== thisWeek;
-  const other = person === 'amanda' ? 'aidan' : 'amanda';
-  // Local optimistic update
-  mood = {
-    ...mood,
-    [person]: emoji,
-    [other]: weekRolled ? '' : mood[other],
-    week: thisWeek
-  };
+  // Local optimistic update — write only this person's field. renderMoodWidget filters by
+  // mood.week so a stale partner pick from last week stays hidden until they re-pick. We do
+  // NOT clear the other person's field on week rollover even though it's now stale: if
+  // both partners pick simultaneously on a new-week boundary, each one's "clear other" would
+  // wipe the other person's just-set pick (the race the agent flagged).
+  mood = { ...mood, [person]: emoji, week: thisWeek };
   renderMoodWidget();
-  // Merge-write only the changed fields so concurrent picks by the partner aren't clobbered
-  // by a full-document set(). On week rollover, also explicitly clear the OTHER person's stale
-  // pick (otherwise merge would preserve it).
-  const patch = { [person]: emoji, week: thisWeek };
-  if (weekRolled) patch[other] = '';
-  db.collection('state').doc('mood').set(patch, {merge:true}).catch(_onSaveErr);
+  db.collection('state').doc('mood').set({ [person]: emoji, week: thisWeek }, {merge:true}).catch(_onSaveErr);
 }
 
 function spinMood() {
@@ -6994,17 +7013,24 @@ function saveExpenseEdit(id) {
   const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value ?? '');
   const date    = document.getElementById('txe-date-'   + id)?.value;
   const shared  = document.getElementById('txe-shared-' + id)?.checked ?? false;
-  if (!desc || isNaN(amt)) return; // form gone or invalid — silently bail
+  if (!desc || !Number.isFinite(amt)) return; // form gone or invalid — silently bail
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
   e.month = monthName(new Date(date + 'T12:00:00'));
-  // Transaction: swap old object for updated one atomically
+  // Transaction: swap old object for updated one atomically. If the transaction fails (most
+  // commonly: offline — runTransaction doesn't queue), roll the local mutation back so the
+  // visible state matches Firestore. Otherwise the user sees their edit appear, then watches
+  // it silently revert on the next snapshot with no clear explanation.
   const docRef = db.collection('state').doc('expenses');
   db.runTransaction(t => t.get(docRef).then(snap => {
     const items = (snap.data()?.items || []).map(x => x.id === id ? {...e} : x);
     t.set(docRef, {items});
-  })).catch(_onSaveErr);
+  })).catch(err => {
+    Object.assign(e, prev);
+    renderBudget();
+    _onSaveErr(err);
+  });
   renderBudget();
 }
 
