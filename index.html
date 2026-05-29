@@ -80,8 +80,10 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
   .nav-dark-controls{display:none!important}
   #signout-btn{display:none!important}
   #bottom-nav{display:flex!important}
-  .page{padding-bottom:84px!important}
-  .toast{bottom:72px}
+  /* Add safe-area-inset so home-indicator iPhones don't have their bottom nav, FAB, or
+     toast overlap the indicator zone. env() defaults to 0 on non-supporting browsers. */
+  .page{padding-bottom:calc(84px + env(safe-area-inset-bottom, 0px))!important}
+  .toast{bottom:calc(72px + env(safe-area-inset-bottom, 0px))}
   /* Typography scaling */
   .page-title{font-size:20px;margin-bottom:4px}
   .page-sub{font-size:12px;margin-bottom:20px}
@@ -716,7 +718,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .fab{position:fixed;bottom:28px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--amber);color:white;font-size:26px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(191,124,54,.45);align-items:center;justify-content:center;z-index:201;transition:transform .15s,box-shadow .15s;line-height:1;font-weight:300}
 .fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(191,124,54,.55)}
 .fab:active{transform:scale(0.93)}
-@media(max-width:540px){.fab{bottom:72px;right:14px}}
+@media(max-width:540px){.fab{bottom:calc(72px + env(safe-area-inset-bottom, 0px));right:14px}}
 
 /* ── Responsive ── */
 @media(max-width:680px){
@@ -1712,8 +1714,13 @@ function _flushPendingWrites() {
 // the standard "tab going away" event; visibilitychange catches app-switching in PWA mode.
 ['beforeunload', 'pagehide'].forEach(evt => window.addEventListener(evt, _flushPendingWrites));
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) _flushPendingWrites();
-  else if (typeof _applyPendingWeekplanIfReady === 'function') _applyPendingWeekplanIfReady();
+  if (document.hidden) { _flushPendingWrites(); return; }
+  if (typeof _applyPendingWeekplanIfReady === 'function') _applyPendingWeekplanIfReady();
+  // When the tab returns to foreground (especially after backgrounding past midnight on
+  // iOS PWA, where the _midnightTimer doesn't fire reliably), refresh the home greeting +
+  // date/season class so the UI doesn't stay stuck on yesterday.
+  if (typeof applySeason === 'function') applySeason();
+  if (typeof isActive === 'function' && isActive('home') && typeof renderHome === 'function') renderHome();
 });
 
 // Apply a deferred weekplan snapshot when typing focus leaves the Dates page. The snapshot
@@ -2025,6 +2032,7 @@ function teardownFirestore() {
   // Reset all per-account migration flags and in-memory state so the next sign-in starts clean.
   _migratedExpensesMonth = false;
   _migratedTripsBackfill = false;
+  _lostSyncWarned = false; // re-arm so the next account's listener errors can still warn
   _pendingTripIds.clear();
   _pendingWeekplanData = null;
   todos = []; todoCategories = []; newEntries = []; trips = [];
@@ -5272,9 +5280,11 @@ function exportToCalendar() {
       'CATEGORIES:Our Weekly',
       'END:VEVENT'
     );
-    // Separate Monday reminder event
+    // Separate Monday reminder event. Use Date.UTC to avoid the local-time→UTC ISO drift
+    // that would shift the DTEND by one day for users east of UTC (same bug pattern that
+    // bit parseICSEndDate earlier and was fixed by switching to Date.UTC).
     const monday = prevMonday(t.sortDate);
-    const mondayDate = new Date(parseInt(monday.slice(0,4)), parseInt(monday.slice(4,6)) - 1, parseInt(monday.slice(6,8)) + 1);
+    const mondayDate = new Date(Date.UTC(parseInt(monday.slice(0,4)), parseInt(monday.slice(4,6)) - 1, parseInt(monday.slice(6,8)) + 1));
     const nextDay = mondayDate.toISOString().slice(0,10).replace(/-/g,'');
     lines.push(
       'BEGIN:VEVENT',
@@ -5623,7 +5633,15 @@ function renderTrip() {
 
 function saveTripField(field, value) {
   const t = _currentTrip();
-  if (!t) { renderTrip(); return; } // trip was deleted (e.g. by partner) → show "deleted" state instead of silently dropping edits
+  if (!t) {
+    // Trip was deleted by the partner while we were editing. Surface a long-lived toast so
+    // the user knows their just-typed value (which the textarea/input still shows) was lost,
+    // rather than silently swapping in the "deleted" state with no explanation.
+    const lostLen = typeof value === 'string' ? value.trim().length : 0;
+    if (lostLen > 0) showToast(`⚠️ Trip was deleted by your partner — last edit (${lostLen} chars) wasn't saved`, null, {duration: 15000});
+    renderTrip();
+    return;
+  }
   const v = typeof value === 'string' ? value.trim() : value;
   if (field === 'label') {
     if (!v) { renderTrip(); return; } // bail on empty
@@ -6631,7 +6649,14 @@ function _lsSet(key, value) {
 let _bSearchTimer = null;
 function _debouncedBudgetSearch() {
   clearTimeout(_bSearchTimer);
-  _bSearchTimer = setTimeout(() => { _bSearchTimer = null; renderBudget(); }, 150);
+  _bSearchTimer = setTimeout(() => {
+    _bSearchTimer = null;
+    // Skip the re-render if the user is mid-edit on an inline expense row — renderBudget
+    // calls _cleanExpEdit() which would wipe the open form. The next user action that
+    // commits or cancels the edit triggers its own render.
+    if (typeof _expEditId !== 'undefined' && _expEditId) return;
+    renderBudget();
+  }, 150);
 }
 
 // Generate a collision-resistant id. The legacy pattern `Math.random().toString(36).slice(2)`
@@ -7543,19 +7568,24 @@ function editExpense(id) {
 }
 
 function saveExpenseEdit(id) {
-  _cleanExpEdit();
-  const e = expenses.find(x => x.id === id);
-  if (!e) return;
+  // Pre-validate BEFORE _cleanExpEdit so a bail doesn't leave the form visually open but
+  // dissociated from _expEditId (subsequent Enter/blur would do nothing with no feedback).
   const person  = document.getElementById('txe-person-' + id)?.value;
   const desc    = document.getElementById('txe-desc-'   + id)?.value?.trim();
   const cat     = document.getElementById('txe-cat-'    + id)?.value;
   const amt     = parseFloat(document.getElementById('txe-amt-' + id)?.value ?? '');
   const date    = document.getElementById('txe-date-'   + id)?.value;
   const shared  = document.getElementById('txe-shared-' + id)?.checked ?? false;
-  // Date is required — without it `monthName(new Date(undefined + 'T12:00:00'))` yields
-  // undefined, Firestore rejects the write, and the user sees an opaque save-failed toast
-  // with no hint that the missing date was the cause.
-  if (!desc || !Number.isFinite(amt) || !date) return;
+  if (!desc || !Number.isFinite(amt) || !date) {
+    showToast('⚠️ Date, description, and amount are all required');
+    if (!date) document.getElementById('txe-date-' + id)?.focus();
+    else if (!desc) document.getElementById('txe-desc-' + id)?.focus();
+    else document.getElementById('txe-amt-' + id)?.focus();
+    return;
+  }
+  _cleanExpEdit();
+  const e = expenses.find(x => x.id === id);
+  if (!e) return;
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
@@ -8188,7 +8218,6 @@ auth.onAuthStateChanged(user => {
     }
     initFirestore();
     document.getElementById('review-date-sub').textContent = getReviewWeekLabel();
-    const now2 = new Date();
   } else {
     // Sign-out: detach the live snapshot listeners and wipe in-memory state so a subsequent
     // sign-in (especially as a different account) doesn't leak the previous user's data or

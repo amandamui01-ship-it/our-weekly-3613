@@ -1,0 +1,19 @@
+# Local scratch from review iterations (extracted JS, diff dumps)
+_owjs.js
+_diff*.txt
+_*.local.txt
+_runtests.js
+
+# Firebase function build/deploy artifacts
+firebase-debug.log
+firebase-debug.*.log
+functions/lib/
+functions/node_modules/
+.firebase/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
