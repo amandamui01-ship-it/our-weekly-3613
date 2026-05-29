@@ -3563,7 +3563,10 @@ let _calDragOriginY = 0;
 let _calDragMoved = false;
 let _calDragActive = false;
 let _calDragPointerType = null;
+let _calDragPointerId = null; // multi-touch guard — only honor events for the tracked pointer
+let _calGestureToken = 0;     // long-press timer token — prevents a queued timer from another gesture
 let _calLongPressTimer = null;
+let _calCapturedEl = null;    // element that holds the pointer capture (if any)
 // A click that registered ≥6px of cursor travel counts as a drag. Below that, treat as a
 // stationary click on the original cell — keeps a tiny mouse-twitch across a cell boundary
 // from being treated as a multi-day selection.
@@ -3589,15 +3592,24 @@ function _bindCalDragSelect() {
   };
   const resetDragState = () => {
     if (_calLongPressTimer) { clearTimeout(_calLongPressTimer); _calLongPressTimer = null; }
+    if (_calCapturedEl && _calDragPointerId != null) {
+      try { _calCapturedEl.releasePointerCapture(_calDragPointerId); } catch (_) {}
+    }
+    _calCapturedEl = null;
     _calDragStart = null;
     _calDragLast = null;
     _calDragMoved = false;
     _calDragActive = false;
     _calDragPointerType = null;
+    _calDragPointerId = null;
   };
   grid.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return; // primary mouse button only
     if (isInteractive(e.target)) return;
+    // Multi-touch guard: if a gesture is already in flight, ignore additional fingers/clicks.
+    // Without this, a second finger would overwrite _calDragStart/origin and the first
+    // finger's drag would silently re-anchor to the second touch's data.
+    if (_calDragStart !== null) return;
     const cell = e.target.closest('.cal-day');
     if (!cell) return;
     _calDragStart = cell.dataset.date;
@@ -3606,6 +3618,7 @@ function _bindCalDragSelect() {
     _calDragOriginY = e.clientY;
     _calDragMoved = false;
     _calDragPointerType = e.pointerType;
+    _calDragPointerId = e.pointerId;
     paintRange(_calDragStart, _calDragStart);
     if (e.pointerType === 'mouse') {
       // Mouse: active immediately. Threshold gate in pointermove decides click vs drag.
@@ -3616,10 +3629,22 @@ function _bindCalDragSelect() {
       // scrolls behave normally. If the long-press fires while the finger is still down, we
       // commit to drag mode (with a soft haptic) and start tracking range changes.
       _calDragActive = false;
+      // Token captured BEFORE the timer arms; the timer only flips state if the token still
+      // matches when it fires (e.g. user didn't release-and-tap-again in the 350ms window).
+      const myToken = ++_calGestureToken;
+      const capturedPointerId = e.pointerId;
       _calLongPressTimer = setTimeout(() => {
+        if (myToken !== _calGestureToken) return; // stale timer from a previous gesture
         if (!_calDragStart) return;
         _calDragActive = true;
         _calDragMoved = true; // a long-press alone is enough — they might release without moving
+        // Hard-bind the gesture to the grid via setPointerCapture so iOS scroll-stealing
+        // can't yank it away. Without capture, iOS can decide mid-drag that a pan is
+        // happening and send `pointercancel`, dropping the user's selection silently.
+        try {
+          grid.setPointerCapture(capturedPointerId);
+          _calCapturedEl = grid;
+        } catch (_) {}
         if (navigator.vibrate) try { navigator.vibrate(35); } catch (_) {}
       }, _CAL_TOUCH_LONGPRESS_MS);
     }
@@ -3628,6 +3653,7 @@ function _bindCalDragSelect() {
   // or wanders over a chip/bar mid-drag. passive:false so we can preventDefault on touch.
   document.addEventListener('pointermove', e => {
     if (!_calDragStart) return;
+    if (_calDragPointerId !== null && e.pointerId !== _calDragPointerId) return; // ignore other fingers
     const dx = e.clientX - _calDragOriginX;
     const dy = e.clientY - _calDragOriginY;
     const distSq = dx*dx + dy*dy;
@@ -3655,14 +3681,15 @@ function _bindCalDragSelect() {
     // Once we're committed to a touch drag, block page scroll for subsequent moves.
     if (_calDragPointerType !== 'mouse' && _calDragActive) e.preventDefault();
   }, { passive: false });
-  document.addEventListener('pointerup', () => {
+  document.addEventListener('pointerup', e => {
     if (!_calDragStart) return;
+    if (_calDragPointerId !== null && e.pointerId !== _calDragPointerId) return;
     const start = _calDragStart;
     const end = _calDragMoved ? (_calDragLast || _calDragStart) : _calDragStart;
     const wasActive = _calDragActive;
     const pointerType = _calDragPointerType;
-    resetDragState();
     clearRange();
+    resetDragState();
     // Touch/pen tap that never activated (released before long-press) → still treat as
     // a single-cell click so the user's tap-to-add gesture works.
     if (!wasActive && pointerType !== 'mouse') {
@@ -3674,10 +3701,16 @@ function _bindCalDragSelect() {
   });
   // pointercancel fires when the OS takes the gesture away (e.g. a notification, or a
   // touch becomes a system swipe). Treat it as an abort — no event creation.
-  document.addEventListener('pointercancel', () => {
+  document.addEventListener('pointercancel', e => {
     if (!_calDragStart) return;
+    if (_calDragPointerId !== null && e.pointerId !== _calDragPointerId) return;
     clearRange();
     resetDragState();
+  });
+  // Off-window mouse release: if the user mouse-drags past the browser edge and releases,
+  // pointerup fires to the OS and we'd otherwise leak the painted range until next pointerdown.
+  window.addEventListener('blur', () => {
+    if (_calDragStart) { clearRange(); resetDragState(); }
   });
   _calDragBound = true;
 }
@@ -8045,7 +8078,25 @@ auth.onAuthStateChanged(user => {
 <script>
 if ('serviceWorker' in navigator) {
   // Use a relative path so the SW still registers if the app is hosted from a different folder.
-  navigator.serviceWorker.register('./sw.js');
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // Poll for updates whenever the tab returns to the foreground — without this the SW
+    // file can sit in HTTP cache for up to 24h before iOS Safari checks for a new version,
+    // leaving users on stale HTML days after a deploy.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update(); });
+  }).catch(() => {});
+  // The SW posts SW_UPDATED after activate; show a quiet toast so the user can opt into
+  // picking up the new code immediately rather than after the next full reload.
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'SW_UPDATED') {
+      // Show a refresh toast only if the user has already been using the page (i.e., the
+      // SW updated mid-session). The very first install fires SW_UPDATED too, but a
+      // brand-new tab doesn't need a "refresh for new version" prompt.
+      if (typeof showToast === 'function' && document.body && document.body.dataset.swActivated) {
+        showToast('🔄 New version available — tap to refresh', () => location.reload(), {duration: 30000});
+      }
+      if (document.body) document.body.dataset.swActivated = '1';
+    }
+  });
 }
 </script>
 <!-- ── Bottom Nav (mobile) ── -->
