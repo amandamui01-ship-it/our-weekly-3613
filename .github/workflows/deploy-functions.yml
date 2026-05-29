@@ -22,7 +22,7 @@ jobs:
 
       - name: Install function dependencies
         working-directory: ./functions
-        run: npm install
+        run: npm ci
 
       - name: Write service account credentials
         env:
