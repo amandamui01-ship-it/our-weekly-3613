@@ -51,6 +51,13 @@ self.addEventListener('fetch', e => {
     url.includes('firebasestorage')
   ) return;
 
+  // Offline fallback helper — if cache also misses, return a real Response instead of
+  // undefined (which browsers treat as a network error). Without this the user could see a
+  // raw "Failed to fetch" instead of a graceful offline screen.
+  const offlineFallback = req => caches.match(req).then(r => r || new Response(
+    'You appear to be offline.', { status: 503, headers: { 'Content-Type': 'text/plain' } }
+  ));
+
   // Network-first for the app shell (HTML). Deploys take effect on the next online load
   // instead of requiring two reloads (the old cache-first-with-revalidate served the OLD
   // HTML and only cached the new one for next time).
@@ -58,11 +65,8 @@ self.addEventListener('fetch', e => {
   if (url === scope || url === scope + 'index.html') {
     e.respondWith(
       fetch(e.request)
-        .then(res => {
-          safeCachePut(e.request, res.clone());
-          return res;
-        })
-        .catch(() => caches.match(e.request))
+        .then(res => { safeCachePut(e.request, res.clone()); return res; })
+        .catch(() => offlineFallback(e.request))
     );
     return;
   }
@@ -71,10 +75,7 @@ self.addEventListener('fetch', e => {
   // safeCachePut guard so we don't cache a transient 5xx forever.
   e.respondWith(
     fetch(e.request)
-      .then(response => {
-        safeCachePut(e.request, response.clone());
-        return response;
-      })
-      .catch(() => caches.match(e.request))
+      .then(response => { safeCachePut(e.request, response.clone()); return response; })
+      .catch(() => offlineFallback(e.request))
   );
 });

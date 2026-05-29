@@ -271,7 +271,7 @@ exports.ics = onRequest(
 
         const eventLines = [
           'BEGIN:VEVENT',
-          `UID:our-weekly-trip-${t.id}@ourweekly`,
+          `UID:our-weekly-trip-${escIcs(t.id)}@ourweekly`,
           `DTSTAMP:${dtstamp}`,
         ];
         if (isSingleDay && t.time && /^\d{2}:\d{2}$/.test(t.time)) {
@@ -302,7 +302,7 @@ exports.ics = onRequest(
         if (!/^\d{8}$/.test(dateCompact)) continue;
         const lineSet = [
           'BEGIN:VEVENT',
-          `UID:our-weekly-evt-${e.id}@ourweekly`,
+          `UID:our-weekly-evt-${escIcs(e.id)}@ourweekly`,
           `DTSTAMP:${dtstamp}`,
         ];
         if (e.time && /^\d{2}:\d{2}$/.test(e.time)) {

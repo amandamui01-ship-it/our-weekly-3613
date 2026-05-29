@@ -1381,7 +1381,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       </div>
       <div class="tw-section">
         <div class="card-title">Notes & Reminders</div>
-        <textarea id="plan-notes" placeholder="Anything else to remember this week — errands, calls, ideas..."
+        <textarea id="plan-notes" maxlength="5000" placeholder="Anything else to remember this week — errands, calls, ideas..."
           style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;background:var(--surface-warm);resize:none;overflow:hidden;outline:none;transition:border-color .15s;color:var(--text)"
           onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>
@@ -1711,7 +1711,10 @@ function _flushPendingWrites() {
 // `beforeunload` reliably and sometimes only signals via `visibilitychange`. Pagehide is
 // the standard "tab going away" event; visibilitychange catches app-switching in PWA mode.
 ['beforeunload', 'pagehide'].forEach(evt => window.addEventListener(evt, _flushPendingWrites));
-document.addEventListener('visibilitychange', () => { if (document.hidden) _flushPendingWrites(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) _flushPendingWrites();
+  else if (typeof _applyPendingWeekplanIfReady === 'function') _applyPendingWeekplanIfReady();
+});
 
 // Apply a deferred weekplan snapshot when typing focus leaves the Dates page. The snapshot
 // listener stashes incoming partner data here when the user is mid-typing; without this
@@ -2009,6 +2012,29 @@ function teardownFirestore() {
   logisticsList = []; bucketList = []; weekPlan = {}; datedEvents = [];
   expenses = []; recurringItems = []; customCountdowns = [];
   mood = { amanda: '', aidan: '', week: '' };
+  // UI/transient state that references account-specific data — leaving these set would let
+  // the next sign-in render against dead handles or partially-populate forms with prior
+  // user's input.
+  _currentTripId = null;
+  _editingHistoryId = null;
+  budgetTargets = {};
+  heartValAmanda = 0;
+  heartValAidan = 0;
+  heartVal = 0;
+  // In-memory File objects from an unsaved review draft — clearing these prevents the next
+  // user from accidentally uploading the previous user's photos on save.
+  if (typeof _reviewPhotos !== 'undefined') {
+    _reviewPhotos.forEach(f => { if (f && f._owUrl) { try { URL.revokeObjectURL(f._owUrl); } catch (_) {} f._owUrl = null; } });
+    _reviewPhotos = [];
+  }
+  // User-private localStorage caches — on a shared device (one phone), the next account's
+  // form would otherwise pre-fill with the previous account's draft, dismissed-overlap list,
+  // recurring-reminder dismissals, etc. Device-scoped prefs (theme, accent, widget order)
+  // are deliberately preserved.
+  ['ow-review-draft', 'ow-bulk-person', 'ow-bq-person', 'ow-bq-cat',
+   'ow-dismissed-overlaps', 'ow-rec-dismissed', 'ow-rec-minimized'].forEach(k => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
 }
 function initFirestore() {
   if (_firestoreInited) return; // guard against onAuthStateChanged stacking listeners on token refresh
@@ -2040,6 +2066,14 @@ function initFirestore() {
   _track(ref('entries').onSnapshot(snap => {
     if (!snap.exists) { ref('entries').set({items:[]}); return; }
     newEntries = snap.data().items || [];
+    // Skip the full re-render when:
+    //   (a) this is the echo of our own write (hasPendingWrites=true) — the heart picker and
+    //       inline field saves fire writes that bounce back here; rebuilding the entire
+    //       history list would wipe the open edit form mid-interaction.
+    //   (b) an edit form is currently open — the partner-write case. Re-rendering would
+    //       destroy `#hef-${id}` and lose whatever the user has been typing/clicking.
+    const editorOpen = !!_editingHistoryId;
+    if (snap.metadata.hasPendingWrites || editorOpen) { scheduleRenderHome(); return; }
     if (isActive('history') && !_hasTypingFocus('#page-history')) renderHistory();
     scheduleRenderHome();
   }));
@@ -2186,6 +2220,14 @@ function initFirestore() {
       ref('expenses').set({items: expenses});
     } else {
       expenses = snap.data().items || [];
+      // Dedupe by id keeping the LAST seen — arrayUnion's deep-equality dedupe doesn't catch
+      // two writes with the same deterministic id but different field values (e.g. both
+      // partners load this month's recurring with different override amounts). Local dedupe
+      // ensures only one row per id is rendered/computed against, even if the doc temporarily
+      // contains duplicates.
+      const seen = new Map();
+      for (const e of expenses) { if (e && e.id) seen.set(e.id, e); }
+      if (seen.size !== expenses.length) expenses = [...seen.values()];
       // One-time backfill for the missing-month field. Only runs once per session — re-running
       // on every snapshot turns this into a full-array .set() that races with concurrent
       // arrayUnion writes from the other partner. Strict date-shape check avoids writing
@@ -2275,20 +2317,23 @@ function saveTrips(opts) {
   // togglePackItem, savePackText, addPackItem, saveLinkField, etc.) without each having to
   // remember to add the id themselves.
   if (_currentTripId) _pendingTripIds.add(_currentTripId);
+  const doWrite = () => {
+    // Snapshot the pending-ids set BEFORE the write so the resolve callback only clears the
+    // ids we just persisted — an edit on a different trip queued during the round trip won't
+    // get its pending flag wiped (which would have caused the next partner snapshot to clobber
+    // that edit).
+    const flushedIds = new Set(_pendingTripIds);
+    return db.collection('state').doc('trips').set({items: trips})
+      .then(() => { flushedIds.forEach(id => _pendingTripIds.delete(id)); })
+      .catch(_onSaveErr);
+  };
   if (opts && opts.immediate) {
     if (_saveTripsTimer) { clearTimeout(_saveTripsTimer); _saveTripsTimer = null; }
-    db.collection('state').doc('trips').set({items: trips})
-      .then(() => _pendingTripIds.clear())
-      .catch(_onSaveErr);
+    doWrite();
     return;
   }
   if (_saveTripsTimer) clearTimeout(_saveTripsTimer);
-  _saveTripsTimer = setTimeout(() => {
-    _saveTripsTimer = null;
-    db.collection('state').doc('trips').set({items: trips})
-      .then(() => _pendingTripIds.clear())
-      .catch(_onSaveErr);
-  }, TRIP_SAVE_DEBOUNCE_MS);
+  _saveTripsTimer = setTimeout(() => { _saveTripsTimer = null; doWrite(); }, TRIP_SAVE_DEBOUNCE_MS);
 }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
@@ -2552,7 +2597,8 @@ function showPage(name) {
     if (name === 'todos')   renderTodos();
     if (name === 'history') renderHistory();
     if (name === 'home')    renderHome();
-    if (name === 'dates')   { _maybeRollPlanWeek(); renderDates(); renderPlan(); }
+    if (name === 'dates')   { _maybeRollPlanWeek(); _applyPendingWeekplanIfReady(); renderDates(); renderPlan(); }
+    else if (_pendingWeekplanData) _applyPendingWeekplanIfReady(); // leaving Dates → flush stash so partner edits aren't lost forever
     if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); checkRecurringReminder(); }
     if (name === 'review')  { document.getElementById('review-date-sub').textContent = getReviewWeekLabel(); loadReviewDraft(); }
     if (name === 'trip')    renderTrip();
@@ -3447,7 +3493,7 @@ let _datesView = localStorage.getItem('ow-dates-view') || 'cal'; // 'cal' | 'gri
 
 function setDatesView(view) {
   _datesView = view;
-  localStorage.setItem('ow-dates-view', view);
+  _lsSet('ow-dates-view', view);
   renderDates();
 }
 
@@ -4416,7 +4462,7 @@ let _mealExpanded = localStorage.getItem('ow-meal-expanded') === '1';
 function toggleMealPlan() {
   const y = window.scrollY;
   _mealExpanded = !_mealExpanded;
-  localStorage.setItem('ow-meal-expanded', _mealExpanded ? '1' : '0');
+  _lsSet('ow-meal-expanded', _mealExpanded ? '1' : '0');
   _applyMealCollapse();
   window.scrollTo(0, y);
 }
@@ -5327,7 +5373,12 @@ function deleteTrip(id) {
     // currently in `trips` (a partner may have edited the trip between delete and undo). If
     // we just push our stale captured copy, we'd clobber the partner's edit on the next write.
     const current = trips.find(t => t.id === id);
-    trips.push(current ? {...item, ...current} : item);
+    if (current) {
+      // Trip already came back in via snapshot — merge fields, don't duplicate the row.
+      Object.assign(current, item, current);
+    } else {
+      trips.push(item);
+    }
     saveTrips({ immediate: true });
     renderDates();
   });
@@ -5348,14 +5399,9 @@ function openTrip(id) {
 
 function closeTrip() {
   // Flush any debounced trip save so navigating away never silently drops a pending blur.
-  // Only fire when a write is actually pending — an unconditional flush could clobber a
-  // partner edit that just arrived via snapshot but isn't reflected in our local `trips`
-  // array yet (we'd write our older copy back).
-  if (_saveTripsTimer) {
-    clearTimeout(_saveTripsTimer);
-    _saveTripsTimer = null;
-    db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
-  }
+  // Route through saveTrips({immediate:true}) so the pending-ids set gets cleared on the
+  // round-trip — bypassing that left ids hanging in `_pendingTripIds` forever.
+  if (_saveTripsTimer) saveTrips({ immediate: true });
   _currentTripId = null;
   showPage('dates');
 }
@@ -5450,7 +5496,7 @@ function renderTrip() {
     itineraryInner = dayKeys.map((iso, i) => `
       <div class="td-day">
         <div class="td-day-label">Day ${i+1} · ${fmtDay(iso)}</div>
-        <textarea class="td-day-textarea" data-day="${iso}"
+        <textarea class="td-day-textarea" data-day="${iso}" maxlength="5000"
           placeholder="Plans for this day..."
           oninput="_growNotes(this)"
           onblur="saveItineraryDay('${iso}', this.value)">${escHtml(itinMap[iso] || '')}</textarea>
@@ -6000,11 +6046,11 @@ function editHistoryEntry(id) {
           <div class="history-edit-field">
             <div class="history-section-lbl">${f.lbl}</div>
             ${f.multi
-              ? `<textarea class="history-edit-ta" rows="2"
+              ? `<textarea class="history-edit-ta" rows="2" maxlength="5000"
                   onblur="saveHistoryField('${id}','${f.key}',this.value)"
                   onkeydown="if(event.key==='Escape')this.blur()"
                 >${escHtml(entry[f.key]||'')}</textarea>`
-              : `<input class="history-edit-input" type="text" value="${escHtml(entry[f.key]||'')}"
+              : `<input class="history-edit-input" type="text" maxlength="300" value="${escHtml(entry[f.key]||'')}"
                   onblur="saveHistoryField('${id}','${f.key}',this.value)"
                   onkeydown="if(event.key==='Enter'){saveHistoryField('${id}','${f.key}',this.value);doneEditingHistory('${id}');}if(event.key==='Escape')this.blur()"
                 />`
@@ -6091,6 +6137,23 @@ function setEditHeart(id, val, person) {
   // calendar/seed consumer) sees the new average.
   entry.hearts = _avgHearts(entry.heartsAmanda, entry.heartsAidan);
   _updateEntryById(id);
+  // Surgical update of the collapsed-header hearts row so a user editing on a legacy entry
+  // sees the new average immediately (without this they had to close edit to see anything
+  // change). Mirrors the logic doneEditingHistory uses to refresh the header.
+  const header = document.getElementById('hh-' + id);
+  if (header) {
+    const heartsEl = header.querySelector('.history-hearts');
+    const eff = _entryHearts(entry);
+    const soloRater = _entryHeartsSoloRater(entry);
+    const soloTag = soloRater ? `<span class="history-hearts-solo" title="Only ${soloRater} rated this week">${soloRater[0]}</span>` : '';
+    if (heartsEl) {
+      heartsEl.innerHTML = (eff > 0 ? renderHeartsHtml(eff) : '') + soloTag;
+    } else if (eff > 0) {
+      // No hearts element existed (legacy entry that previously had hearts:0). Insert one.
+      const chev = header.querySelector('.history-chevron');
+      if (chev) chev.insertAdjacentHTML('beforebegin', `<div class="history-hearts">${renderHeartsHtml(eff)}${soloTag}</div>`);
+    }
+  }
   const row = document.querySelector(`#hef-${id} [data-person="${target}"]`);
   if (!row) return;
   row.querySelectorAll('.hw').forEach((hw, i) => {
@@ -6143,7 +6206,7 @@ function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const next = isDark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('ow-theme', next);
+  _lsSet('ow-theme', next);
   document.getElementById('dark-toggle').classList.toggle('active', next === 'dark');
   const mi = document.getElementById('menu-dark-item');
   if (mi) mi.textContent = next === 'dark' ? '☀️ Light mode' : '🌙 Dark mode';
@@ -6198,7 +6261,7 @@ function setAccent(name) {
   document.documentElement.style.removeProperty('--amber-dark');
   if (name === 'amber') document.documentElement.removeAttribute('data-accent');
   else document.documentElement.setAttribute('data-accent', name);
-  localStorage.setItem('ow-accent', name);
+  _lsSet('ow-accent', name);
   document.querySelectorAll('.palette-swatch').forEach(el => el.classList.remove('active'));
   const sw = document.getElementById('swatch-' + name);
   if (sw) sw.classList.add('active');
@@ -6215,7 +6278,7 @@ function setBackground(name) {
     document.body.classList.add('season-'+s);
   } else {
     document.body.setAttribute('data-bg', name);
-    localStorage.setItem('ow-bg', name);
+    _lsSet('ow-bg', name);
   }
   document.querySelectorAll('.bg-swatch').forEach(el => el.classList.remove('active'));
   const sw = document.getElementById('bgswatch-' + name);
@@ -6788,8 +6851,8 @@ function applyCustomAccent(hex) {
     document.documentElement.style.setProperty('--amber-dark', `rgb(${dim(r,.65)},${dim(g,.65)},${dim(b,.65)})`);
   }
   document.documentElement.removeAttribute('data-accent');
-  localStorage.setItem('ow-accent', 'custom');
-  localStorage.setItem('ow-accent-custom', hex);
+  _lsSet('ow-accent', 'custom');
+  _lsSet('ow-accent-custom', hex);
   document.querySelectorAll('.palette-swatch').forEach(el => el.classList.remove('active'));
   const sw = document.getElementById('swatch-custom');
   if (sw) sw.classList.add('active');
@@ -7316,7 +7379,7 @@ function toggleThisWeekSection() {
   if (!body) return;
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
-  localStorage.setItem('ow-this-week-open', open ? '1' : '0');
+  _lsSet('ow-this-week-open', open ? '1' : '0');
   if (chev) chev.textContent = open ? '▼' : '▶';
 }
 
@@ -7335,8 +7398,8 @@ function addExpense() {
   db.collection('state').doc('expenses').update({
     items: firebase.firestore.FieldValue.arrayUnion(newItem)
   }).catch(_onSaveErr);
-  localStorage.setItem('ow-bq-person', person);
-  localStorage.setItem('ow-bq-cat', category);
+  _lsSet('ow-bq-person', person);
+  _lsSet('ow-bq-cat', category);
   document.getElementById('b-category').value = '';
   document.getElementById('b-desc').value = '';
   document.getElementById('b-amount').value = '';
@@ -8054,7 +8117,7 @@ document.getElementById('login-password').addEventListener('keydown', e => {
 // ─── INIT ────────────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
   if (user) {
-    localStorage.setItem('ow-was-authed', '1');
+    _lsSet('ow-was-authed', '1');
     const ov = document.getElementById('login-overlay');
     if (ov && !ov.classList.contains('hidden')) {
       ov.classList.add('fading');
@@ -8081,20 +8144,27 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').then(reg => {
     // Poll for updates whenever the tab returns to the foreground — without this the SW
     // file can sit in HTTP cache for up to 24h before iOS Safari checks for a new version,
-    // leaving users on stale HTML days after a deploy.
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update(); });
+    // leaving users on stale HTML days after a deploy. Swallow the rejection so a transient
+    // network failure during polling doesn't fill the console with unhandled-rejection noise.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) { try { reg.update().catch(() => {}); } catch (_) {} }
+    });
   }).catch(() => {});
   // The SW posts SW_UPDATED after activate; show a quiet toast so the user can opt into
   // picking up the new code immediately rather than after the next full reload.
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.type === 'SW_UPDATED') {
-      // Show a refresh toast only if the user has already been using the page (i.e., the
-      // SW updated mid-session). The very first install fires SW_UPDATED too, but a
-      // brand-new tab doesn't need a "refresh for new version" prompt.
-      if (typeof showToast === 'function' && document.body && document.body.dataset.swActivated) {
-        showToast('🔄 New version available — tap to refresh', () => location.reload(), {duration: 30000});
-      }
-      if (document.body) document.body.dataset.swActivated = '1';
+    if (!e.data || e.data.type !== 'SW_UPDATED') return;
+    // Persist "have I ever seen a SW activate on this device" across sessions in localStorage.
+    // The previous dataset-bit approach reset on every page load, which made the very first
+    // SW update of each new session silently suppressed instead of just the first-ever install.
+    let firstInstall = false;
+    try { firstInstall = !localStorage.getItem('ow-sw-installed'); } catch (_) {}
+    if (firstInstall) {
+      try { localStorage.setItem('ow-sw-installed', '1'); } catch (_) {}
+      return; // don't toast the very first install
+    }
+    if (typeof showToast === 'function') {
+      showToast('🔄 New version available — tap to refresh', () => location.reload(), {duration: 30000});
     }
   });
 }
