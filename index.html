@@ -287,7 +287,8 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .history-del-btn{background:none;border:1px solid var(--border);color:var(--text-3);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
 .history-del-btn:hover{border-color:var(--coral);color:var(--coral);background:var(--coral-bg)}
 .history-header.open .history-chevron{transform:rotate(180deg)}
-.history-hearts{display:flex;gap:3px;flex-shrink:0}
+.history-hearts{display:flex;gap:3px;flex-shrink:0;align-items:center}
+.history-hearts-solo{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:14px;padding:0 4px;margin-left:4px;font-size:9px;font-weight:700;border-radius:7px;background:var(--text-3);color:white;letter-spacing:.05em}
 .history-hearts .hw{font-size:14px}
 .history-body{display:block;overflow:hidden;max-height:0;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:0 22px;transition:max-height .28s ease,padding .28s ease,background .15s,border-color .15s}
 .history-body.open{max-height:3000px;padding:20px 22px}
@@ -961,7 +962,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <body>
 
 <!-- ── Offline Banner ── -->
-<div id="offline-banner">📡 You're offline — changes will sync when you reconnect</div>
+<div id="offline-banner" role="status" aria-live="polite">📡 You're offline — changes will sync when you reconnect</div>
 
 <!-- ── Login Overlay ── -->
 <div id="login-overlay">
@@ -970,13 +971,13 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     <p id="login-sub">Amanda & Aidan's space</p>
     <div class="field">
       <label for="login-email">Email</label>
-      <input type="text" id="login-email" placeholder="you@email.com" autocomplete="email">
+      <input type="email" id="login-email" placeholder="you@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
     </div>
     <div class="field">
       <label for="login-password">Password</label>
       <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
     </div>
-    <div id="login-error"></div>
+    <div id="login-error" role="alert" aria-live="assertive"></div>
     <button class="btn btn-primary btn-lg" id="login-btn" onclick="doLogin()">Sign In</button>
   </div>
 </div>
@@ -1577,7 +1578,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="confetti-wrap" id="confetti-wrap"></div>
 <div id="photo-lightbox" onclick="closeLightbox()"><img id="lightbox-img" src="" alt="Full size photo"></div>
 
@@ -1694,7 +1695,7 @@ try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage 
 // Covers trips (debounced via _saveTripsTimer) and the plan doc (meals + notes, debounced
 // via _planDebounce). Without these flushes, typing-then-closing within the debounce
 // window silently loses the user's edit.
-['beforeunload', 'pagehide'].forEach(evt => window.addEventListener(evt, () => {
+function _flushPendingWrites() {
   if (typeof _saveTripsTimer !== 'undefined' && _saveTripsTimer) {
     clearTimeout(_saveTripsTimer);
     _saveTripsTimer = null;
@@ -1705,7 +1706,33 @@ try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage 
     _planDebounce = null;
     try { db.collection('state').doc('weekplan').set({plan: weekPlan}); } catch(e) {}
   }
-}));
+}
+// Three flush triggers because iOS Safari, especially as a standalone PWA, doesn't fire
+// `beforeunload` reliably and sometimes only signals via `visibilitychange`. Pagehide is
+// the standard "tab going away" event; visibilitychange catches app-switching in PWA mode.
+['beforeunload', 'pagehide'].forEach(evt => window.addEventListener(evt, _flushPendingWrites));
+document.addEventListener('visibilitychange', () => { if (document.hidden) _flushPendingWrites(); });
+
+// Apply a deferred weekplan snapshot when typing focus leaves the Dates page. The snapshot
+// listener stashes incoming partner data here when the user is mid-typing; without this
+// apply, those partner edits would never become visible (they'd be discarded by every
+// subsequent snapshot that arrived during the same typing session).
+function _applyPendingWeekplanIfReady() {
+  if (!_pendingWeekplanData) return;
+  if (_hasTypingFocus('#page-dates')) return;
+  weekPlan = _pendingWeekplanData;
+  _pendingWeekplanData = null;
+  if (isActive('dates')) {
+    renderPlan();
+    _refreshCalendarChips();
+    const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
+    _renderTodayBanner(todayLocal);
+  }
+}
+document.addEventListener('focusout', e => {
+  if (!e.target.closest || !e.target.closest('#page-dates')) return;
+  setTimeout(_applyPendingWeekplanIfReady, 60);
+});
 
 // Enable offline persistence so the app works without a connection
 db.enablePersistence({ synchronizeTabs: true }).catch(err => {
@@ -1945,56 +1972,103 @@ let mood = { amanda: '', aidan: '', week: '' };
 let _migratedExpensesMonth = false;
 let _migratedTripsBackfill = false;
 
+// Trip ids with pending local mutations (waiting on the debounced saveTrips). On a partner
+// snapshot we KEEP our local version for these ids — the wholesale `trips = snap.data().items`
+// would otherwise wipe an in-flight field edit before its debounce fires. The set is cleared
+// when the debounced write resolves.
+const _pendingTripIds = new Set();
+
+// Deferred weekplan snapshot. When the user is mid-typing on the Dates page and a partner's
+// weekplan snapshot arrives, replacing weekPlan immediately would clobber any adjacent field
+// edits queued in the 600ms _planDebounce window. We stash the incoming data and apply it
+// after focus leaves the page.
+let _pendingWeekplanData = null;
+// Same shape for trips/datedEvents/etc — only weekPlan needs this today because it's the
+// only doc where the listener replaces a single mutable object that's mutated by typing.
+
 function isActive(name) {
   return document.getElementById('page-' + name)?.classList.contains('active');
 }
 
 let _firestoreInited = false;
+// Captured unsubscribe handles so we can tear down listeners on sign-out — leaving them
+// attached for a re-sign-in (especially as a different account) would mean stale state and
+// listeners that fail silently against the new user's permissions.
+const _firestoreUnsubs = [];
+function _track(unsub) { _firestoreUnsubs.push(unsub); return unsub; }
+function teardownFirestore() {
+  _firestoreUnsubs.forEach(u => { try { u(); } catch (e) {} });
+  _firestoreUnsubs.length = 0;
+  _firestoreInited = false;
+  // Reset all per-account migration flags and in-memory state so the next sign-in starts clean.
+  _migratedExpensesMonth = false;
+  _migratedTripsBackfill = false;
+  _pendingTripIds.clear();
+  _pendingWeekplanData = null;
+  todos = []; todoCategories = []; newEntries = []; trips = [];
+  logisticsList = []; bucketList = []; weekPlan = {}; datedEvents = [];
+  expenses = []; recurringItems = []; customCountdowns = [];
+  mood = { amanda: '', aidan: '', week: '' };
+}
 function initFirestore() {
   if (_firestoreInited) return; // guard against onAuthStateChanged stacking listeners on token refresh
   _firestoreInited = true;
   const ref = key => db.collection('state').doc(key);
 
-  ref('todoCategories').onSnapshot(snap => {
+  _track(ref('todoCategories').onSnapshot(snap => {
     if (!snap.exists) { ref('todoCategories').set({items: todoCategories}); return; }
     const saved = snap.data().items;
     if (saved && saved.length) todoCategories = saved;
     if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
-  });
+  }));
 
-  ref('mood').onSnapshot(snap => {
+  _track(ref('mood').onSnapshot(snap => {
     if (!snap.exists) { ref('mood').set(mood); return; }
     mood = { amanda:'', aidan:'', week:'', ...snap.data() };
     if (isActive('home')) renderMoodWidget();
-  });
+  }));
 
-  ref('todos').onSnapshot(snap => {
+  _track(ref('todos').onSnapshot(snap => {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
     todos = snap.data().items || [];
     if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
     scheduleRenderHome();
     const el = document.getElementById('stat-todos');
     if (el) el.textContent = todos.filter(t=>!t.done).length;
-  });
+  }));
 
-  ref('entries').onSnapshot(snap => {
+  _track(ref('entries').onSnapshot(snap => {
     if (!snap.exists) { ref('entries').set({items:[]}); return; }
     newEntries = snap.data().items || [];
     if (isActive('history') && !_hasTypingFocus('#page-history')) renderHistory();
     scheduleRenderHome();
-  });
+  }));
 
-  ref('budgetTargets').onSnapshot(snap => {
+  _track(ref('budgetTargets').onSnapshot(snap => {
     budgetTargets = snap.exists ? (snap.data().targets || {}) : {};
     if (isActive('budget')) renderBudget();
-  });
+  }));
 
-  ref('trips').onSnapshot(snap => {
+  _track(ref('trips').onSnapshot(snap => {
     if (!snap.exists) {
       trips = TRIPS_2026.map((x,i) => ({...x, id:'trip-'+i}));
       ref('trips').set({items: trips});
     } else {
-      trips = snap.data().items || [];
+      const incoming = snap.data().items || [];
+      // Preserve trip objects with pending local mutations (in the 400ms saveTrips debounce
+      // window). Without this, a partner snapshot lands → trips = snap.data() → our local
+      // edit to trip X is orphaned → 400ms later saveTrips writes the snapshot-version of
+      // trip X back, silently overwriting the user's blur'd field. Only echoes of our own
+      // writes (hasPendingWrites=true) skip this merge.
+      if (_pendingTripIds.size && !snap.metadata.hasPendingWrites) {
+        trips = incoming.map(remote => {
+          if (!_pendingTripIds.has(remote.id)) return remote;
+          const local = trips.find(t => t.id === remote.id);
+          return local || remote;
+        });
+      } else {
+        trips = incoming;
+      }
       // One-time backfill for sortDate from seed + PTO field stripping. Runs once per session,
       // not per snapshot — re-running the full-array .set() on every echo would race against
       // concurrent partner edits (e.g. a saveTripField queued in the same tick gets clobbered).
@@ -2024,9 +2098,9 @@ function initFirestore() {
       renderTrip();
     }
     scheduleRenderHome();
-  });
+  }));
 
-  ref('logistics').onSnapshot(snap => {
+  _track(ref('logistics').onSnapshot(snap => {
     if (!snap.exists) {
       logisticsList = LOGISTICS_LIST.map((text,i) => ({id:'log-'+i, text}));
       ref('logistics').set({items: logisticsList});
@@ -2034,9 +2108,9 @@ function initFirestore() {
       logisticsList = snap.data().items || [];
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
-  });
+  }));
 
-  ref('bucket').onSnapshot(snap => {
+  _track(ref('bucket').onSnapshot(snap => {
     if (!snap.exists) {
       bucketList = BUCKET_LIST.map((text,i) => ({id:'bkt-'+i, text}));
       ref('bucket').set({items: bucketList});
@@ -2044,9 +2118,9 @@ function initFirestore() {
       bucketList = snap.data().items || [];
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
-  });
+  }));
 
-  ref('datedEvents').onSnapshot(snap => {
+  _track(ref('datedEvents').onSnapshot(snap => {
     if (!snap.exists) {
       // First-load migration: move any existing weekPlan events into the dated collection so
       // nothing the user has typed gets lost. Future writes go straight to datedEvents.
@@ -2062,10 +2136,22 @@ function initFirestore() {
       const today = new Date(); today.setHours(0,0,0,0);
       _renderTodayBanner(today);
     }
-  });
+  }));
 
-  ref('weekplan').onSnapshot(snap => {
-    weekPlan = snap.exists ? (snap.data().plan || {}) : {};
+  _track(ref('weekplan').onSnapshot(snap => {
+    const incoming = snap.exists ? (snap.data().plan || {}) : {};
+    // Defer the snapshot when the user is mid-typing on the Dates page AND the snapshot is
+    // NOT an echo of our own write. Wholesale replacing `weekPlan` mid-typing would clobber
+    // any adjacent field edits queued in the 600ms _planDebounce window (e.g. they typed
+    // dinner-Mon, focused dinner-Tue, partner snapshot lands → Mon's edit is in our local
+    // copy but not yet on server → snapshot has neither, and `weekPlan = incoming` wipes
+    // Mon's "p"). Apply the deferred snapshot when typing focus leaves the page.
+    if (_hasTypingFocus('#page-dates') && !snap.metadata.hasPendingWrites) {
+      _pendingWeekplanData = incoming;
+      return;
+    }
+    weekPlan = incoming;
+    _pendingWeekplanData = null;
     // Skip re-render while the user is mid-typing in any meal input, notes textarea,
     // add-event input, or contenteditable chip — otherwise partner's update wipes their input.
     // renderPlan() rebuilds the schedule + meals + notes; the calendar grid only needs its
@@ -2077,14 +2163,14 @@ function initFirestore() {
       const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
       _renderTodayBanner(todayLocal);
     }
-  });
+  }));
 
-  ref('countdowns').onSnapshot(snap => {
+  _track(ref('countdowns').onSnapshot(snap => {
     customCountdowns = snap.exists ? (snap.data().items || []) : [];
     if (isActive('home')) renderCustomCountdowns();
-  });
+  }));
 
-  ref('recurring').onSnapshot(snap => {
+  _track(ref('recurring').onSnapshot(snap => {
     if (!snap.exists) {
       recurringItems = DEFAULT_RECURRING.map(r=>({...r}));
       ref('recurring').set({items: recurringItems});
@@ -2092,9 +2178,9 @@ function initFirestore() {
       recurringItems = snap.data().items || [];
     }
     if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderRecurring();
-  });
+  }));
 
-  ref('expenses').onSnapshot(snap => {
+  _track(ref('expenses').onSnapshot(snap => {
     if (!snap.exists) {
       expenses = [];
       ref('expenses').set({items: expenses});
@@ -2121,7 +2207,7 @@ function initFirestore() {
     }
     if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderBudget();
     scheduleRenderHome();
-  });
+  }));
 }
 
 // True when the user is mid-typing inside the matched container — used to suppress Firestore-
@@ -2177,24 +2263,31 @@ function _removeFromDoc(docName, item) {
 }
 // Debounced trips writer. Field-level edits (notes/itinerary/links/etc) flush as one Firestore
 // write at the trailing edge so a flurry of blurs across the detail page collapses to a single
-// document write. _lastTripWrite is consulted by the trips onSnapshot to skip the echo re-render
-// of the trip page while the user is actively editing — partner edits still come through after
-// the quiet period.
+// document write. The snapshot listener consults snap.metadata.hasPendingWrites to skip
+// re-render of OUR OWN echo; partner edits still come through immediately, and the
+// _pendingTripIds set protects our in-flight local mutations from being clobbered when those
+// partner edits merge in.
 let _saveTripsTimer = null;
-let _lastTripWrite = 0;
 const TRIP_SAVE_DEBOUNCE_MS = 400;
-const TRIP_ECHO_GUARD_MS = 1500;
 function saveTrips(opts) {
-  _lastTripWrite = Date.now();
+  // Mark the currently-open trip as having a pending mutation so the snapshot listener
+  // doesn't overwrite it mid-debounce. Catches every trip-detail-page caller (saveTripField,
+  // togglePackItem, savePackText, addPackItem, saveLinkField, etc.) without each having to
+  // remember to add the id themselves.
+  if (_currentTripId) _pendingTripIds.add(_currentTripId);
   if (opts && opts.immediate) {
     if (_saveTripsTimer) { clearTimeout(_saveTripsTimer); _saveTripsTimer = null; }
-    db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
+    db.collection('state').doc('trips').set({items: trips})
+      .then(() => _pendingTripIds.clear())
+      .catch(_onSaveErr);
     return;
   }
   if (_saveTripsTimer) clearTimeout(_saveTripsTimer);
   _saveTripsTimer = setTimeout(() => {
     _saveTripsTimer = null;
-    db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
+    db.collection('state').doc('trips').set({items: trips})
+      .then(() => _pendingTripIds.clear())
+      .catch(_onSaveErr);
   }, TRIP_SAVE_DEBOUNCE_MS);
 }
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
@@ -2789,17 +2882,20 @@ function clearHeartPreview(person) {
   });
 }
 
-// Read the effective hearts rating for an entry. Averages per-person values when both are
-// set; falls back to a single per-person rating; finally to the legacy entry.hearts scalar
-// for pre-migration entries. Returns 0 when nothing is rated.
+// Hearts schema: each entry stores heartsAmanda and/or heartsAidan (0.5-step values from
+// 0.5–5). The legacy `hearts` scalar is kept as the averaged display value for pre-migration
+// entries. Critical: BOTH helpers below MUST agree on what "no rating" means — previously
+// _entryHearts treated 0 as a real rating and averaged it with the other partner's value,
+// causing a single 5-star pick to display as 2.5. Both now treat 0 as "unrated" so
+// "Amanda rated 5, Aidan never picked" correctly displays as 5.
 function _entryHearts(e) {
   if (!e) return 0;
-  const a = typeof e.heartsAmanda === 'number' ? e.heartsAmanda : null;
-  const b = typeof e.heartsAidan === 'number' ? e.heartsAidan : null;
+  const a = (typeof e.heartsAmanda === 'number' && e.heartsAmanda > 0) ? e.heartsAmanda : null;
+  const b = (typeof e.heartsAidan  === 'number' && e.heartsAidan  > 0) ? e.heartsAidan  : null;
   if (a !== null && b !== null) return (a + b) / 2;
   if (a !== null) return a;
   if (b !== null) return b;
-  return typeof e.hearts === 'number' ? e.hearts : 0;
+  return (typeof e.hearts === 'number' && e.hearts > 0) ? e.hearts : 0;
 }
 function _avgHearts(a, b) {
   const aSet = typeof a === 'number' && a > 0;
@@ -2808,6 +2904,17 @@ function _avgHearts(a, b) {
   if (aSet) return a;
   if (bSet) return b;
   return 0;
+}
+// True when only one partner has rated this entry. Used to surface "(Amanda rated)" /
+// "(Aidan rated)" in the display so a 5-heart show isn't visually ambiguous between
+// "both rated 5" and "only Amanda rated 5".
+function _entryHeartsSoloRater(e) {
+  if (!e) return null;
+  const aSet = typeof e.heartsAmanda === 'number' && e.heartsAmanda > 0;
+  const bSet = typeof e.heartsAidan  === 'number' && e.heartsAidan  > 0;
+  if (aSet && !bSet) return 'Amanda';
+  if (bSet && !aSet) return 'Aidan';
+  return null;
 }
 
 // ── Review photos ──
@@ -2847,7 +2954,7 @@ function renderReviewPhotos() {
 // ── Edit-mode photo helpers ──
 function editPhotoThumbsHtml(id, urls) {
   return urls.map((url, i) =>
-    `<div class="review-photo-thumb"><img src="${url}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeEditPhoto(event,'${id}',${i})">✕</button></div>`
+    `<div class="review-photo-thumb"><img src="${escHtml(url)}" alt="Photo ${i+1}"><button class="review-photo-remove" onclick="removeEditPhoto(event,'${id}',${i})">✕</button></div>`
   ).join('');
 }
 function renderEditPhotos(id) {
@@ -4064,7 +4171,7 @@ function renderDates() {
   for (const id of [...dismissedOverlaps]) {
     if (!stillInOverlap.has(id)) { dismissedOverlaps.delete(id); dismissedPruned = true; }
   }
-  if (dismissedPruned) localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissedOverlaps]));
+  if (dismissedPruned) _lsSet('ow-dismissed-overlaps', JSON.stringify([...dismissedOverlaps]));
 
   const tripCardHtml = (t, done) => {
     let badge = '';
@@ -4258,7 +4365,7 @@ function _saveReviewDraft() {
   draft.heartValAidan = heartValAidan;
   draft.heartVal = heartVal; // legacy field kept so older drafts can still round-trip
   draft.photoCount = _reviewPhotos.length;
-  localStorage.setItem('ow-review-draft', JSON.stringify(draft));
+  _lsSet('ow-review-draft', JSON.stringify(draft));
 }
 
 // ─── PLAN ────────────────────────────────────────────────────────────────────
@@ -4842,6 +4949,7 @@ function parseICSEndDateMemo(datesStr, sortDate) {
 function _invalidateIcsEndCache() { _icsEndDateCache.clear(); }
 
 function parseICSEndDate(datesStr, sortDate) {
+  if (!sortDate) return ''; // mirror the server's early-return so addOne can't be called with undefined
   // ICS all-day DTEND is exclusive (day after last day). Use Date.UTC so the
   // toISOString().slice(0,10) result is computed in UTC and matches the server's mirror of
   // this function (functions/index.js). Mixing `new Date(y,m,d)` (local) with
@@ -4852,14 +4960,16 @@ function parseICSEndDate(datesStr, sortDate) {
     const d = new Date(Date.UTC(yy, mm - 1, dd + 1));
     return d.toISOString().slice(0,10).replace(/-/g,'');
   };
-  if (!datesStr || !sortDate) return addOne(sortDate);
+  if (!datesStr) return addOne(sortDate);
   const year = parseInt(sortDate.slice(0, 4));
   const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
   // Match end of range. Three lookaheads protect against misreads:
   //   - (?!\d) blocks a 4-digit year being captured as the end day ("Jun-Jul 2026" → "2026").
   //   - (?!\s*(?:am|pm)\b) blocks a hyphenated time clause from being read as a date range
   //     ("May 28 - 9 PM" was matching "9" as endDay → phantom multi-day trip).
-  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)(?!\s*(?:am|pm)\b)/i);
+  // (?!\d) blocks 4-digit years; (?!\s*(?:am|pm)\b) blocks "May 28 - 9 PM"; (?!\s*:) blocks
+  // "May 28 - 9:00 PM" (the previous lookahead only caught the no-colon case).
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)(?!\s*:)(?!\s*(?:am|pm)\b)/i);
   if (rangeMatch) {
     const endDay = parseInt(rangeMatch[2]);
     let endMonth;
@@ -4893,6 +5003,10 @@ function parseICSEndDate(datesStr, sortDate) {
       let endYear = year;
       const startMonth = parseInt(sortDate.slice(5,7)) - 1;
       if (endMonth < startMonth - 1) endYear++;
+      const startDay = parseInt(sortDate.slice(8,10));
+      // Reversed-range guard (mirror the alphabetic branch): same month, end < start → fall
+      // back to single-day rather than emitting a negative-duration range.
+      if (endYear === year && endMonth === startMonth && endDay < startDay) return addOne(sortDate);
       const d = new Date(Date.UTC(endYear, endMonth, endDay + 1));
       return d.toISOString().slice(0,10).replace(/-/g,'');
     }
@@ -5161,7 +5275,7 @@ function dismissOverlap(id) {
     if (a === id) dismissed.add(b);
     if (b === id) dismissed.add(a);
   });
-  localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
+  _lsSet('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   renderDates();
 }
 
@@ -5399,7 +5513,7 @@ function saveTripField(field, value) {
     // Clear any dismissed overlap so re-overlaps re-warn
     const dismissed = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
     dismissed.delete(t.id);
-    localStorage.setItem('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
+    _lsSet('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
   } else if (field === 'time') {
     if (!v) { t.time = null; t.endTime = null; }
     else {
@@ -5413,6 +5527,9 @@ function saveTripField(field, value) {
   } else {
     t[field] = v;
   }
+  // Flag this trip as "has pending local mutations" so the snapshot listener preserves our
+  // in-flight edit if a partner snapshot lands during the 400ms debounce.
+  _pendingTripIds.add(t.id);
   saveTrips();
   // Full re-render only for fields that change layout (dates affect itinerary day list, label
   // affects header color via emoji). Other fields don't need it.
@@ -5427,6 +5544,7 @@ function cycleTripStatus() {
   const next = TRIP_STATUS_CYCLE[(idx + 1) % TRIP_STATUS_CYCLE.length];
   const justConfirmed = next === 'confirmed' && current !== 'confirmed';
   t.status = next;
+  _pendingTripIds.add(t.id);
   saveTrips();
   // Surgically update the pill instead of rebuilding the entire detail page.
   const pill = document.querySelector('.td-status-pill');
@@ -5576,7 +5694,7 @@ function saveLinkField(id, field, value) {
         a.className = 'td-link-go';
         a.href = safe;
         a.target = '_blank';
-        a.rel = 'noopener';
+        a.rel = 'noopener noreferrer';
         a.title = 'Open link';
         a.textContent = '↗';
         a.addEventListener('click', e => e.stopPropagation());
@@ -5730,6 +5848,10 @@ function renderHistory() {
     const preview = _src.slice(0, 90) + (_src.length > 90 ? '...' : '');
     const effHearts = _entryHearts(e);
     const heartsHtml = effHearts > 0 ? renderHeartsHtml(effHearts) : '';
+    // Tiny "(Amanda)" / "(Aidan)" tag when only one partner rated, so a 5-heart display
+    // isn't ambiguous between "both loved it" and "Amanda thinks Aidan slacked off".
+    const soloRater = _entryHeartsSoloRater(e);
+    const soloTag = soloRater ? `<span class="history-hearts-solo" title="Only ${soloRater} rated this week">${soloRater[0]}</span>` : '';
 
     return `
       <div class="history-entry">
@@ -5737,7 +5859,7 @@ function renderHistory() {
           <div class="history-date-badge">${dateLabel}</div>
           <div class="history-preview">${escHtml(preview) || '—'}</div>
           ${e.theme ? e.theme.split(',').map(t=>t.trim()).filter(Boolean).slice(0,2).map(t=>`<div class="history-theme">${escHtml(t.replace(/^[\p{Emoji}\s]+/u,'').split('(')[0].trim())}</div>`).join('') : ''}
-          ${heartsHtml ? `<div class="history-hearts">${heartsHtml}</div>` : ''}
+          ${heartsHtml ? `<div class="history-hearts">${heartsHtml}${soloTag}</div>` : ''}
           <div class="history-chevron">▼</div>
         </div>
         <div class="history-body" id="hb-${e.id}">
@@ -5836,7 +5958,7 @@ function editHistoryEntry(id) {
     </div>`;
   setTimeout(() => {
     body.innerHTML = `
-      <div class="history-edit-form" id="hef-${id}">
+      <div class="history-edit-form" id="hef-${id}" data-amanda-initial="${heartA0}" data-aidan-initial="${heartB0}">
         <div class="history-edit-field">
           <div class="history-section-lbl">How was this week?</div>
           <div class="history-edit-hearts" style="display:flex;flex-direction:column;gap:4px;margin-top:2px">${heartsHtml}</div>
@@ -5900,10 +6022,16 @@ function clearEditHeartPreview(id, person) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   const target = person || 'amanda';
-  const fallback = entry.hearts || 0;
-  const val = target === 'amanda'
-    ? (typeof entry.heartsAmanda === 'number' ? entry.heartsAmanda : fallback)
-    : (typeof entry.heartsAidan  === 'number' ? entry.heartsAidan  : fallback);
+  // Fall back to the per-edit "opened-with" snapshot stashed on the form, not to the live
+  // legacy hearts scalar — the scalar gets recomputed on every click, so without the
+  // snapshot the OTHER row would snap to the new average on mouseout.
+  const form = document.getElementById(`hef-${id}`);
+  const stash = form && form.dataset[target + 'Initial'];
+  const stashed = stash !== undefined && stash !== '' ? Number(stash) : null;
+  const live = target === 'amanda'
+    ? (typeof entry.heartsAmanda === 'number' ? entry.heartsAmanda : null)
+    : (typeof entry.heartsAidan  === 'number' ? entry.heartsAidan  : null);
+  const val = live !== null ? live : (stashed !== null && !Number.isNaN(stashed) ? stashed : 0);
   const row = document.querySelector(`#hef-${id} [data-person="${target}"]`);
   if (!row) return;
   row.querySelectorAll('.hw').forEach((hw, i) => {
@@ -5915,6 +6043,15 @@ function setEditHeart(id, val, person) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   const target = person || 'amanda';
+  const other = target === 'amanda' ? 'aidan' : 'amanda';
+  const otherKey = other === 'amanda' ? 'heartsAmanda' : 'heartsAidan';
+  // Legacy-entry migration on first click: if the other partner's field is unset but the
+  // entry has a pre-split `hearts` scalar, copy that scalar into the other partner's field
+  // so this click doesn't silently zero out the prior rating. The "opened-with" snapshot in
+  // dataset reflects exactly this intent (both pickers defaulted to the legacy value).
+  if (typeof entry[otherKey] !== 'number' && typeof entry.hearts === 'number' && entry.hearts > 0) {
+    entry[otherKey] = entry.hearts;
+  }
   if (target === 'amanda') entry.heartsAmanda = val;
   else entry.heartsAidan = val;
   // Recompute the legacy `hearts` field so any code path still reading it (or any other
@@ -6227,8 +6364,11 @@ function resizePhoto(file, maxPx, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
+    // Cleanup runs on BOTH paths so a corrupt JPEG that fails to load doesn't leak its
+    // Object URL until tab close.
+    const cleanup = () => { try { URL.revokeObjectURL(url); } catch (_) {} };
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      cleanup();
       const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
@@ -6237,7 +6377,7 @@ function resizePhoto(file, maxPx, quality) {
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       resolve(canvas.toDataURL('image/jpeg', quality));
     };
-    img.onerror = reject;
+    img.onerror = (e) => { cleanup(); reject(e); };
     img.src = url;
   });
 }
@@ -6318,9 +6458,24 @@ function escHtml(str) {
 
 // Safe JSON parse — return a fallback instead of throwing on corrupted input. iOS aggressively
 // evicts localStorage; truncated values turn JSON.parse into a render-killer error.
+// Callers like `new Set(_safeJsonParse(...))` expect an iterable, so we also verify the parsed
+// value has the same constructor shape as the fallback (Array/Object) and re-fall-back if a
+// tampered localStorage entry like `"42"` parses to a number that would crash `new Set(42)`.
 function _safeJsonParse(str, fallback) {
   if (!str) return fallback;
-  try { return JSON.parse(str); } catch (e) { return fallback; }
+  let v;
+  try { v = JSON.parse(str); } catch (e) { return fallback; }
+  if (Array.isArray(fallback) && !Array.isArray(v)) return fallback;
+  if (fallback !== null && typeof fallback === 'object' && !Array.isArray(fallback) && (v === null || typeof v !== 'object' || Array.isArray(v))) return fallback;
+  return v;
+}
+
+// Safe localStorage setter — iOS Safari throws QuotaExceededError under storage pressure or
+// SecurityError in private mode. The setItem call sites are too numerous to wrap individually,
+// so swallow the throw and warn instead of crashing the surrounding handler.
+function _lsSet(key, value) {
+  try { localStorage.setItem(key, value); }
+  catch (e) { console.warn('localStorage write failed:', key, e && e.name); }
 }
 
 // Generate a collision-resistant id. The legacy pattern `Math.random().toString(36).slice(2)`
@@ -6690,7 +6845,7 @@ function initWidgetDrag() {
     target.classList.remove('drag-before','drag-after');
     if (before) target.before(from); else target.after(from);
     const order = [...container.querySelectorAll('.home-widget')].map(w => w.dataset.widget);
-    localStorage.setItem('ow-widget-order', JSON.stringify(order));
+    _lsSet('ow-widget-order', JSON.stringify(order));
   });
 
   container.querySelectorAll('.home-widget').forEach(w => {
@@ -7491,7 +7646,7 @@ function loadRecurringForMonth(year, month) {
 let _dismissedRecurring = new Set(_safeJsonParse(localStorage.getItem('ow-rec-dismissed'), []));
 function dismissRecurringReminder(key) {
   _dismissedRecurring.add(key);
-  localStorage.setItem('ow-rec-dismissed', JSON.stringify([..._dismissedRecurring]));
+  _lsSet('ow-rec-dismissed', JSON.stringify([..._dismissedRecurring]));
   checkRecurringReminder();
 }
 
@@ -7499,7 +7654,7 @@ let _minimizedRecurring = new Set(_safeJsonParse(localStorage.getItem('ow-rec-mi
 function toggleRecurringReminder(key) {
   if (_minimizedRecurring.has(key)) _minimizedRecurring.delete(key);
   else _minimizedRecurring.add(key);
-  localStorage.setItem('ow-rec-minimized', JSON.stringify([..._minimizedRecurring]));
+  _lsSet('ow-rec-minimized', JSON.stringify([..._minimizedRecurring]));
   checkRecurringReminder();
 }
 
@@ -7633,7 +7788,7 @@ function renderBulkPreview() {
     const explicitDate = firstField ? _parseBulkDate(firstField) : null;
     const r = _parseBulkLine(line, _carryDate);
     if (explicitDate) _carryDate = explicitDate;
-    if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${escHtml(line)} <span style="opacity:.7">— ${r.error}</span></td></tr>`;
+    if (r.error) return `<tr style="background:var(--coral-bg)"><td style="padding:7px 6px 7px 12px;color:var(--coral);font-family:monospace;font-size:11px;font-weight:700">${lineNo}</td><td colspan="5" style="padding:7px 12px;color:var(--coral);font-family:monospace;font-size:11px">${escHtml(line)} <span style="opacity:.7">— ${escHtml(r.error)}</span></td></tr>`;
     const bg = (r.warnMisc || r.warnAmbiguous) ? 'var(--amber-bg)' : '';
     // Escape user-paste fields — a pasted line like `Din<img src=x onerror=alert(1)>, 5, n`
     // would otherwise inject markup into the preview row.
@@ -7760,7 +7915,7 @@ function _executeBulkImport() {
       const bg = type === 'error' ? 'rgba(217,106,82,.07)' : 'rgba(191,124,54,.07)';
       return `<div style="margin-bottom:6px;padding:6px 10px;background:${bg};border-radius:6px;border-left:3px solid ${color}">
         ${line ? `<div style="font-family:monospace;color:var(--text);margin-bottom:2px">${escHtml(line)}</div>` : ''}
-        <div style="color:${color};font-size:11px">${reason}</div>
+        <div style="color:${color};font-size:11px">${escHtml(reason)}</div>
       </div>`;
     }).join('');
     // Scroll the error block into view so the user notices what failed and can fix it.
@@ -7876,6 +8031,10 @@ auth.onAuthStateChanged(user => {
     document.getElementById('review-date-sub').textContent = getReviewWeekLabel();
     const now2 = new Date();
   } else {
+    // Sign-out: detach the live snapshot listeners and wipe in-memory state so a subsequent
+    // sign-in (especially as a different account) doesn't leak the previous user's data or
+    // ride on the now-dead listeners.
+    teardownFirestore();
     localStorage.removeItem('ow-was-authed');
     document.documentElement.removeAttribute('data-preauthed');
     const ov = document.getElementById('login-overlay');

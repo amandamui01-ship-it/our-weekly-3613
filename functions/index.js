@@ -28,7 +28,9 @@ function parseICSEndDate(datesStr, sortDate) {
   //   - (?!\d) prevents capturing a 4-digit year as the end day ("Jun-Jul 2026").
   //   - (?!\s*(?:am|pm)\b) prevents misreading a hyphenated time as a date range
   //     ("May 28 - 9 PM" was parsing "9" as endDay → multi-day phantom trip).
-  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)(?!\s*(?:am|pm)\b)/i);
+  // (?!\d) blocks 4-digit years; (?!\s*(?:am|pm)\b) blocks "May 28 - 9 PM"; (?!\s*:) blocks
+  // "May 28 - 9:00 PM" (the previous lookahead only caught the no-colon case).
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)(?!\s*:)(?!\s*(?:am|pm)\b)/i);
   if (rangeMatch) {
     const endDay = parseInt(rangeMatch[2]);
     let endMonth;
@@ -60,6 +62,9 @@ function parseICSEndDate(datesStr, sortDate) {
       let endYear = year;
       const startMonth = parseInt(sortDate.slice(5, 7)) - 1;
       if (endMonth < startMonth - 1) endYear++;
+      const startDay = parseInt(sortDate.slice(8, 10));
+      // Reversed-range guard (mirror the alphabetic branch): "5/30-5/28" → single-day.
+      if (endYear === year && endMonth === startMonth && endDay < startDay) return addOne(sortDate);
       const d = new Date(Date.UTC(endYear, endMonth, endDay + 1));
       return d.toISOString().slice(0, 10).replace(/-/g, '');
     }
