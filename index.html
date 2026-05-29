@@ -3286,7 +3286,7 @@ function quickAddEventInline(iso) {
     const parsed = parseEventTextAndTime(raw);
     if (!parsed.text) return;
     datedEvents.push({
-      id: 'evt-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+      id: _uid('evt-'),
       date: iso,
       text: parsed.text,
       time: parsed.time,
@@ -3530,16 +3530,16 @@ function _renderTodayBanner(today) {
   el.style.display = '';
 }
 
-// Click an event chip on the calendar grid → edit in place. Uses ISO date + idx within that
-// date's events (sorted) to find the target in datedEvents. Saves to datedEvents; @-syntax in
-// the input gets parsed (e.g. "Volleyball @11:30am" → text + time).
-function editCalEvent(isoDate, idx) {
-  const el = document.querySelector(`.cal-event[data-date="${isoDate}"][data-idx="${idx}"]`);
+// Click an event chip on the calendar grid → edit in place. The chip carries the event's
+// stable id (data-id), and we look up the event by id at click time AND again inside
+// finish() — index-based lookup would target the wrong event if the partner added an
+// earlier-time event between render and save (sort order shifts everything down by one).
+function editCalEvent(eventId) {
+  const el = document.querySelector(`.cal-event[data-id="${eventId}"]`);
   if (!el || el.querySelector('input')) return;
-  const events = _eventsForDate(isoDate);
-  const target = events[idx];
-  if (!target) return;
-  const rawText = target.time ? `${target.text} @${formatTimeRange(target.time, target.endTime)}` : target.text;
+  const original = datedEvents.find(e => e.id === eventId);
+  if (!original) return;
+  const rawText = original.time ? `${original.text} @${formatTimeRange(original.time, original.endTime)}` : original.text;
   const input = document.createElement('input');
   input.type = 'text';
   input.value = rawText;
@@ -3554,13 +3554,22 @@ function editCalEvent(isoDate, idx) {
     done = true;
     if (save) {
       const raw = input.value.trim();
+      // Re-resolve by id at save time — a partner snapshot during this edit may have replaced
+      // the datedEvents array, leaving `original` orphaned. Mutating the orphan would silently
+      // drop the edit on the next saveDatedEvents() write.
+      const target = datedEvents.find(e => e.id === eventId);
       if (!raw) {
-        datedEvents = datedEvents.filter(e => e.id !== target.id);
-      } else {
+        datedEvents = datedEvents.filter(e => e.id !== eventId);
+        saveDatedEvents();
+      } else if (target) {
         const parsed = parseEventTextAndTime(raw);
-        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; target.endTime = parsed.endTime || null; }
+        if (parsed.text) {
+          target.text = parsed.text;
+          target.time = parsed.time;
+          target.endTime = parsed.endTime || null;
+          saveDatedEvents();
+        }
       }
-      saveDatedEvents();
     }
     renderCalendar();
     if (isActive('dates')) {
@@ -3734,10 +3743,10 @@ function renderCalendar() {
       const cellIsoForEvents = _fmtDateKey(d);
       const cellEvents = _eventsForDate(cellIsoForEvents);
       if (cellEvents.length) {
-        eventsHtml = cellEvents.map((evt, ei) => {
+        eventsHtml = cellEvents.map(evt => {
           const timePrefix = evt.time ? `<span class="cal-event-time">${formatTimeRange(evt.time, evt.endTime)}</span> ` : '';
           const fullText = (evt.time ? formatTimeRange(evt.time, evt.endTime) + ' · ' : '') + evt.text;
-          return `<div class="cal-event" data-date="${cellIsoForEvents}" data-idx="${ei}" onclick="editCalEvent('${cellIsoForEvents}',${ei});event.stopPropagation()" title="${escHtml(fullText)} (click to edit)">${timePrefix}${escHtml(evt.text)}</div>`;
+          return `<div class="cal-event" data-id="${escHtml(evt.id)}" onclick="editCalEvent('${escHtml(evt.id)}');event.stopPropagation()" title="${escHtml(fullText)} (click to edit)">${timePrefix}${escHtml(evt.text)}</div>`;
         }).join('');
       }
 
@@ -4195,7 +4204,8 @@ function renderPlan() {
           ${autoTrips.map(t => `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`).join('')}
           ${dayEvents.map((evt, i) => {
             const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeRange(evt.time, evt.endTime)}</span>` : '';
-            return `<div class="plan-slot-event ec${i%5}" id="evt-${key}-${i}" onclick="editEvent('${key}',${i})"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span></div>`;
+            const safeId = escHtml(evt.id);
+            return `<div class="plan-slot-event ec${i%5}" data-id="${safeId}" onclick="editEvent('${safeId}')"><span class="plan-slot-event-emoji" contenteditable="false">${['⭐','🌿','🎉','💜','🔥'][i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${safeId}');event.stopPropagation()">×</span></div>`;
           }).join('')}
           <input class="plan-slot-add-input" id="add-input-${key}" placeholder="Add event… (try @11:30am)" style="display:none"
             onkeydown="handleEventKey(event,'${key}')" onblur="commitEvent('${key}')">
@@ -4384,7 +4394,7 @@ function commitEvent(key) {
   const monday = _planMondayDate();
   const date = new Date(monday); date.setDate(monday.getDate() + off);
   datedEvents.push({
-    id: 'evt-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+    id: _uid('evt-'),
     date: _fmtDateKey(date),
     text: parsed.text,
     time: parsed.time,
@@ -4401,18 +4411,17 @@ function cancelAddEvent(key) {
   if (btn) btn.style.display = '';
 }
 
-function editEvent(key, idx) {
-  const chip = document.getElementById('evt-' + key + '-' + idx);
+function editEvent(eventId) {
+  const chip = document.querySelector(`.plan-slot-event[data-id="${eventId}"]`);
   if (!chip || chip.isContentEditable) return;
-  const dayEvents = _eventsForDayKey(key);
-  const target = dayEvents[idx];
-  if (!target) return;
+  const original = datedEvents.find(e => e.id === eventId);
+  if (!original) return;
   const del = chip.querySelector('.plan-slot-event-del');
   const timeEl = chip.querySelector('.plan-slot-event-time');
   if (del) del.style.visibility = 'hidden';
   if (timeEl) timeEl.style.display = 'none';
   // Replace existing text content with the raw editable form: "text [@HH:MMam/pm]"
-  const rawText = target.time ? `${target.text} @${formatTimeRange(target.time, target.endTime)}` : target.text;
+  const rawText = original.time ? `${original.text} @${formatTimeRange(original.time, original.endTime)}` : original.text;
   [...chip.childNodes].forEach(n => { if (n.nodeType === Node.TEXT_NODE) n.remove(); });
   const textNode = document.createTextNode(rawText);
   if (del) chip.insertBefore(textNode, del);
@@ -4427,6 +4436,9 @@ function editEvent(key, idx) {
     window.getSelection().removeAllRanges();
     window.getSelection().addRange(range);
   }, 0);
+  // Derive the day key from the original event's date — needed so renderDayEvents knows
+  // which slot to repaint after the edit.
+  const key = _isoToDayKey(original.date);
   const finish = (save) => {
     if (!chip.isConnected) return;
     chip.onkeydown = null;
@@ -4437,15 +4449,23 @@ function editEvent(key, idx) {
       const clone = chip.cloneNode(true);
       clone.querySelectorAll('span').forEach(s => s.remove());
       const raw = clone.textContent.trim();
+      // Re-resolve by id at save time — a partner snapshot during this edit may have replaced
+      // the datedEvents array, leaving `original` orphaned.
+      const target = datedEvents.find(e => e.id === eventId);
       if (!raw) {
-        datedEvents = datedEvents.filter(e => e.id !== target.id);
-      } else {
+        datedEvents = datedEvents.filter(e => e.id !== eventId);
+        saveDatedEvents();
+      } else if (target) {
         const parsed = parseEventTextAndTime(raw);
-        if (parsed.text) { target.text = parsed.text; target.time = parsed.time; target.endTime = parsed.endTime || null; }
+        if (parsed.text) {
+          target.text = parsed.text;
+          target.time = parsed.time;
+          target.endTime = parsed.endTime || null;
+          saveDatedEvents();
+        }
       }
-      saveDatedEvents();
     }
-    renderDayEvents(key);
+    if (key) renderDayEvents(key);
     // Calendar grid + today banner share the event source; refresh them too if visible.
     if (isActive('dates')) {
       renderCalendar();
@@ -4460,18 +4480,32 @@ function editEvent(key, idx) {
   chip.onblur = () => finish(true);
 }
 
-function removeEvent(key, idx) {
-  const dayEvents = _eventsForDayKey(key);
-  const target = dayEvents[idx];
+function removeEvent(eventId) {
+  const target = datedEvents.find(e => e.id === eventId);
   if (!target) return;
-  datedEvents = datedEvents.filter(e => e.id !== target.id);
+  const key = _isoToDayKey(target.date);
+  datedEvents = datedEvents.filter(e => e.id !== eventId);
   saveDatedEvents();
-  renderDayEvents(key);
+  if (key) renderDayEvents(key);
   if (isActive('dates')) {
     renderCalendar();
     const today = new Date(); today.setHours(0,0,0,0);
     _renderTodayBanner(today);
   }
+}
+
+// Map an ISO date back to the plan-week dayKey ('mon'/'tue'/...) if the date falls in the
+// currently-displayed plan week. Returns null if outside the plan week (in which case there's
+// nothing to refresh in the plan view).
+function _isoToDayKey(iso) {
+  if (!iso) return null;
+  const monday = _planMondayDate();
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const target = new Date(y, m - 1, d);
+  const diff = Math.round((target - monday) / 864e5);
+  if (diff < 0 || diff > 6) return null;
+  return ['mon','tue','wed','thu','fri','sat','sun'][diff];
 }
 
 function renderDayEvents(key) {
@@ -4484,10 +4518,10 @@ function renderDayEvents(key) {
   events.forEach((evt, i) => {
     const chip = document.createElement('div');
     chip.className = `plan-slot-event ec${i%5}`;
-    chip.id = 'evt-' + key + '-' + i;
-    chip.setAttribute('onclick', `editEvent('${key}',${i})`);
+    chip.setAttribute('data-id', evt.id);
+    chip.setAttribute('onclick', `editEvent('${evt.id}')`);
     const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeRange(evt.time, evt.endTime)}</span>` : '';
-    chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${key}',${i});event.stopPropagation()">×</span>`;
+    chip.innerHTML = `<span class="plan-slot-event-emoji" contenteditable="false">${EVT_EMOJIS[i%5]}</span>${timeChip}${escHtml(evt.text)}<span class="plan-slot-event-del" contenteditable="false" onclick="removeEvent('${evt.id}');event.stopPropagation()">×</span>`;
     slot.insertBefore(chip, addInput);
   });
 }
@@ -4812,7 +4846,7 @@ function addTrip() {
   if (parsedName.time && isSingleDay && sortDate) {
     // Quick timed event path
     datedEvents.push({
-      id: 'evt-' + Date.now() + '-' + Math.random().toString(36).slice(2,5),
+      id: _uid('evt-'),
       date: sortDate,
       text: parsedName.text,
       time: parsedName.time,
