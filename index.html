@@ -1664,13 +1664,21 @@ try { storage = firebase.storage(); } catch(e) { console.warn('Firebase Storage 
   update();
 })();
 
-// Flush any debounced trips write before the tab closes / app backgrounds. Using both events
+// Flush any debounced writes before the tab closes / app backgrounds. Using both events
 // because pagehide fires reliably on iOS Safari where beforeunload often doesn't.
+// Covers trips (debounced via _saveTripsTimer) and the plan doc (meals + notes, debounced
+// via _planDebounce). Without these flushes, typing-then-closing within the debounce
+// window silently loses the user's edit.
 ['beforeunload', 'pagehide'].forEach(evt => window.addEventListener(evt, () => {
   if (typeof _saveTripsTimer !== 'undefined' && _saveTripsTimer) {
     clearTimeout(_saveTripsTimer);
     _saveTripsTimer = null;
     try { db.collection('state').doc('trips').set({items: trips}); } catch(e) {}
+  }
+  if (typeof _planDebounce !== 'undefined' && _planDebounce) {
+    clearTimeout(_planDebounce);
+    _planDebounce = null;
+    try { db.collection('state').doc('weekplan').set({plan: weekPlan}); } catch(e) {}
   }
 }));
 
@@ -1900,6 +1908,12 @@ let expenses = [];
 let recurringItems = [];
 let mood = { amanda: '', aidan: '', week: '' };
 
+// One-time migration guards. These prevent in-listener data fixups from re-running on every
+// snapshot, which would otherwise race with concurrent arrayUnion writes from the partner
+// (the full-array .set() can clobber edits queued in the same tick).
+let _migratedExpensesMonth = false;
+let _migratedTripsBackfill = false;
+
 function isActive(name) {
   return document.getElementById('page-' + name)?.classList.contains('active');
 }
@@ -1950,20 +1964,24 @@ function initFirestore() {
       ref('trips').set({items: trips});
     } else {
       trips = snap.data().items || [];
-      let changed = false;
-      // Back-fill missing sortDate from seed; strip any stale PTO fields left from the
-      // removed PTO tracker feature so they don't bloat the doc.
-      trips = trips.map(t => {
-        const seed = TRIPS_2026.find(s => s.label === t.label);
-        let updated = {...t};
-        if (!t.sortDate && seed?.sortDate) { updated.sortDate = seed.sortDate; changed = true; }
-        const ptoFields = ['aidanVacation','aidanWfh','aidanPersonal','amandaVacation','amandaWfh','amandaPersonal','aidanDays','amandaDays'];
-        for (const f of ptoFields) {
-          if (f in updated) { delete updated[f]; changed = true; }
-        }
-        return updated;
-      });
-      if (changed) ref('trips').set({items: trips});
+      // One-time backfill for sortDate from seed + PTO field stripping. Runs once per session,
+      // not per snapshot — re-running the full-array .set() on every echo would race against
+      // concurrent partner edits (e.g. a saveTripField queued in the same tick gets clobbered).
+      if (!_migratedTripsBackfill) {
+        let changed = false;
+        trips = trips.map(t => {
+          const seed = TRIPS_2026.find(s => s.label === t.label);
+          let updated = {...t};
+          if (!t.sortDate && seed?.sortDate) { updated.sortDate = seed.sortDate; changed = true; }
+          const ptoFields = ['aidanVacation','aidanWfh','aidanPersonal','amandaVacation','amandaWfh','amandaPersonal','aidanDays','amandaDays'];
+          for (const f of ptoFields) {
+            if (f in updated) { delete updated[f]; changed = true; }
+          }
+          return updated;
+        });
+        if (changed) ref('trips').set({items: trips});
+        _migratedTripsBackfill = true;
+      }
     }
     if (isActive('dates') && !_hasTypingFocus('#page-dates')) renderDates();
     // Skip trip-detail re-render right after a local save — the snapshot would otherwise
@@ -2050,16 +2068,24 @@ function initFirestore() {
       ref('expenses').set({items: expenses});
     } else {
       expenses = snap.data().items || [];
-      // Backfill missing month field
-      let changed = false;
-      expenses = expenses.map(e => {
-        if (!e.month && e.date) {
-          changed = true;
-          return {...e, month: monthName(new Date(e.date + 'T12:00:00'))};
-        }
-        return e;
-      });
-      if (changed) ref('expenses').set({items: expenses});
+      // One-time backfill for the missing-month field. Only runs once per session — re-running
+      // on every snapshot turns this into a full-array .set() that races with concurrent
+      // arrayUnion writes from the other partner. Strict date-shape check avoids writing
+      // month:undefined (which Firestore rejects, causing all subsequent saves to fail).
+      if (!_migratedExpensesMonth) {
+        let changed = false;
+        expenses = expenses.map(e => {
+          if (!e.month && typeof e.date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(e.date)) {
+            const d = new Date(e.date + 'T12:00:00');
+            if (isNaN(d)) return e;
+            changed = true;
+            return {...e, month: monthName(d)};
+          }
+          return e;
+        });
+        if (changed) ref('expenses').set({items: expenses});
+        _migratedExpensesMonth = true;
+      }
     }
     if (isActive('budget') && !_hasTypingFocus('#page-budget')) renderBudget();
     scheduleRenderHome();
@@ -2077,7 +2103,13 @@ function _hasTypingFocus(containerSelector) {
   return !!(container && container.contains(el));
 }
 
-const _onSaveErr = e => { console.error('Save failed:', e); showToast('⚠️ Save failed — check your connection'); };
+// Save failures previously showed a 3.2s toast that was easy to miss — and since local state
+// has already been mutated, the next snapshot silently reverts the edit. Hold the toast for
+// 12s and use a stronger message so the user knows their work may not have stuck.
+const _onSaveErr = e => {
+  console.error('Save failed:', e);
+  showToast('⚠️ Save failed — your last edit may not have stuck. Check your connection.', null, {duration: 12000});
+};
 
 // NOTE on concurrency: these whole-array .set() writes are last-writer-wins. If Amanda and
 // Aidan mutate the same doc within the same render cycle (~milliseconds), one user's edit can
@@ -2287,13 +2319,21 @@ function formatTimeRange(time, endTime) {
   return `${t1}-${t2}`;
 }
 
-// Reject anything other than http/https/mailto schemes — guards link `↗` from javascript:
-// and data: URIs that would otherwise execute on click.
+// Allowlist http/https only. Parses via `new URL` so that schemes obfuscated with whitespace
+// or control chars (e.g. `java\tscript:`, `java\nscript:` — which browsers normalize away
+// before navigating) can't slip past as they would past a regex on the raw string. Returns
+// the canonicalized URL on success, '' on rejection. Protocol-less inputs (e.g. `airbnb.com/x`)
+// get an implicit `https://` prefix so the resulting href doesn't resolve relative to the app.
 function _safeUrl(url) {
   if (!url) return '';
   const s = String(url).trim();
-  if (/^\s*(javascript|data|vbscript|file):/i.test(s)) return '';
-  return s;
+  if (!s) return '';
+  let parsed;
+  try {
+    parsed = /^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(s) ? new URL(s) : new URL('https://' + s);
+  } catch (e) { return ''; }
+  if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.toString();
+  return '';
 }
 
 // Render a 24h "HH:MM" as a friendly "11:30am" / "2pm" / "12pm" string.
@@ -3960,12 +4000,18 @@ function loadReviewDraft() {
       });
     }
     if (draft.heartVal) setHeart(draft.heartVal);
-    if (draft.photoCount > 0) {
+    // Only show the "re-add" banner when in-memory photos really are gone (e.g. page reloaded).
+    // If _reviewPhotos still holds the File objects, redraw the live thumbnails instead — a
+    // tab-switch shouldn't wipe what the user sees, and the banner would otherwise mislead
+    // them into uploading duplicates.
+    if (draft.photoCount > 0 && _reviewPhotos.length === 0) {
       const preview = document.getElementById('r-photo-preview');
       if (preview) {
         preview.style.display = 'block';
         preview.innerHTML = `<div style="font-size:12px;color:var(--amber-dark);margin-top:6px;padding:8px 12px;background:var(--amber-bg);border-radius:8px;border:1px solid var(--amber)">📷 You had ${draft.photoCount} photo${draft.photoCount > 1 ? 's' : ''} — re-add if needed</div>`;
       }
+    } else if (_reviewPhotos.length > 0) {
+      renderReviewPhotos();
     }
   } catch(e) {}
   // Show last week's "adjustments" as a hint if the field is still empty
@@ -5919,8 +5965,19 @@ function exportData() {
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 function escHtml(str) {
-  if (!str) return '';
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Generate a collision-resistant id. The legacy pattern `Math.random().toString(36).slice(2)`
+// produced variable-length suffixes (0–11 chars), and inside a tight loop with identical
+// Date.now() values, two short suffixes can collide. crypto.randomUUID gives 122 bits of
+// entropy; the fallback uses fixed-length slices to guarantee at least 13 chars of suffix.
+function _uid(prefix) {
+  const rnd = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+    : (Date.now().toString(36) + Math.random().toString(36).slice(2, 9).padEnd(7, '0'));
+  return prefix + rnd;
 }
 
 let _confirmCallback = null;
@@ -5979,17 +6036,20 @@ document.addEventListener('keydown', e => {
 
 let _toastTimer = null;
 let _toastUndo = null;
-function showToast(msg, undoFn) {
+function showToast(msg, undoFn, opts) {
   const t = document.getElementById('toast');
   clearTimeout(_toastTimer);
   _toastUndo = undoFn || null;
-  if (undoFn) {
-    t.innerHTML = `<span>${msg}</span><button class="toast-undo" onclick="_doUndo()">Undo</button>`;
-  } else {
-    t.innerHTML = `<span>${msg}</span>`;
-  }
+  // Build static structure with innerHTML, then set the message via textContent — several
+  // callers interpolate raw user input (trip names, dates, descriptions) into msg, and
+  // textContent prevents that from becoming HTML.
+  t.innerHTML = undoFn
+    ? `<span></span><button class="toast-undo" onclick="_doUndo()">Undo</button>`
+    : `<span></span>`;
+  t.querySelector('span').textContent = msg;
   t.classList.add('show');
-  _toastTimer = setTimeout(() => { t.classList.remove('show'); _toastUndo = null; }, undoFn ? 5000 : 3200);
+  const duration = (opts && opts.duration) || (undoFn ? 5000 : 3200);
+  _toastTimer = setTimeout(() => { t.classList.remove('show'); _toastUndo = null; }, duration);
 }
 function _doUndo() {
   clearTimeout(_toastTimer);
@@ -6995,7 +7055,7 @@ function loadRecurringForMonth(year, month) {
   for (const r of recurringItems) {
     if (_isRecurringLoaded(r, month, year)) continue;
     const amt = isFinite(overrides[r.id]) ? overrides[r.id] : r.amount;
-    added.push({ id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
+    added.push({ id:_uid('exp-'),
       date: firstDay, month, person: r.person, category: r.category,
       description: r.description, amount: amt, shared: r.shared, recurringId: r.id });
   }
@@ -7034,7 +7094,7 @@ function loadRecurring() {
   let added = 0;
   for (const r of recurringItems) {
     if (_isRecurringLoaded(r, month, year)) continue;
-    expenses.push({id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
+    expenses.push({id:_uid('exp-'),
       date:dateStr, month, person:r.person, category:r.category,
       description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id});
     added++;
@@ -7059,7 +7119,7 @@ function loadSingleRecurring(id) {
   const year  = now.getFullYear().toString();
   const dateStr = `${year}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   if (_isRecurringLoaded(r, month, year)) { showToast('Already loaded this month!'); return; }
-  const item = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2),
+  const item = {id:_uid('exp-'),
     date:dateStr, month, person:r.person, category:r.category,
     description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id};
   expenses.push(item);
@@ -7234,7 +7294,7 @@ function _executeBulkImport() {
     if (r.warnMisc) miscWarns.push(r.catRaw);
     if (r.warnAmbiguous) miscWarns.push(`${r.catRaw} (ambiguous: ${r.candidates.join(', ')})`);
     const month = monthName(new Date(r.date + 'T12:00:00'));
-    expenses.push({id: 'exp-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+    expenses.push({id: _uid('exp-'),
       date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared});
     added++;
   }
