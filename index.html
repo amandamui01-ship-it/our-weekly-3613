@@ -4654,8 +4654,16 @@ function parseICSEndDateMemo(datesStr, sortDate) {
 function _invalidateIcsEndCache() { _icsEndDateCache.clear(); }
 
 function parseICSEndDate(datesStr, sortDate) {
-  // ICS all-day DTEND is exclusive (day after last day)
-  const addOne = s => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().slice(0,10).replace(/-/g,''); };
+  // ICS all-day DTEND is exclusive (day after last day). Use Date.UTC so the
+  // toISOString().slice(0,10) result is computed in UTC and matches the server's mirror of
+  // this function (functions/index.js). Mixing `new Date(y,m,d)` (local) with
+  // toISOString() (UTC) returned the previous day for users west of UTC, causing the
+  // iPhone subscription and the web app to disagree by a day at DST boundaries.
+  const addOne = s => {
+    const [yy, mm, dd] = s.split('-').map(Number);
+    const d = new Date(Date.UTC(yy, mm - 1, dd + 1));
+    return d.toISOString().slice(0,10).replace(/-/g,'');
+  };
   if (!datesStr || !sortDate) return addOne(sortDate);
   const year = parseInt(sortDate.slice(0, 4));
   const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
@@ -4678,7 +4686,7 @@ function parseICSEndDate(datesStr, sortDate) {
       let endYear = year;
       const startMonth = parseInt(sortDate.slice(5,7)) - 1;
       if (endMonth < startMonth - 1) endYear++;
-      const d = new Date(endYear, endMonth, endDay + 1); // +1 exclusive
+      const d = new Date(Date.UTC(endYear, endMonth, endDay + 1)); // +1 exclusive
       return d.toISOString().slice(0,10).replace(/-/g,'');
     }
   }

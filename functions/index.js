@@ -43,6 +43,46 @@ function parseICSEndDate(datesStr, sortDate) {
   return addOne(sortDate);
 }
 
+// Build a floating-time DTSTART/DTEND pair for a single-day event with optional endTime.
+// Handles three problem cases the old in-place math missed:
+//   1. endTime < startTime (e.g. 23:00 → 01:00 — user wants "11pm to 1am next day"): roll
+//      the end forward one day so DTEND > DTSTART. Previously emitted an invalid VEVENT
+//      that iPhone/Google Calendar silently dropped.
+//   2. endTime == startTime: treat as zero-duration intent → fall back to +1h. Some clients
+//      drop true zero-duration events.
+//   3. Hour overflow ≥48 from a manually-set bad endTime: integer-division on minutes
+//      handles arbitrary day rollover, where the old `eH -= 24` ran once and could leave
+//      eH ≥ 24 if input was extreme.
+function _buildTimedRange(dateCompact, startTime, endTime) {
+  const [sH, sM] = startTime.split(':').map(Number);
+  const startMins = sH * 60 + sM;
+  let endMins;
+  if (endTime && /^\d{2}:\d{2}$/.test(endTime)) {
+    const [eH, eM] = endTime.split(':').map(Number);
+    const candidate = eH * 60 + eM;
+    if (candidate < startMins) endMins = candidate + 24 * 60;
+    else if (candidate === startMins) endMins = startMins + 60;
+    else endMins = candidate;
+  } else {
+    endMins = startMins + 60;
+  }
+  const startTs = `${dateCompact}T${String(sH).padStart(2,'0')}${String(sM).padStart(2,'0')}00`;
+  const daysAhead = Math.floor(endMins / (24 * 60));
+  const finalH = Math.floor((endMins % (24 * 60)) / 60);
+  const finalM = endMins % 60;
+  let endDateCompact = dateCompact;
+  if (daysAhead > 0) {
+    const d = new Date(Date.UTC(
+      parseInt(dateCompact.slice(0,4)),
+      parseInt(dateCompact.slice(4,6)) - 1,
+      parseInt(dateCompact.slice(6,8)) + daysAhead
+    ));
+    endDateCompact = d.toISOString().slice(0,10).replace(/-/g,'');
+  }
+  const endTs = `${endDateCompact}T${String(finalH).padStart(2,'0')}${String(finalM).padStart(2,'0')}00`;
+  return { startTs, endTs };
+}
+
 const escIcs = s => (s || '')
   .toString()
   .replace(/\\/g, '\\\\')
@@ -53,13 +93,21 @@ const escIcs = s => (s || '')
 // RFC 5545 §3.1: content lines longer than 75 OCTETS must be folded — split at 75 octets and
 // continue with CRLF + a single space. Apple/Google tolerate unfolded lines but stricter parsers
 // (Lotus Notes, some Linux mail clients) silently truncate. Counting code units is a good-enough
-// approximation for the ASCII property names + mostly-ASCII trip text we emit.
+// approximation for the ASCII property names + mostly-ASCII trip text we emit, with one
+// exception: a UTF-16 surrogate pair (emoji like 🎉 are two code units / 4 UTF-8 bytes) must
+// not be split across a fold — slicing inside the pair produces a lone surrogate that the
+// UTF-8 encoder turns into U+FFFD, corrupting the emoji. Back off the chunk by one when the
+// boundary would land between a high and low surrogate.
 function foldIcs(line) {
   if (line.length <= 75) return line;
   const parts = [];
   let i = 0;
   while (i < line.length) {
-    const len = i === 0 ? 75 : 74; // continuation lines lose 1 char to the leading space
+    let len = i === 0 ? 75 : 74; // continuation lines lose 1 char to the leading space
+    if (i + len < line.length) {
+      const lastCharCode = line.charCodeAt(i + len - 1);
+      if (lastCharCode >= 0xD800 && lastCharCode <= 0xDBFF) len -= 1;
+    }
     parts.push((i === 0 ? '' : ' ') + line.slice(i, i + len));
     i += len;
   }
@@ -160,24 +208,7 @@ exports.ics = onRequest(
           `DTSTAMP:${dtstamp}`,
         ];
         if (isSingleDay && t.time && /^\d{2}:\d{2}$/.test(t.time)) {
-          const [sH, sM] = t.time.split(':').map(Number);
-          const startTs = `${startCompact}T${String(sH).padStart(2,'0')}${String(sM).padStart(2,'0')}00`;
-          // Use explicit endTime when set, otherwise +1h default. Handles day rollover.
-          let eH, eM, endDateCompact = startCompact;
-          if (t.endTime && /^\d{2}:\d{2}$/.test(t.endTime)) {
-            [eH, eM] = t.endTime.split(':').map(Number);
-          } else {
-            eH = sH + 1; eM = sM;
-          }
-          if (eH >= 24) {
-            eH -= 24;
-            const d = new Date(Date.UTC(
-              parseInt(startCompact.slice(0,4)), parseInt(startCompact.slice(4,6)) - 1,
-              parseInt(startCompact.slice(6,8)) + 1
-            ));
-            endDateCompact = d.toISOString().slice(0,10).replace(/-/g,'');
-          }
-          const endTs = `${endDateCompact}T${String(eH).padStart(2,'0')}${String(eM).padStart(2,'0')}00`;
+          const { startTs, endTs } = _buildTimedRange(startCompact, t.time, t.endTime);
           eventLines.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
         } else {
           eventLines.push(
@@ -207,24 +238,7 @@ exports.ics = onRequest(
           `DTSTAMP:${dtstamp}`,
         ];
         if (e.time && /^\d{2}:\d{2}$/.test(e.time)) {
-          const [sH, sM] = e.time.split(':').map(Number);
-          const startTs = `${dateCompact}T${String(sH).padStart(2,'0')}${String(sM).padStart(2,'0')}00`;
-          // Use explicit endTime when set; otherwise +1h default. Handles day rollover.
-          let eH, eM, endDate = dateCompact;
-          if (e.endTime && /^\d{2}:\d{2}$/.test(e.endTime)) {
-            [eH, eM] = e.endTime.split(':').map(Number);
-          } else {
-            eH = sH + 1; eM = sM;
-          }
-          if (eH >= 24) {
-            eH -= 24;
-            const d = new Date(Date.UTC(
-              parseInt(dateCompact.slice(0,4)), parseInt(dateCompact.slice(4,6)) - 1,
-              parseInt(dateCompact.slice(6,8)) + 1
-            ));
-            endDate = d.toISOString().slice(0,10).replace(/-/g,'');
-          }
-          const endTs = `${endDate}T${String(eH).padStart(2,'0')}${String(eM).padStart(2,'0')}00`;
+          const { startTs, endTs } = _buildTimedRange(dateCompact, e.time, e.endTime);
           lineSet.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
         } else {
           // All-day event: DTEND is exclusive (day after)
