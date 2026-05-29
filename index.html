@@ -1185,15 +1185,15 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="step-sub">Take a few minutes to reflect on how the week went as a team.</div>
       <div class="field">
         <label>What went well this week?</label>
-        <textarea id="r-well" placeholder="Wins, good moments, things to celebrate..."></textarea>
+        <textarea id="r-well" maxlength="5000" placeholder="Wins, good moments, things to celebrate..."></textarea>
       </div>
       <div class="field">
         <label>What was stressful or hard?</label>
-        <textarea id="r-stress" placeholder="Challenges, friction, things to let go..."></textarea>
+        <textarea id="r-stress" maxlength="5000" placeholder="Challenges, friction, things to let go..."></textarea>
       </div>
       <div class="field">
         <label>Any adjustments for next week?</label>
-        <textarea id="r-adjust" placeholder="What would you do differently?"></textarea>
+        <textarea id="r-adjust" maxlength="5000" placeholder="What would you do differently?"></textarea>
         <div id="review-adjust-hint" style="display:none;margin-top:6px;padding:10px 14px;background:var(--amber-bg);border:1px solid var(--border);border-radius:9px;font-size:12px;color:var(--amber-dark);align-items:flex-start;gap:10px">
           <span style="flex:1;line-height:1.55"><strong>📌 Last week:</strong> <span id="review-adjust-hint-text"></span></span>
           <button onclick="pullLastAdjust()" style="flex-shrink:0;background:var(--amber);color:white;border:none;border-radius:7px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Use ↑</button>
@@ -1209,26 +1209,41 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="step-title">❤️ Us Check-in</div>
       <div class="step-sub">The most important part. How are we doing?</div>
       <div class="field">
-        <label>How would you rate this week? (1–5 ❤️)</label>
-        <div class="heart-rating" onmouseleave="clearHeartPreview()" style="display:flex;align-items:center;gap:8px">
-          <span class="hw" onclick="setHeartClick(event,this,1)" onmousemove="previewHeart(event,this,1)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,2)" onmousemove="previewHeart(event,this,2)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,3)" onmousemove="previewHeart(event,this,3)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,4)" onmousemove="previewHeart(event,this,4)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
-          <span class="hw" onclick="setHeartClick(event,this,5)" onmousemove="previewHeart(event,this,5)"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+        <label>How would you rate this week? (1–5 ❤️ — each pick yours; the stored rating is the average)</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="min-width:64px;font-weight:700;font-size:12px;color:var(--coral)">Amanda</span>
+            <div class="heart-rating" data-person="amanda" onmouseleave="clearHeartPreview('amanda')" style="display:flex;align-items:center;gap:8px">
+              <span class="hw" onclick="setHeartClick(event,this,1,'amanda')" onmousemove="previewHeart(event,this,1,'amanda')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,2,'amanda')" onmousemove="previewHeart(event,this,2,'amanda')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,3,'amanda')" onmousemove="previewHeart(event,this,3,'amanda')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,4,'amanda')" onmousemove="previewHeart(event,this,4,'amanda')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,5,'amanda')" onmousemove="previewHeart(event,this,5,'amanda')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="min-width:64px;font-weight:700;font-size:12px;color:var(--blue,#4a7bb0)">Aidan</span>
+            <div class="heart-rating" data-person="aidan" onmouseleave="clearHeartPreview('aidan')" style="display:flex;align-items:center;gap:8px">
+              <span class="hw" onclick="setHeartClick(event,this,1,'aidan')" onmousemove="previewHeart(event,this,1,'aidan')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,2,'aidan')" onmousemove="previewHeart(event,this,2,'aidan')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,3,'aidan')" onmousemove="previewHeart(event,this,3,'aidan')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,4,'aidan')" onmousemove="previewHeart(event,this,4,'aidan')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+              <span class="hw" onclick="setHeartClick(event,this,5,'aidan')" onmousemove="previewHeart(event,this,5,'aidan')"><span class="hbg">❤️</span><span class="hfill">❤️</span></span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="field">
         <label>Amanda → one thing you loved about Aidan this week</label>
-        <input type="text" id="r-amanda" placeholder="💛">
+        <input type="text" id="r-amanda" maxlength="300" placeholder="💛">
       </div>
       <div class="field">
         <label>Aidan → one thing you loved about Amanda this week</label>
-        <input type="text" id="r-aidan" placeholder="💛">
+        <input type="text" id="r-aidan" maxlength="300" placeholder="💛">
       </div>
       <div class="field">
         <label>Anything else to remember?</label>
-        <textarea id="r-misc" placeholder="Wild cards, funny moments, things to look back on..."></textarea>
+        <textarea id="r-misc" maxlength="5000" placeholder="Wild cards, funny moments, things to look back on..."></textarea>
       </div>
       <div class="field">
         <label>Next week's themes (pick up to 2)</label>
@@ -1254,7 +1269,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
           <div class="theme-chip" onclick="pickTheme(this)">🫶 Us First</div>
           <div class="theme-chip" onclick="pickTheme(this)">🧹 Reset & Declutter</div>
         </div>
-        <input type="text" id="r-theme" placeholder="Or type your own theme...">
+        <input type="text" id="r-theme" maxlength="200" placeholder="Or type your own theme...">
       </div>
       <div class="field">
         <label>This week's memory photos <span style="color:var(--text-3);font-weight:400">(optional, up to 4)</span></label>
@@ -1292,8 +1307,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     </div>
     <div id="add-date-form" style="margin-top:12px">
       <div class="add-trip-form" style="margin-top:0;padding-top:0;border-top:none">
-        <input type="text" id="new-trip-dates" placeholder="Dates (e.g. Jun 5–7)">
-        <input type="text" id="new-trip-name" placeholder="Trip or event name" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
+        <input type="text" id="new-trip-dates" maxlength="60" placeholder="Dates (e.g. Jun 5–7)">
+        <input type="text" id="new-trip-name" maxlength="100" placeholder="Trip or event name" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
         <button class="btn btn-primary" style="grid-column:1/-1;justify-content:center" onclick="addTrip()">+ Add Trip or Event</button>
       </div>
     </div>
@@ -1522,7 +1537,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
           <option>Pet</option><option>Savings</option><option>Shopping</option><option>Subscriptions</option>
           <option>Transportation</option><option>Travel</option><option>Utilities</option>
         </select>
-        <input id="rec-desc" class="bq-input" style="flex:2;min-width:100px" placeholder="Description">
+        <input id="rec-desc" class="bq-input" style="flex:2;min-width:100px" maxlength="200" placeholder="Description">
         <input id="rec-amt" type="number" class="bq-input" style="width:80px" placeholder="$" step="0.01">
         <label class="bq-split"><input type="checkbox" id="rec-shared"> 50/50</label>
         <button class="btn btn-primary" style="font-size:12px;padding:6px 10px" onclick="addRecurring()">+ Save</button>
@@ -1550,7 +1565,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
           <option>Savings</option><option>Shopping</option><option>Subscriptions</option>
           <option>Transportation</option><option>Travel</option><option>Utilities</option>
         </select>
-        <input class="bq-input bq-desc" id="b-desc" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
+        <input class="bq-input bq-desc" id="b-desc" maxlength="200" placeholder="Description" onkeydown="if(event.key==='Enter')document.getElementById('b-amount').focus()">
       </div>
       <div class="bqa-row2">
         <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00 (or negative for refunds)" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
@@ -1907,6 +1922,12 @@ let todoCategories = [
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let currentStep = 0;
+// Per-person heart ratings for the in-progress weekly review. Display value (for the saved
+// entry) is the average of both, so neither partner can overwrite the other's rating.
+let heartValAmanda = 0;
+let heartValAidan = 0;
+// Legacy alias — some old code paths still read heartVal. Kept in sync with whichever pick
+// was made most recently so any straggler caller doesn't show 0.
 let heartVal = 0;
 let _reviewPhotos = [];
 let todos = [];
@@ -2725,33 +2746,68 @@ function renderHeartsHtml(val) {
     return `<span class="hw"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
   }).join('');
 }
-function setHeartClick(e, el, n) {
+function setHeartClick(e, el, n, person) {
   const rect = el.getBoundingClientRect();
-  setHeart((e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n);
+  setHeart((e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n, person);
 }
-function setHeart(n) {
-  heartVal = n;
-  document.querySelectorAll('.heart-rating .hw').forEach((hw, i) => {
-    const pos = i + 1;
-    hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
-  });
+function setHeart(n, person) {
+  // Default to amanda when called without person — preserves legacy single-picker callers
+  // (e.g. loadReviewDraft restoring a saved single value).
+  if (!person) person = 'amanda';
+  if (person === 'amanda') heartValAmanda = n;
+  else heartValAidan = n;
+  heartVal = n; // legacy alias kept in sync
+  const row = document.querySelector(`.heart-rating[data-person="${person}"]`);
+  if (row) {
+    row.querySelectorAll('.hw').forEach((hw, i) => {
+      const pos = i + 1;
+      hw.querySelector('.hfill').style.width = n >= pos ? '100%' : n >= pos - 0.5 ? '50%' : '0%';
+    });
+  }
   // Persist to the review draft — neither click nor programmatic value sets fire an "input"
-  // event, so the autosave dispatcher (text-field listener at line 3306) never picks this up.
+  // event, so the autosave dispatcher never picks this up.
   _saveReviewDraft();
 }
-function previewHeart(e, el, n) {
+function previewHeart(e, el, n, person) {
   const rect = el.getBoundingClientRect();
   const val = (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n;
-  document.querySelectorAll('.heart-rating .hw').forEach((hw, i) => {
+  const row = document.querySelector(`.heart-rating[data-person="${person || 'amanda'}"]`);
+  if (!row) return;
+  row.querySelectorAll('.hw').forEach((hw, i) => {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
   });
 }
-function clearHeartPreview() {
-  document.querySelectorAll('.heart-rating .hw').forEach((hw, i) => {
+function clearHeartPreview(person) {
+  const target = person || 'amanda';
+  const stored = target === 'amanda' ? heartValAmanda : heartValAidan;
+  const row = document.querySelector(`.heart-rating[data-person="${target}"]`);
+  if (!row) return;
+  row.querySelectorAll('.hw').forEach((hw, i) => {
     const pos = i + 1;
-    hw.querySelector('.hfill').style.width = heartVal >= pos ? '100%' : heartVal >= pos - 0.5 ? '50%' : '0%';
+    hw.querySelector('.hfill').style.width = stored >= pos ? '100%' : stored >= pos - 0.5 ? '50%' : '0%';
   });
+}
+
+// Read the effective hearts rating for an entry. Averages per-person values when both are
+// set; falls back to a single per-person rating; finally to the legacy entry.hearts scalar
+// for pre-migration entries. Returns 0 when nothing is rated.
+function _entryHearts(e) {
+  if (!e) return 0;
+  const a = typeof e.heartsAmanda === 'number' ? e.heartsAmanda : null;
+  const b = typeof e.heartsAidan === 'number' ? e.heartsAidan : null;
+  if (a !== null && b !== null) return (a + b) / 2;
+  if (a !== null) return a;
+  if (b !== null) return b;
+  return typeof e.hearts === 'number' ? e.hearts : 0;
+}
+function _avgHearts(a, b) {
+  const aSet = typeof a === 'number' && a > 0;
+  const bSet = typeof b === 'number' && b > 0;
+  if (aSet && bSet) return (a + b) / 2;
+  if (aSet) return a;
+  if (bSet) return b;
+  return 0;
 }
 
 // ── Review photos ──
@@ -2816,7 +2872,7 @@ function addEditPhoto(id, file) {
   if (urls.length + inFlight >= 4) return;
   _editPhotoUploading.set(id, inFlight + 1);
   if (storage) showToast('📸 Uploading photo…');
-  uploadPhoto(file, entry.id, urls.length + inFlight, 800, 0.65).then(url => {
+  uploadPhoto(file, entry.id, urls.length + inFlight, 720, 0.55).then(url => {
     _editPhotoUploading.set(id, Math.max(0, (_editPhotoUploading.get(id) || 1) - 1));
     // Re-resolve the entry after the async upload — if partner edited the entry while we
     // were uploading, the old `entry` reference is orphaned and writes would be lost.
@@ -2912,7 +2968,12 @@ function saveEntry() {
     amanda:   get('r-amanda'),
     aidan:    get('r-aidan'),
     misc:     get('r-misc'),
-    hearts:   heartVal,
+    // Per-person ratings — display logic averages them via _entryHearts. We also write the
+    // legacy `hearts` field as the average so older code paths and any seed-aware reader
+    // still get a usable single value.
+    heartsAmanda: heartValAmanda,
+    heartsAidan:  heartValAidan,
+    hearts:       _avgHearts(heartValAmanda, heartValAidan),
   };
   const photos = _reviewPhotos.slice(); // capture before reset
   _saveEntryInFlight = true;
@@ -2933,7 +2994,8 @@ function saveEntry() {
     renderReviewPhotos();
     const rp = document.getElementById('r-photo');
     if (rp) rp.value = '';
-    setHeart(0);
+    setHeart(0, 'amanda');
+    setHeart(0, 'aidan');
     document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('on'));
     nextStep(0);
     _saveEntryInFlight = false;
@@ -2944,7 +3006,7 @@ function saveEntry() {
   };
 
   if (photos.length) {
-    Promise.all(photos.map((f, i) => uploadPhoto(f, entry.id, i, 900, 0.75).catch(() => null)))
+    Promise.all(photos.map((f, i) => uploadPhoto(f, entry.id, i, 720, 0.55).catch(() => null)))
       .then(urls => finalize(urls.filter(Boolean)));
   } else {
     finalize([]);
@@ -2967,7 +3029,7 @@ function renderTodos() {
         </div>
         <div class="todo-items">${items.length ? items.map(renderTodoItem).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">Nothing here yet!</div>'}</div>
         <div class="add-todo">
-          <input type="text" placeholder="Add item..." id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
+          <input type="text" placeholder="Add item..." maxlength="200" id="add-${cat.id}" onkeydown="if(event.key==='Enter')addTodo('${cat.id}')" oninput="this.value=this.value.replace(/^([a-z])/,c=>c.toUpperCase())">
           <button onclick="addTodo('${cat.id}')">+ Add</button>
         </div>
       </div>`;
@@ -4051,14 +4113,14 @@ function renderDates() {
   document.getElementById('logistics-list').innerHTML =
     sortedLogistics.map(l => listItemHtml(l, 'logistics', 'editListItem')).join('') + `
     <div class="add-list-row">
-      <input type="text" id="new-logistics" placeholder="Add item..." onkeydown="if(event.key==='Enter')addListItem('logistics')">
+      <input type="text" id="new-logistics" placeholder="Add item..." maxlength="200" onkeydown="if(event.key==='Enter')addListItem('logistics')">
       <button onclick="addListItem('logistics')">+ Add</button>
     </div>`;
 
   document.getElementById('bucket-list').innerHTML =
     sortedBucket.map(b => listItemHtml(b, 'bucket', 'editBucketItem')).join('') + `
     <div class="add-list-row">
-      <input type="text" id="new-bucket" placeholder="Add idea..." onkeydown="if(event.key==='Enter')addListItem('bucket')">
+      <input type="text" id="new-bucket" placeholder="Add idea..." maxlength="200" onkeydown="if(event.key==='Enter')addListItem('bucket')">
       <button onclick="addListItem('bucket')">+ Add</button>
     </div>`;
 
@@ -4145,7 +4207,12 @@ function loadReviewDraft() {
         if (picked.has(c.textContent)) c.classList.add('on');
       });
     }
-    if (draft.heartVal) setHeart(draft.heartVal);
+    // Restore per-person hearts. Fall back to the legacy single heartVal for drafts saved
+    // before the split — applied to both pickers so the visual matches what was there before.
+    if (typeof draft.heartValAmanda === 'number') setHeart(draft.heartValAmanda, 'amanda');
+    else if (draft.heartVal) setHeart(draft.heartVal, 'amanda');
+    if (typeof draft.heartValAidan === 'number') setHeart(draft.heartValAidan, 'aidan');
+    else if (draft.heartVal) setHeart(draft.heartVal, 'aidan');
     // Only show the "re-add" banner when in-memory photos really are gone (e.g. page reloaded).
     // If _reviewPhotos still holds the File objects, redraw the live thumbnails instead — a
     // tab-switch shouldn't wipe what the user sees, and the banner would otherwise mislead
@@ -4187,7 +4254,9 @@ function pullLastAdjust() {
 function _saveReviewDraft() {
   const draft = {};
   _REVIEW_DRAFT_IDS.forEach(id => { const el = document.getElementById(id); if (el) draft[id] = el.value; });
-  draft.heartVal = heartVal;
+  draft.heartValAmanda = heartValAmanda;
+  draft.heartValAidan = heartValAidan;
+  draft.heartVal = heartVal; // legacy field kept so older drafts can still round-trip
   draft.photoCount = _reviewPhotos.length;
   localStorage.setItem('ow-review-draft', JSON.stringify(draft));
 }
@@ -5189,11 +5258,11 @@ function renderTrip() {
   const headerHtml = `
     <div class="td-header ${colorCls}">
       <button class="td-delete" onclick="deleteTripFromDetail()">🗑️ Delete</button>
-      <input class="td-dates-input" id="td-dates" value="${escHtml(t.dates)}" data-original="${escHtml(t.dates)}"
+      <input class="td-dates-input" id="td-dates" maxlength="60" value="${escHtml(t.dates)}" data-original="${escHtml(t.dates)}"
         placeholder="Dates (e.g. Jun 5–7)"
         onblur="saveTripField('dates', this.value)"
         onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value=this.dataset.original||'';this.blur()}">
-      <input class="td-name-input" id="td-name" value="${escHtml(t.label)}" data-original="${escHtml(t.label)}"
+      <input class="td-name-input" id="td-name" maxlength="100" value="${escHtml(t.label)}" data-original="${escHtml(t.label)}"
         placeholder="Trip name"
         onblur="saveTripField('label', this.value)"
         onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value=this.dataset.original||'';this.blur()}">
@@ -5218,7 +5287,7 @@ function renderTrip() {
   const notesHtml = `
     <div class="card td-section">
       <div class="td-section-title">📝 Notes</div>
-      <textarea class="td-textarea" id="td-notes"
+      <textarea class="td-textarea" id="td-notes" maxlength="10000"
         placeholder="Plans, ideas, things to remember..."
         oninput="_growNotes(this)"
         onblur="saveTripField('notes', this.value)">${escHtml(t.notes || '')}</textarea>
@@ -5659,7 +5728,8 @@ function renderHistory() {
     const dateLabel = `${MONTHS_S[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
     const _src = e.well || e.stress || e.misc || '';
     const preview = _src.slice(0, 90) + (_src.length > 90 ? '...' : '');
-    const heartsHtml = e.hearts > 0 ? renderHeartsHtml(e.hearts) : '';
+    const effHearts = _entryHearts(e);
+    const heartsHtml = effHearts > 0 ? renderHeartsHtml(effHearts) : '';
 
     return `
       <div class="history-entry">
@@ -5744,19 +5814,32 @@ function editHistoryEntry(id) {
     {key:'aidan',  lbl:'Aidan ♥ Amanda',     multi:false},
     {key:'misc',   lbl:'Notes',              multi:true},
   ];
-  const v0 = entry.hearts || 0;
+  // Hearts editor in history shows BOTH partners' pickers. Legacy entries that only have
+  // entry.hearts (a single scalar) default both pickers to that value, so the first save
+  // preserves the existing display without surprising the user.
   const urls0 = getEntryPhotoUrls(entry);
-  const heartsHtml = Array.from({length:5}, (_,i) => {
+  const heartA0 = typeof entry.heartsAmanda === 'number' ? entry.heartsAmanda : (entry.hearts || 0);
+  const heartB0 = typeof entry.heartsAidan  === 'number' ? entry.heartsAidan  : (entry.hearts || 0);
+  const buildHearts = (v, person) => Array.from({length:5}, (_,i) => {
     const pos = i + 1;
-    const pct = v0 >= pos ? '100%' : v0 >= pos - 0.5 ? '50%' : '0%';
-    return `<span class="hw" onclick="setEditHeartClick(event,this,'${id}',${pos})" onmousemove="previewEditHeart(event,this,'${id}',${pos})"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
+    const pct = v >= pos ? '100%' : v >= pos - 0.5 ? '50%' : '0%';
+    return `<span class="hw" onclick="setEditHeartClick(event,this,'${id}',${pos},'${person}')" onmousemove="previewEditHeart(event,this,'${id}',${pos},'${person}')"><span class="hbg">❤️</span><span class="hfill" style="width:${pct}">❤️</span></span>`;
   }).join('');
+  const heartsHtml = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="min-width:64px;font-weight:700;font-size:11px;color:var(--coral)">Amanda</span>
+      <div data-person="amanda" style="display:flex;gap:6px" onmouseleave="clearEditHeartPreview('${id}','amanda')">${buildHearts(heartA0, 'amanda')}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="min-width:64px;font-weight:700;font-size:11px;color:var(--blue,#4a7bb0)">Aidan</span>
+      <div data-person="aidan" style="display:flex;gap:6px" onmouseleave="clearEditHeartPreview('${id}','aidan')">${buildHearts(heartB0, 'aidan')}</div>
+    </div>`;
   setTimeout(() => {
     body.innerHTML = `
       <div class="history-edit-form" id="hef-${id}">
         <div class="history-edit-field">
           <div class="history-section-lbl">How was this week?</div>
-          <div class="history-edit-hearts" style="display:flex;gap:6px;margin-top:2px" onmouseleave="clearEditHeartPreview('${id}')">${heartsHtml}</div>
+          <div class="history-edit-hearts" style="display:flex;flex-direction:column;gap:4px;margin-top:2px">${heartsHtml}</div>
         </div>
         ${fields.map(f => `
           <div class="history-edit-field">
@@ -5798,33 +5881,49 @@ function saveHistoryField(id, field, val) {
   _updateEntryById(id);
 }
 
-function setEditHeartClick(e, el, id, n) {
+function setEditHeartClick(e, el, id, n, person) {
   e.stopPropagation();
   const rect = el.getBoundingClientRect();
-  setEditHeart(id, (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n);
+  setEditHeart(id, (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n, person || 'amanda');
 }
-function previewEditHeart(e, el, id, n) {
+function previewEditHeart(e, el, id, n, person) {
   const rect = el.getBoundingClientRect();
   const val = (e.clientX - rect.left) < rect.width / 2 ? n - 0.5 : n;
-  document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
+  const row = document.querySelector(`#hef-${id} [data-person="${person || 'amanda'}"]`);
+  if (!row) return;
+  row.querySelectorAll('.hw').forEach((hw, i) => {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
   });
 }
-function clearEditHeartPreview(id) {
-  const entry = newEntries.find(e => e.id === id);
-  const val = entry ? (entry.hearts || 0) : 0;
-  document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
-    const pos = i + 1;
-    hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
-  });
-}
-function setEditHeart(id, val) {
+function clearEditHeartPreview(id, person) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
-  entry.hearts = val;
+  const target = person || 'amanda';
+  const fallback = entry.hearts || 0;
+  const val = target === 'amanda'
+    ? (typeof entry.heartsAmanda === 'number' ? entry.heartsAmanda : fallback)
+    : (typeof entry.heartsAidan  === 'number' ? entry.heartsAidan  : fallback);
+  const row = document.querySelector(`#hef-${id} [data-person="${target}"]`);
+  if (!row) return;
+  row.querySelectorAll('.hw').forEach((hw, i) => {
+    const pos = i + 1;
+    hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
+  });
+}
+function setEditHeart(id, val, person) {
+  const entry = newEntries.find(e => e.id === id);
+  if (!entry) return;
+  const target = person || 'amanda';
+  if (target === 'amanda') entry.heartsAmanda = val;
+  else entry.heartsAidan = val;
+  // Recompute the legacy `hearts` field so any code path still reading it (or any other
+  // calendar/seed consumer) sees the new average.
+  entry.hearts = _avgHearts(entry.heartsAmanda, entry.heartsAidan);
   _updateEntryById(id);
-  document.querySelectorAll(`#hef-${id} .hw`).forEach((hw, i) => {
+  const row = document.querySelector(`#hef-${id} [data-person="${target}"]`);
+  if (!row) return;
+  row.querySelectorAll('.hw').forEach((hw, i) => {
     const pos = i + 1;
     hw.querySelector('.hfill').style.width = val >= pos ? '100%' : val >= pos - 0.5 ? '50%' : '0%';
   });
@@ -5853,7 +5952,10 @@ function doneEditingHistory(id) {
         const previewEl = header.querySelector('.history-preview');
         if (previewEl) previewEl.textContent = preview || '—';
         const heartsEl = header.querySelector('.history-hearts');
-        if (heartsEl) heartsEl.innerHTML = e.hearts > 0 ? renderHeartsHtml(e.hearts) : '';
+        if (heartsEl) {
+          const eff = _entryHearts(e);
+          heartsEl.innerHTML = eff > 0 ? renderHeartsHtml(eff) : '';
+        }
         header.querySelectorAll('.history-theme').forEach(el => el.remove());
         if (e.theme) {
           const anchor = header.querySelector('.history-hearts') || header.querySelector('.history-chevron');

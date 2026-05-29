@@ -206,6 +206,29 @@ exports.ics = onRequest(
         'X-WR-CALNAME:Our Weekly',
         'X-PUBLISHED-TTL:PT2H',
         'REFRESH-INTERVAL;VALUE=DURATION:PT2H',
+        // Anchor timed events to America/Chicago (Epic / Verona-WI is Central Time) instead of
+        // emitting floating time. When Amanda's phone travels to another time zone, a 7pm
+        // Chicago reservation now shows at the equivalent local time on the device (e.g. 5am
+        // next day in Tokyo) rather than mistakenly displaying as 7pm Tokyo. The standard/
+        // daylight rules below are the US 2007+ DST schedule (DST begins 2nd Sunday in March,
+        // ends 1st Sunday in November).
+        'BEGIN:VTIMEZONE',
+        'TZID:America/Chicago',
+        'BEGIN:STANDARD',
+        'DTSTART:19701101T020000',
+        'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU',
+        'TZOFFSETFROM:-0500',
+        'TZOFFSETTO:-0600',
+        'TZNAME:CST',
+        'END:STANDARD',
+        'BEGIN:DAYLIGHT',
+        'DTSTART:19700308T020000',
+        'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU',
+        'TZOFFSETFROM:-0600',
+        'TZOFFSETTO:-0500',
+        'TZNAME:CDT',
+        'END:DAYLIGHT',
+        'END:VTIMEZONE',
       ];
 
       // ── Trip events ──
@@ -248,7 +271,8 @@ exports.ics = onRequest(
         ];
         if (isSingleDay && t.time && /^\d{2}:\d{2}$/.test(t.time)) {
           const { startTs, endTs } = _buildTimedRange(startCompact, t.time, t.endTime);
-          eventLines.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
+          // TZID-anchored times move with DST and travel correctly.
+          eventLines.push(`DTSTART;TZID=America/Chicago:${startTs}`, `DTEND;TZID=America/Chicago:${endTs}`);
         } else {
           eventLines.push(
             `DTSTART;VALUE=DATE:${startCompact}`,
@@ -278,7 +302,7 @@ exports.ics = onRequest(
         ];
         if (e.time && /^\d{2}:\d{2}$/.test(e.time)) {
           const { startTs, endTs } = _buildTimedRange(dateCompact, e.time, e.endTime);
-          lineSet.push(`DTSTART:${startTs}`, `DTEND:${endTs}`);
+          lineSet.push(`DTSTART;TZID=America/Chicago:${startTs}`, `DTEND;TZID=America/Chicago:${endTs}`);
         } else {
           // All-day event: DTEND is exclusive (day after)
           const d = new Date(Date.UTC(
