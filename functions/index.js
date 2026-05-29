@@ -7,6 +7,7 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const crypto = require('crypto');
 
 initializeApp();
 const db = getFirestore();
@@ -14,15 +15,20 @@ const db = getFirestore();
 // Mirror of the same logic in index.html — ICS DTEND for all-day events is exclusive (day AFTER
 // the last day). Keep this in sync with the client implementation.
 function parseICSEndDate(datesStr, sortDate) {
+  if (!sortDate) return '';
   const addOne = s => {
     const d = new Date(s + 'T00:00:00Z');
     d.setUTCDate(d.getUTCDate() + 1);
     return d.toISOString().slice(0, 10).replace(/-/g, '');
   };
-  if (!datesStr || !sortDate) return addOne(sortDate);
+  if (!datesStr) return addOne(sortDate);
   const year = parseInt(sortDate.slice(0, 4));
   const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)/);
+  // Range patterns: "Apr 3–6", "Oct 24 – Nov 8", "Jul 30 – Aug 2".
+  //   - (?!\d) prevents capturing a 4-digit year as the end day ("Jun-Jul 2026").
+  //   - (?!\s*(?:am|pm)\b) prevents misreading a hyphenated time as a date range
+  //     ("May 28 - 9 PM" was parsing "9" as endDay → multi-day phantom trip).
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)(?!\s*(?:am|pm)\b)/i);
   if (rangeMatch) {
     const endDay = parseInt(rangeMatch[2]);
     let endMonth;
@@ -33,6 +39,24 @@ function parseICSEndDate(datesStr, sortDate) {
       if (startMonthMatch) endMonth = months[startMonthMatch[1].toLowerCase().slice(0, 3)];
     }
     if (endMonth !== undefined && !isNaN(endDay) && endDay >= 1 && endDay <= 31) {
+      let endYear = year;
+      const startMonth = parseInt(sortDate.slice(5, 7)) - 1;
+      if (endMonth < startMonth - 1) endYear++;
+      const startDay = parseInt(sortDate.slice(8, 10));
+      // Guard against reversed inputs ("Jun 5-3" or other end-before-start typos). Same month,
+      // end day < start day → treat as single-day rather than emitting a negative-duration
+      // range that the calendar grid would silently drop.
+      if (endYear === year && endMonth === startMonth && endDay < startDay) return addOne(sortDate);
+      const d = new Date(Date.UTC(endYear, endMonth, endDay + 1));
+      return d.toISOString().slice(0, 10).replace(/-/g, '');
+    }
+  }
+  // Numeric range fallback: "4/28-5/2", "12/30-1/2" (cross-year).
+  const numericRange = datesStr.match(/(\d{1,2})\/(\d{1,2})\s*[–—\-]\s*(\d{1,2})\/(\d{1,2})/);
+  if (numericRange) {
+    const endMonth = parseInt(numericRange[3]) - 1;
+    const endDay = parseInt(numericRange[4]);
+    if (endMonth >= 0 && endMonth <= 11 && endDay >= 1 && endDay <= 31) {
       let endYear = year;
       const startMonth = parseInt(sortDate.slice(5, 7)) - 1;
       if (endMonth < startMonth - 1) endYear++;
@@ -114,11 +138,23 @@ function foldIcs(line) {
   return parts.join('\r\n');
 }
 
+// Constant-time string compare so the public-token check doesn't leak token bytes via timing.
+// (Practically infeasible to exploit against Cloud Run jitter + public internet, but the
+// crypto.timingSafeEqual primitive is cheap and removes the concern entirely.)
+function _timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  const aBuf = Buffer.from(a, 'utf8');
+  const bBuf = Buffer.from(b, 'utf8');
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
 // Cache the expected token in module scope across warm invocations so we don't pay a Firestore
-// read for every poll from every device. TTL is short — token regeneration takes effect within
-// a few minutes for any subscribed device.
+// read for every poll from every device. 30 s TTL keeps revocation latency low — when Amanda
+// regenerates the token (e.g. after a leak) the old token stops working within ~30 s on each
+// warm instance rather than the previous 5 min.
 let _tokenCache = { value: null, until: 0 };
-const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
+const TOKEN_CACHE_TTL_MS = 30 * 1000;
 async function _expectedToken() {
   const now = Date.now();
   if (_tokenCache.value !== null && now < _tokenCache.until) return _tokenCache.value;
@@ -135,12 +171,15 @@ exports.ics = onRequest(
   // the actual security boundary.
   { region: 'us-central1', cors: false, memory: '256MiB', invoker: 'public' },
   async (req, res) => {
+    // Generate a short correlation id so a 500 response and its console.error log can be
+    // matched up quickly without timestamp gymnastics.
+    const cid = Date.now().toString(36) + '-' + crypto.randomBytes(2).toString('hex');
     try {
       const expectedToken = await _expectedToken();
 
       // Token must be set in Firestore AND match the query string. No token = no access.
       const givenToken = (req.query && req.query.token) ? String(req.query.token) : '';
-      if (!expectedToken || givenToken !== expectedToken) {
+      if (!expectedToken || !_timingSafeEqual(givenToken, expectedToken)) {
         // Don't leak whether the token field exists vs. value mismatch — same response either way.
         res.set('Cache-Control', 'no-store');
         res.status(403).type('text/plain').send('Forbidden');
@@ -177,7 +216,7 @@ exports.ics = onRequest(
       // (single-day all-day), so trips with freeform dates ("tonight", "Memorial Day weekend")
       // still surface on the iPhone calendar instead of being silently filtered out.
       for (const t of trips) {
-        if (!t.sortDate) continue;
+        if (!t.sortDate || !t.id) continue; // Missing id → unstable UID, calendar clients dedupe
         const descParts = [];
         if (t.location) descParts.push(`Location: ${t.location}`);
         if (t.who) descParts.push(`Who: ${t.who}`);
@@ -229,7 +268,7 @@ exports.ics = onRequest(
       // duration. When unset, emit as a VALUE=DATE all-day event. Floating time = no TZID; the
       // calendar client interprets in the device's local time, matching how Amanda enters them.
       for (const e of events) {
-        if (!e || !e.date || !e.text) continue;
+        if (!e || !e.date || !e.text || !e.id) continue; // Missing id → unstable UID
         const dateCompact = e.date.replace(/-/g, '');
         if (!/^\d{8}$/.test(dateCompact)) continue;
         const lineSet = [
@@ -261,10 +300,14 @@ exports.ics = onRequest(
       // shared/CDN cache must not be allowed to serve it to anyone else who happens to have the
       // same URL. 15-min max-age balances freshness against iPhone's hourly poll rate.
       res.set('Cache-Control', 'private, max-age=900');
-      res.status(200).send(lines.map(foldIcs).join('\r\n'));
+      // RFC 5545 §3.4: every content line must be terminated by CRLF, including the final one.
+      // iCloud/Google/Apple tolerate the missing trailing CRLF, but Outlook (and other strict
+      // parsers) occasionally drop the last VEVENT without it.
+      res.status(200).send(lines.map(foldIcs).join('\r\n') + '\r\n');
     } catch (err) {
-      console.error('ICS feed error', err);
-      res.status(500).type('text/plain').send('Internal error');
+      console.error(`ICS feed error [cid=${cid}]`, err);
+      res.set('Cache-Control', 'no-store');
+      res.status(500).type('text/plain').send(`Internal error (ref ${cid})`);
     }
   }
 );

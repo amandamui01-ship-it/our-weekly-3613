@@ -2266,6 +2266,13 @@ function parseTimeOrRange(raw) {
     const startAm = _hhmm(sh, smm, 'am');
     if (startAm && startAm < endTime) startTime = startAm;
   }
+  // Mirror retry for "11-1am" — both sides propagate to "am", but 11:00 > 01:00. The user
+  // most likely meant "11pm to 1am" (an overnight range). Switch start to 'pm' so the
+  // downstream ICS emitter can roll the end to the next day instead of dropping the event.
+  if (startTime >= endTime && !sapRaw && (endAp || '').toLowerCase() === 'am') {
+    const startPm = _hhmm(sh, smm, 'pm');
+    if (startPm) startTime = startPm;
+  }
   return { startTime, endTime };
 }
 
@@ -2286,13 +2293,21 @@ function parseEventTextAndTime(input) {
     // 2: "text clause" at end without @ → text=$1, clause=$2
     new RegExp('^(.+?)\\s+' + CLAUSE + '\\s*$', 'i'),
   ];
+  // Common English prepositions that often appear immediately before a time clause. We strip
+  // a dangling one from the end of `text` so "Pick up Aidan at 5pm" → text="Pick up Aidan"
+  // instead of stranding "at" on the end. Whole-word match only to avoid eating part of a
+  // legitimate noun.
+  const stripDanglingPreposition = s => s.replace(/\s+(?:at|by|from|until|till|@)$/i, '').trim();
   for (let i = 0; i < patterns.length; i++) {
     const m = trimmed.match(patterns[i]);
     if (!m) continue;
-    const text = (i === 1 ? m[2] : m[1]).trim();
+    let text = (i === 1 ? m[2] : m[1]).trim();
     const clause = i === 1 ? m[1] : m[2];
     const range = parseTimeOrRange(clause);
-    if (range && text) return { text, time: range.startTime, endTime: range.endTime };
+    if (range && text) {
+      text = stripDanglingPreposition(text);
+      if (text) return { text, time: range.startTime, endTime: range.endTime };
+    }
   }
   return { text: trimmed, time: null, endTime: null };
 }
@@ -3620,12 +3635,22 @@ function editCalEvent(eventId) {
         datedEvents = datedEvents.filter(e => e.id !== eventId);
         saveDatedEvents();
       } else if (target) {
-        const parsed = parseEventTextAndTime(raw);
-        if (parsed.text) {
-          target.text = parsed.text;
-          target.time = parsed.time;
-          target.endTime = parsed.endTime || null;
+        // Time-only update path: "@5pm", "5pm", "3-4pm" with no event text → update just the
+        // time and keep the existing label. Previously this overwrote target.text with the
+        // literal "@5pm" string and nulled target.time, destroying the event content.
+        const timeOnly = parseTimeInput(raw.replace(/^@\s*/, ''));
+        if (timeOnly) {
+          target.time = timeOnly.startTime;
+          target.endTime = timeOnly.endTime;
           saveDatedEvents();
+        } else {
+          const parsed = parseEventTextAndTime(raw);
+          if (parsed.text) {
+            target.text = parsed.text;
+            target.time = parsed.time;
+            target.endTime = parsed.endTime || null;
+            saveDatedEvents();
+          }
         }
       }
     }
@@ -4513,12 +4538,20 @@ function editEvent(eventId) {
         datedEvents = datedEvents.filter(e => e.id !== eventId);
         saveDatedEvents();
       } else if (target) {
-        const parsed = parseEventTextAndTime(raw);
-        if (parsed.text) {
-          target.text = parsed.text;
-          target.time = parsed.time;
-          target.endTime = parsed.endTime || null;
+        // Time-only update path — see editCalEvent for rationale.
+        const timeOnly = parseTimeInput(raw.replace(/^@\s*/, ''));
+        if (timeOnly) {
+          target.time = timeOnly.startTime;
+          target.endTime = timeOnly.endTime;
           saveDatedEvents();
+        } else {
+          const parsed = parseEventTextAndTime(raw);
+          if (parsed.text) {
+            target.text = parsed.text;
+            target.time = parsed.time;
+            target.endTime = parsed.endTime || null;
+            saveDatedEvents();
+          }
         }
       }
     }
@@ -4667,11 +4700,11 @@ function parseICSEndDate(datesStr, sortDate) {
   if (!datesStr || !sortDate) return addOne(sortDate);
   const year = parseInt(sortDate.slice(0, 4));
   const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-  // Match end of range: "Apr 3–6", "Oct 24 – Nov 8", "Jul 30 – Aug 2". Constrain the trailing
-  // number to 1-2 digits and require it NOT be followed by more digits — otherwise a label
-  // like "Jun-Jul 2026" captures "2026" as the end-day, which yields Date(year, 6, 2027) and
-  // a multi-year trip that overlays every future day on the plan view.
-  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)/);
+  // Match end of range. Three lookaheads protect against misreads:
+  //   - (?!\d) blocks a 4-digit year being captured as the end day ("Jun-Jul 2026" → "2026").
+  //   - (?!\s*(?:am|pm)\b) blocks a hyphenated time clause from being read as a date range
+  //     ("May 28 - 9 PM" was matching "9" as endDay → phantom multi-day trip).
+  const rangeMatch = datesStr.match(/[–—\-]\s*(?:([A-Za-z]+)\s+)?(\d{1,2})(?!\d)(?!\s*(?:am|pm)\b)/i);
   if (rangeMatch) {
     const endDay = parseInt(rangeMatch[2]);
     let endMonth;
@@ -4686,7 +4719,26 @@ function parseICSEndDate(datesStr, sortDate) {
       let endYear = year;
       const startMonth = parseInt(sortDate.slice(5,7)) - 1;
       if (endMonth < startMonth - 1) endYear++;
+      const startDay = parseInt(sortDate.slice(8,10));
+      // Reversed-range guard: same month, end day < start day (e.g. "Jun 5-3" typo). Treat as
+      // single-day rather than emitting a negative-duration range that the calendar grid
+      // silently drops.
+      if (endYear === year && endMonth === startMonth && endDay < startDay) return addOne(sortDate);
       const d = new Date(Date.UTC(endYear, endMonth, endDay + 1)); // +1 exclusive
+      return d.toISOString().slice(0,10).replace(/-/g,'');
+    }
+  }
+  // Numeric-range fallback: "4/28-5/2", "12/30-1/2" (cross-year). Without this, the original
+  // [A-Za-z]+ requirement would silently downgrade these to single-day.
+  const numericRange = datesStr.match(/(\d{1,2})\/(\d{1,2})\s*[–—\-]\s*(\d{1,2})\/(\d{1,2})/);
+  if (numericRange) {
+    const endMonth = parseInt(numericRange[3]) - 1;
+    const endDay = parseInt(numericRange[4]);
+    if (endMonth >= 0 && endMonth <= 11 && endDay >= 1 && endDay <= 31) {
+      let endYear = year;
+      const startMonth = parseInt(sortDate.slice(5,7)) - 1;
+      if (endMonth < startMonth - 1) endYear++;
+      const d = new Date(Date.UTC(endYear, endMonth, endDay + 1));
       return d.toISOString().slice(0,10).replace(/-/g,'');
     }
   }
@@ -4867,11 +4919,15 @@ function parseSortDate(dateStr) {
   if (!dateStr) return null;
   const first = dateStr.replace(/[–—\-].*/, '').trim();
   const today = new Date(); today.setHours(0,0,0,0);
-  let year = today.getFullYear();
+  // If the user already typed an explicit 4-digit year, honor it — don't year-shift. The old
+  // code would happily move "Jan 5, 2026" entered in May 2026 to Jan 5 2027 because Jan 2026
+  // is more than 2 months in the past. Now: if any 4-digit year is present in the input, use
+  // it verbatim and skip the next-year retry.
+  const explicitYear = (dateStr.match(/\b(20\d{2})\b/) || [])[1];
+  let year = explicitYear ? parseInt(explicitYear) : today.getFullYear();
   let d = new Date(`${first} ${year}`);
   if (isNaN(d)) return null;
-  // If the parsed date is more than 2 months in the past, assume next year
-  if (d < new Date(today.getFullYear(), today.getMonth() - 2, 1)) {
+  if (!explicitYear && d < new Date(today.getFullYear(), today.getMonth() - 2, 1)) {
     d = new Date(`${first} ${year + 1}`);
   }
   return isNaN(d) ? null : d.toISOString().slice(0, 10);
