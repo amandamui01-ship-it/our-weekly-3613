@@ -7585,7 +7585,12 @@ function saveExpenseEdit(id) {
   }
   _cleanExpEdit();
   const e = expenses.find(x => x.id === id);
-  if (!e) return;
+  if (!e) {
+    // Expense was deleted (likely by partner) between edit-open and save. Tell the user
+    // rather than silently dropping their changes — mirrors the saveTripField handling.
+    showToast('⚠️ Expense was deleted by your partner — last edit wasn’t saved', null, {duration: 12000});
+    return;
+  }
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
