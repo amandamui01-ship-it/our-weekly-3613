@@ -1052,7 +1052,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
   <div class="home-widget" data-widget="countdowns">
     <div class="home-widget-handle" title="Drag to reorder">⠿</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch">
+    <div id="countdowns-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch">
       <div class="card" id="next-trip-card" style="text-align:center;padding:18px 14px;background:var(--amber-bg);border-color:#f0d4a8">
         <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--amber-dark);margin-bottom:4px">Next Adventure 🗺️</div>
         <div style="font-size:12px;color:var(--text-2);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="next-trip-name">—</div>
@@ -1116,8 +1116,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="card-title">Countdowns ⏳</div>
       <div id="custom-cd-list"></div>
       <div class="custom-cd-add">
-        <input type="text" id="cd-name" placeholder="Event name">
-        <input type="date" id="cd-date">
+        <input type="text" id="cd-name" placeholder="Event name" onkeydown="if(event.key==='Enter')addCustomCountdown()">
+        <input type="date" id="cd-date" onkeydown="if(event.key==='Enter')addCustomCountdown()">
         <button onclick="addCustomCountdown()">+ Add</button>
       </div>
     </div>
@@ -1626,13 +1626,23 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 // ─── SEASONAL THEME ──────────────────────────────────────────────────────────
-(function applySeason() {
+// Season-class IIFE expanded to a named function so the midnight refresh can re-evaluate
+// the month at the season boundary (Feb→Mar, May→Jun, Aug→Sep, Nov→Dec). Previously the
+// class was set once at script init and could lag a day on long-open sessions.
+function applySeason() {
   const savedBg = localStorage.getItem('ow-bg');
-  if (savedBg && savedBg !== 'default') { document.body.setAttribute('data-bg', savedBg); return; }
+  if (savedBg && savedBg !== 'default') {
+    document.body.setAttribute('data-bg', savedBg);
+    document.body.classList.remove('season-spring','season-summer','season-fall','season-winter');
+    return;
+  }
+  document.body.removeAttribute('data-bg');
   const m = new Date().getMonth();
   const s = m >= 2 && m <= 4 ? 'spring' : m >= 5 && m <= 7 ? 'summer' : m >= 8 && m <= 10 ? 'fall' : 'winter';
+  document.body.classList.remove('season-spring','season-summer','season-fall','season-winter');
   document.body.classList.add('season-' + s);
-})();
+}
+applySeason();
 
 // ─── TRIP COLOR ───────────────────────────────────────────────────────────────
 function tripColor(id) {
@@ -2430,7 +2440,7 @@ function showPage(name) {
     if (name === 'home')    renderHome();
     if (name === 'dates')   { _maybeRollPlanWeek(); renderDates(); renderPlan(); }
     if (name === 'budget')  { renderBudget(); renderRecurring(); renderBulkCatChips(); checkRecurringReminder(); }
-    if (name === 'review')  loadReviewDraft();
+    if (name === 'review')  { document.getElementById('review-date-sub').textContent = getReviewWeekLabel(); loadReviewDraft(); }
     if (name === 'trip')    renderTrip();
     // Only run the 1Hz Japan countdown ticker when the home page is mounted — saves battery
     // on mobile and avoids wasted getElementById calls on other pages.
@@ -2559,7 +2569,10 @@ function renderHome() {
   const _today = new Date(); _today.setHours(0,0,0,0);
   const _sortedTrips = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate));
 
-  const all = getAllEntries();
+  // Real entries only — seeds are old read-only memories, not actual reviews. Previously a
+  // brand-new account showed "20+ weeks ago" in coral because the seeds counted as the last
+  // entry, while the streak (also real-only) showed 0. Now both stay consistent.
+  const all = [...newEntries].sort((a,b) => b.date.localeCompare(a.date));
   const lastEl = document.getElementById('stat-last-entry');
   if (all.length > 0) {
     const d = new Date(all[0].date + 'T12:00:00');
@@ -2574,10 +2587,18 @@ function renderHome() {
     lastEl.textContent = '—';
   }
 
-  const _upcoming = _sortedTrips.filter(t => new Date(t.sortDate + 'T00:00:00') >= _today).slice(0, 5);
+  // Include trips currently in progress (started but not yet ended) so they don't vanish
+  // from "Coming Up" the moment they begin. Compare against the ICS end (exclusive) so the
+  // trip stays visible through its last day.
+  const _upcoming = _sortedTrips.filter(t => {
+    const endCompact = parseICSEndDateMemo(t.dates, t.sortDate);
+    if (!endCompact) return false;
+    const endIso = `${endCompact.slice(0,4)}-${endCompact.slice(4,6)}-${endCompact.slice(6,8)}`;
+    return new Date(endIso + 'T00:00:00') > _today;
+  }).slice(0, 5);
   document.getElementById('home-trips').innerHTML = _upcoming.length
     ? _upcoming.map(t => `
-    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+    <div onclick="openTrip('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer">
       <div style="font-size:11px;font-weight:700;color:var(--amber);min-width:90px;flex-shrink:0">${escHtml(t.dates.replace(/\b[a-z]/g, c => c.toUpperCase()))}</div>
       <div style="font-size:13px;color:var(--text);flex:1">${escHtml(t.label)}</div>
     </div>
@@ -2615,7 +2636,9 @@ function _scheduleMidnightHomeRefresh() {
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
   _midnightTimer = setTimeout(() => {
     _midnightTimer = null;
+    applySeason(); // refresh the season class so banner emoji set + bg color cross month boundaries
     if (isActive('home')) renderHome();
+    _scheduleMidnightHomeRefresh(); // re-arm for the next day
   }, tomorrow - now);
 }
 
@@ -2684,7 +2707,7 @@ function pickTheme(el) {
       const prevBg = displaced.style.background;
       displaced.style.background = 'var(--coral-bg)';
       displaced.style.color = 'var(--coral)';
-      setTimeout(() => { displaced.style.background = prevBg; displaced.style.color = ''; }, 400);
+      setTimeout(() => { displaced.style.background = prevBg; displaced.style.color = ''; displaced.style.transition = ''; }, 400);
     }
     el.classList.add('on');
   }
@@ -2780,14 +2803,21 @@ function renderEditPhotos(id) {
   if (list) list.innerHTML = editPhotoThumbsHtml(id, urls);
   if (addBtn) addBtn.style.display = urls.length >= 4 ? 'none' : '';
 }
+// Counters of in-flight photo uploads per entry id. Rapid clicks could otherwise pass the
+// >=4 guard before any of them write back, sneaking past the cap; the counter treats pending
+// uploads as already-allocated slots.
+const _editPhotoUploading = new Map();
 function addEditPhoto(id, file) {
   if (!file) return;
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
+  const inFlight = _editPhotoUploading.get(id) || 0;
   const urls = getEntryPhotoUrls(entry);
-  if (urls.length >= 4) return;
+  if (urls.length + inFlight >= 4) return;
+  _editPhotoUploading.set(id, inFlight + 1);
   if (storage) showToast('📸 Uploading photo…');
-  uploadPhoto(file, entry.id, urls.length, 800, 0.65).then(url => {
+  uploadPhoto(file, entry.id, urls.length + inFlight, 800, 0.65).then(url => {
+    _editPhotoUploading.set(id, Math.max(0, (_editPhotoUploading.get(id) || 1) - 1));
     // Re-resolve the entry after the async upload — if partner edited the entry while we
     // were uploading, the old `entry` reference is orphaned and writes would be lost.
     const fresh = newEntries.find(e => e.id === id);
@@ -2796,6 +2826,9 @@ function addEditPhoto(id, file) {
     delete fresh.photoUrl;
     _updateEntryById(id);
     renderEditPhotos(id);
+  }).catch(err => {
+    _editPhotoUploading.set(id, Math.max(0, (_editPhotoUploading.get(id) || 1) - 1));
+    _onSaveErr(err);
   });
 }
 function removeEditPhoto(event, id, idx) {
@@ -4145,6 +4178,11 @@ function _saveReviewDraft() {
 
 // ─── PLAN ────────────────────────────────────────────────────────────────────
 function _growNotes(el) {
+  // Auto-grow only applies to textareas. Calling it on a single-line <input> forces the input
+  // to its content height, which visibly shrinks/jumps as the user types. The review draft's
+  // global input handler routes through here for every _REVIEW_DRAFT_IDS field, three of
+  // which are <input type="text">.
+  if (!el || el.tagName !== 'TEXTAREA') return;
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 320) + 'px';
 }
@@ -5620,14 +5658,19 @@ function deleteEntry(id) {
   });
 }
 
+let _lastSurpriseId = null;
 function surpriseMe() {
   // Honor whatever search is currently typed — surprise from the filtered set so the user
   // doesn't lose their query just to see a random pick.
   const q = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
   const all = getAllEntries();
-  const pool = q ? all.filter(e => _historyMatches(e, q)) : all;
+  let pool = q ? all.filter(e => _historyMatches(e, q)) : all;
   if (!pool.length) return;
+  // Exclude the last pick so consecutive clicks don't silently pick the same entry — the
+  // button would look broken when the user already had it open and nothing visibly changed.
+  if (pool.length > 1 && _lastSurpriseId) pool = pool.filter(p => p.id !== _lastSurpriseId);
   const e = pool[Math.floor(Math.random() * pool.length)];
+  _lastSurpriseId = e.id;
   setTimeout(() => {
     const header = document.getElementById('hh-' + e.id);
     const body   = document.getElementById('hb-' + e.id);
@@ -6291,15 +6334,32 @@ function burstReview() {
 // ─── NEXT TRIP COUNTDOWN ─────────────────────────────────────────────────────
 function renderNextTrip() {
   const today = new Date(); today.setHours(0,0,0,0);
+  // Include trips currently in progress (end > today) so an active multi-day trip stays in
+  // the Next Adventure card through its last day instead of vanishing the moment it begins.
   const next = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate))
-    .find(t => !t.label.includes('JAPAN') && new Date(t.sortDate + 'T00:00:00') >= today);
+    .find(t => {
+      if (t.label.includes('JAPAN')) return false;
+      const endCompact = parseICSEndDateMemo(t.dates, t.sortDate);
+      if (!endCompact) return false;
+      const endIso = `${endCompact.slice(0,4)}-${endCompact.slice(4,6)}-${endCompact.slice(6,8)}`;
+      return new Date(endIso + 'T00:00:00') > today;
+    });
   const card = document.getElementById('next-trip-card');
-  if (!next) { card.style.display = 'none'; return; }
+  const grid = document.getElementById('countdowns-grid');
+  if (!next) {
+    card.style.display = 'none';
+    // Collapse the grid to a single column so the Anniversary card doesn't sit in column 2
+    // with an empty column 1 gap to its left.
+    if (grid) grid.style.gridTemplateColumns = '1fr';
+    return;
+  }
   card.style.display = '';
+  if (grid) grid.style.gridTemplateColumns = '1fr 1fr';
   document.getElementById('next-trip-name').textContent = `${next.dates.replace(/\b[a-z]/g, c => c.toUpperCase())} — ${next.label}`;
   const days = _daysBetween(today, new Date(next.sortDate + 'T00:00:00'));
-  document.getElementById('next-trip-days').textContent = days || 'Today!';
-  document.getElementById('next-trip-label').style.visibility = days ? '' : 'hidden';
+  // Negative days = trip is in progress; show "happening now" instead of a negative count.
+  document.getElementById('next-trip-days').textContent = days > 0 ? days : days === 0 ? 'Today!' : 'Now!';
+  document.getElementById('next-trip-label').style.visibility = (days > 0) ? '' : 'hidden';
 }
 
 // ─── CUSTOM COUNTDOWNS ───────────────────────────────────────────────────────
@@ -6348,16 +6408,27 @@ function addCustomCountdown() {
   _commitCountdown(name, date);
 }
 function _commitCountdown(name, date) {
-  const item = {id: 'cd-' + Date.now() + '-' + Math.random().toString(36).slice(2,6), name, date};
+  const item = {id: _uid('cd-'), name, date};
   customCountdowns.push(item);
-  saveCustomCountdowns();
+  // arrayUnion (vs. saveCustomCountdowns' full-array .set) so a concurrent partner delete
+  // doesn't clobber this add by writing back the old array.
+  db.collection('state').doc('countdowns').update({
+    items: firebase.firestore.FieldValue.arrayUnion(item)
+  }).catch(() => saveCustomCountdowns()); // doc-missing fallback
   document.getElementById('cd-name').value = '';
   document.getElementById('cd-date').value = '';
   renderCustomCountdowns();
 }
 function deleteCustomCountdown(id) {
+  const removed = customCountdowns.find(c => c.id === id);
   customCountdowns = customCountdowns.filter(c => c.id !== id);
-  saveCustomCountdowns();
+  if (removed) {
+    db.collection('state').doc('countdowns').update({
+      items: firebase.firestore.FieldValue.arrayRemove(removed)
+    }).catch(() => saveCustomCountdowns());
+  } else {
+    saveCustomCountdowns();
+  }
   renderCustomCountdowns();
 }
 
@@ -6524,9 +6595,10 @@ function startJapanTicker() {
 function stopJapanTicker() {
   if (_japanInterval) { clearInterval(_japanInterval); _japanInterval = null; }
 }
-// Home is the default page, so start the ticker on initial load. showPage handles subsequent
-// navigation between pages.
-startJapanTicker();
+// Start the ticker only if the home page is actually active at load time — every other page
+// would otherwise tick a 1Hz interval that does nothing useful (and burns a bit of battery
+// on mobile). showPage handles subsequent navigation between pages.
+if (isActive('home')) startJapanTicker();
 
 // ─── BUDGET ──────────────────────────────────────────────────────────────────
 
