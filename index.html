@@ -7270,20 +7270,24 @@ function renderBudget() {
     const d = new Date(); d.setDate(1);
     d.setMonth(d.getMonth() - 1); // anchor to last completed month
     for (let i = 0; i < n; i++) {
-      periods.push({ year: d.getFullYear().toString(), month: monthName(d) });
+      periods.push({ year: d.getFullYear().toString(), month: monthName(d),
+        ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` });
       d.setMonth(d.getMonth() - 1);
     }
     return periods;
   };
+  // Match periods/months on the authoritative YYYY-MM date prefix, NOT the redundant `month` name
+  // string (which can drift from the date and silently drop transactions from these views).
+  const filterYm = `${filterYear}-${String(MONTHS_LIST.indexOf(filterMonth) + 1).padStart(2, '0')}`;
   // 'all', '3m', '6m' are rolling/aggregate views — they ignore the year filter so "All" is always
   // a superset of "6M" (which can cross year boundaries). The year filter only narrows monthly pills.
   const monthTx = _budgetMonth === 'all'
     ? expenses.slice()
     : _budgetMonth === 'year'
-      ? expenses.filter(e => e.date.startsWith(filterYear))
+      ? expenses.filter(e => typeof e.date === 'string' && e.date.startsWith(filterYear))
       : _budgetMonth === '3m' || _budgetMonth === '6m'
-        ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => ps.some(p => e.date.startsWith(p.year) && e.month === p.month)); })()
-        : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
+        ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => typeof e.date === 'string' && ps.some(p => e.date.slice(0,7) === p.ym)); })()
+        : expenses.filter(e => typeof e.date === 'string' && e.date.slice(0,7) === filterYm);
   const searchQ = (document.getElementById('b-search')?.value || '').toLowerCase();
   const catFilterEl = document.getElementById('b-filter-cat');
   const prevCatSel = catFilterEl?.value || '';
@@ -7293,8 +7297,14 @@ function renderBudget() {
       availCats.map(c => `<option${c===prevCatSel?' selected':''}>${c}</option>`).join('');
   }
   const filterCat = catFilterEl?.value || '';
+  // When a single person is selected, count their SHARE: shared (50/50) expenses count half
+  // (whoever logged them), their own solo expenses count full, the partner's solo expenses don't
+  // count. This matches the per-person category breakdown so the tiles can't disagree with it.
+  // 'Both' ('') and '50-50 only' ('shared') use full amounts as before.
+  const personSel = (filterPerson === 'Amanda' || filterPerson === 'Aidan') ? filterPerson : null;
+  const shareAmt = e => personSel ? (e.shared ? e.amount / 2 : (e.person === personSel ? e.amount : 0)) : e.amount;
   const filtered = monthTx
-    .filter(e => filterPerson === 'shared' ? e.shared : filterPerson ? e.person === filterPerson : true)
+    .filter(e => filterPerson === 'shared' ? e.shared : personSel ? (e.shared || e.person === personSel) : true)
     .filter(e => filterCat ? e.category === filterCat : true)
     .filter(e => {
       if (!searchQ) return true;
@@ -7313,7 +7323,7 @@ function renderBudget() {
   if (totalEl) {
     const isFiltered = searchQ || filterCat || filterPerson;
     if (isFiltered && filtered.length) {
-      const total = filtered.reduce((s, e) => s + e.amount, 0);
+      const total = filtered.reduce((s, e) => s + shareAmt(e), 0);
       totalEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} · $${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
     } else {
       totalEl.textContent = '';
@@ -7325,9 +7335,9 @@ function renderBudget() {
   // because it's an inherently Amanda-vs-Aidan number that the filters can't meaningfully shrink.
   const hasNonPeriodFilter = !!(searchQ || filterCat || filterPerson);
   const snapSrc = hasNonPeriodFilter ? filtered : monthTx;
-  const income    = snapSrc.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
-  const spending  = snapSrc.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
-  const saved     = snapSrc.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
+  const income    = snapSrc.reduce((s,e)=> e.category==='Income' ? s+shareAmt(e) : s, 0);
+  const spending  = snapSrc.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+shareAmt(e) : s, 0);
+  const saved     = snapSrc.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+shareAmt(e) : s, 0);
   // Net = what's left (or short) after everyday spending. Set Aside is NOT subtracted — money
   // moved to savings/investments is still yours, so a negative Net means true overspending, not
   // saving. Sign is shown explicitly because fmt() strips it via Math.abs.
@@ -7360,7 +7370,7 @@ function renderBudget() {
     if (settleYm) settleClick = `onclick="toggleMonthSettled('${settleYm}', ${settleAmt})" style="cursor:pointer"`;
   }
   const filterHint = hasNonPeriodFilter
-    ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">filters active · Settlement is full period</div>`
+    ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">${personSel ? `${personSel}'s share · shared split 50/50 · ` : ''}filters active · Settlement is full period</div>`
     : '';
   document.getElementById('budget-snapshot').innerHTML = filterHint + `
     <div class="bsnap" tabindex="0" data-tip="Money in — transactions categorized Income this period."><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
@@ -7423,7 +7433,7 @@ function renderBudget() {
   const catTotals = {}, catAidan = {}, catAmanda = {};
   for (const e of catSrc) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
-    catTotals[e.category] = (catTotals[e.category]||0) + e.amount;
+    catTotals[e.category] = (catTotals[e.category]||0) + shareAmt(e);
     catAidan[e.category]  = (catAidan[e.category]||0)  + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0);
     catAmanda[e.category] = (catAmanda[e.category]||0) + (e.shared ? e.amount/2 : e.person==='Amanda' ? e.amount : 0);
   }
@@ -7438,7 +7448,9 @@ function renderBudget() {
     : 1;
   const bannerEl = document.getElementById('budget-overbudget-banner');
   if (bannerEl) {
-    const over = catSorted
+    // Targets are household totals; a single-person view shows only that person's SHARE, so
+    // comparing it to the full target would be misleading — skip the banner when person-filtered.
+    const over = personSel ? [] : catSorted
       .map(([c,t]) => [c, t, (budgetTargets[c]||0) * targetMultiplier])
       .filter(([,t,target]) => target > 0 && t > target);
     bannerEl.innerHTML = over.length
@@ -7779,10 +7791,11 @@ function _isRecurringLoaded(r, month, year, yearMonthPrefix) {
     ? e.date.startsWith(yearMonthPrefix)
     : (e.month === month && e.date && e.date.startsWith(String(year)));
 
-  // Income: any income entry >= the threshold this month counts it as logged, regardless of
-  // person/description (paychecks vary too much to match precisely).
+  // Income: a sizable income entry (>= threshold) BY THE SAME PERSON counts this income template
+  // as logged — paycheck amount/description vary too much to match, but scoping to the person
+  // means one partner's paycheck can't mark the other's income template loaded.
   if (r.category === 'Income') {
-    return expenses.some(e => inMonth(e) && e.category === 'Income' && (e.amount || 0) >= INCOME_LOADED_MIN);
+    return expenses.some(e => inMonth(e) && e.category === 'Income' && e.person === r.person && (e.amount || 0) >= INCOME_LOADED_MIN);
   }
 
   const norm = s => (s || '').trim().toLowerCase();
