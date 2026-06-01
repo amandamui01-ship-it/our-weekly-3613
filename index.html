@@ -998,7 +998,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div class="nav-tab" onclick="showPage('budget')"><span class="nav-emoji">💰 </span>Budget</div>
   <div class="nav-tab" onclick="showPage('history')"><span class="nav-emoji">📖 </span>History</div>
   <div class="nav-dark-controls" style="display:flex;align-items:center;gap:5px;margin-left:auto;flex-shrink:0;padding:0 8px">
-    <span id="settings-btn" onclick="showPage('settings')" title="Settings" style="font-size:16px;cursor:pointer;margin-right:6px;line-height:1" role="button" aria-label="Settings">⚙️</span>
     <span class="theme-icon">&#9728;</span>
     <button class="dark-toggle" id="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
     <span class="theme-icon">&#9790;</span>
@@ -1015,7 +1014,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     <div class="menu-item" onclick="showPage('dates')">📅 Calendar</div>
     <div class="menu-item" onclick="showPage('budget')">💰 Budget</div>
     <div class="menu-item" onclick="showPage('history')">📖 History</div>
-    <div class="menu-item" onclick="showPage('settings')">⚙️ Settings</div>
     <div class="menu-divider"></div>
     <div class="menu-item menu-util" id="menu-dark-item" onclick="toggleDarkMode()">🌙 Dark mode</div>
     <div class="menu-item menu-util" onclick="auth.signOut()">↩ Sign out</div>
@@ -1441,8 +1439,13 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
 <!-- ── BUDGET ── -->
 <div class="page" id="page-budget">
-  <div class="page-title">Budget</div>
-  <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+    <div>
+      <div class="page-title">Budget</div>
+      <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
+    </div>
+    <button id="budget-settings-btn" onclick="openBudgetSettings()" title="Budget settings" aria-label="Budget settings" style="background:none;border:1px solid var(--border);border-radius:10px;font-size:18px;cursor:pointer;padding:7px 11px;line-height:1;color:var(--text-2);flex-shrink:0;margin-top:2px">⚙️</button>
+  </div>
 
   <!-- Period picker -->
   <div class="budget-period-row">
@@ -1555,14 +1558,17 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 </div>
 
-<div class="page" id="page-settings">
-  <div class="page-title">⚙️ Settings</div>
-  <div class="page-sub">Manage the things you set once and rarely touch. ⚙️</div>
+<!-- Budget settings popup (opened from the gear on the Budget tab) -->
+<div id="budget-settings-overlay" role="dialog" aria-modal="true" aria-labelledby="bset-title" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeBudgetSettings()">
+  <div style="background:var(--surface);border-radius:16px;padding:24px;max-width:560px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22);max-height:90vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div id="bset-title" style="font-family:'Playfair Display',Georgia,serif;font-size:22px;font-weight:800;color:var(--amber)">⚙️ Budget Settings</div>
+      <button onclick="closeBudgetSettings()" title="Close" style="background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:var(--text-3);padding:0 4px;font-family:inherit">×</button>
+    </div>
 
-  <!-- Recurring expense templates -->
-  <div class="card" style="margin-bottom:16px">
+    <!-- Recurring expense templates -->
     <div class="card-title" style="text-align:left;margin-bottom:6px">🔁 Recurring Expenses</div>
-    <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5">Monthly bill templates. Add, edit, or remove them here — then add them to a month from the Budget tab's reminder, or with "Load This Month" below.</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5">Monthly bill templates. Add, edit, or remove them here — then add them to a month with "Load This Month" below, or from the Budget tab's reminder.</div>
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button id="rec-load-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurring()">Load This Month</button>
     </div>
@@ -2253,7 +2259,7 @@ function initFirestore() {
     } else {
       recurringItems = snap.data().items || [];
     }
-    if (isActive('settings') && !_hasTypingFocus('#page-settings')) renderRecurring();
+    if (_isBudgetSettingsOpen() && !_hasTypingFocus('#budget-settings-overlay')) renderRecurring();
     if (isActive('budget')) checkRecurringReminder();
   });
 
@@ -2647,7 +2653,6 @@ function showPage(name) {
     if (name === 'dates')   { _maybeRollPlanWeek(); _applyPendingWeekplanIfReady(); renderDates(); renderPlan(); }
     else if (_pendingWeekplanData) _applyPendingWeekplanIfReady(); // leaving Dates → flush stash so partner edits aren't lost forever
     if (name === 'budget')  { renderBudget(); renderBulkCatChips(); checkRecurringReminder(); }
-    if (name === 'settings') renderRecurring();
     if (name === 'review')  { document.getElementById('review-date-sub').textContent = getReviewWeekLabel(); loadReviewDraft(); }
     if (name === 'trip')    renderTrip();
     // Only run the 1Hz Japan countdown ticker when the home page is mounted — saves battery
@@ -2662,7 +2667,7 @@ function showPage(name) {
     }));
     const map = {home:-1, review:0, todos:1, dates:2, budget:3, history:4};
     if (map[name] >= 0) document.querySelectorAll('.nav-tab')[map[name]].classList.add('active');
-    const menuMap = {home:0, review:1, todos:2, dates:3, budget:4, history:5, settings:6};
+    const menuMap = {home:0, review:1, todos:2, dates:3, budget:4, history:5};
     document.querySelectorAll('#nav-menu .menu-item').forEach(i => i.classList.remove('active'));
     if (menuMap[name] !== undefined) document.querySelectorAll('#nav-menu .menu-item')[menuMap[name]]?.classList.add('active');
     closeNavMenu();
@@ -7664,6 +7669,25 @@ function _isRecurringLoaded(r, month, year, yearMonthPrefix) {
       && Math.abs((e.amount || 0) - (r.amount || 0)) < 1;
   });
 }
+function _isBudgetSettingsOpen() {
+  const o = document.getElementById('budget-settings-overlay');
+  return !!o && o.style.display !== 'none' && o.style.display !== '';
+}
+function openBudgetSettings() {
+  const o = document.getElementById('budget-settings-overlay');
+  if (!o) return;
+  o.style.display = 'flex';
+  renderRecurring();
+}
+function closeBudgetSettings() {
+  const o = document.getElementById('budget-settings-overlay');
+  if (o) o.style.display = 'none';
+}
+// Close the popup on Escape, matching the app's other modals' dismiss-on-backdrop behavior.
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && _isBudgetSettingsOpen()) closeBudgetSettings();
+});
+
 function renderRecurring() {
   const fmt = n => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const el = document.getElementById('recurring-list');
