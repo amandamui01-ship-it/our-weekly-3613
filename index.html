@@ -7234,7 +7234,13 @@ function renderBudget() {
 
   // Always include the current month as a pill when viewing the current year so users can add new data
   const thisMon = filterYear === curYear ? monthName(new Date()) : null;
-  const available = [...new Set([...expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month), ...(thisMon ? [thisMon] : [])])];
+  // Derive available months from the authoritative DATE prefix (not the drift-prone `month` name)
+  // so the pills line up exactly with the date-prefix month filter used by monthTx.
+  const available = [...new Set([
+    ...expenses.filter(e => typeof e.date === 'string' && e.date.startsWith(filterYear))
+      .map(e => MONTHS_LIST[parseInt(e.date.slice(5, 7), 10) - 1]).filter(Boolean),
+    ...(thisMon ? [thisMon] : [])
+  ])];
   const rangeViews = ['all', 'year', '3m', '6m'];
   // Keep the selection coherent: if the selected year has NO data at all, fall back to the Year
   // view (avoids a "phantom" month selected with no matching pill); otherwise, if the chosen
@@ -7391,16 +7397,17 @@ function renderBudget() {
   // for 3M/6M/All (which can cross year boundaries), use monthTx so the bars correspond to the
   // data feeding the snapshot above.
   // Respect the active person/category/search filters (and per-person share) so the bars match the
-  // filtered snapshot/breakdown instead of always showing combined totals.
-  const trendSrc = (rangeViews.includes(_budgetMonth)
+  // filtered snapshot/breakdown. But the month AXIS is the full period (unfiltered) so a filter
+  // that matches few months doesn't collapse the chart — empty-after-filter months render at zero.
+  const trendBase = (rangeViews.includes(_budgetMonth)
     ? monthTx
-    : expenses.filter(e => typeof e.date === 'string' && e.date.startsWith(filterYear))
-  ).filter(matchesFilters);
+    : expenses.filter(e => typeof e.date === 'string' && e.date.startsWith(filterYear)));
   const monthlySpend = {}; // key: YYYY-MM
-  for (const e of trendSrc) {
-    if (EXPENSE_CATS_EXCL.has(e.category)) continue;
+  for (const e of trendBase) {
+    if (typeof e.date !== 'string') continue;
     const ym = e.date.slice(0, 7);
-    monthlySpend[ym] = (monthlySpend[ym]||0) + shareAmt(e);
+    if (!(ym in monthlySpend)) monthlySpend[ym] = 0; // seed every period month so the axis is stable
+    if (!EXPENSE_CATS_EXCL.has(e.category) && matchesFilters(e)) monthlySpend[ym] += shareAmt(e);
   }
   const ymKeys = Object.keys(monthlySpend).sort();
   const maxSpend = Math.max(...Object.values(monthlySpend), 1);
@@ -7454,15 +7461,17 @@ function renderBudget() {
   // target should compare against $1800 of spending, not $300).
   const targetMultiplier = _budgetMonth === '3m' ? 3
     : _budgetMonth === '6m' ? 6
-    : (_budgetMonth === 'all' || _budgetMonth === 'year') ? (new Set(monthTx.map(e => e.date.slice(0, 7))).size || 1)
+    : (_budgetMonth === 'all' || _budgetMonth === 'year') ? (new Set(monthTx.filter(e => typeof e.date === 'string').map(e => e.date.slice(0, 7))).size || 1)
     : 1;
+  // Only compare against targets when the totals reflect full household spending for the period:
+  // a person filter shows one person's share, and a search filter drops rows within a category —
+  // both would make a full-period target comparison misleading. A category-only filter is fine.
+  const showTargets = !personSel && !searchQ;
   const bannerEl = document.getElementById('budget-overbudget-banner');
   if (bannerEl) {
-    // Targets are household totals; a single-person view shows only that person's SHARE, so
-    // comparing it to the full target would be misleading — skip the banner when person-filtered.
-    const over = personSel ? [] : catSorted
+    const over = showTargets ? catSorted
       .map(([c,t]) => [c, t, (budgetTargets[c]||0) * targetMultiplier])
-      .filter(([,t,target]) => target > 0 && t > target);
+      .filter(([,t,target]) => target > 0 && t > target) : [];
     bannerEl.innerHTML = over.length
       ? `<div style="padding:10px 16px;background:var(--coral-bg);border:1px solid var(--coral);border-radius:10px;font-size:12px;color:var(--coral);font-weight:600">⚠️ Over budget: ${over.map(([c,t,target])=>`${CAT_EMOJIS[c]||'📦'} ${c} <span style="font-weight:400">(+${fmt(t-target)})</span>`).join(' &nbsp;·&nbsp; ')}</div>`
       : '';
@@ -7472,7 +7481,7 @@ function renderBudget() {
     const amandaAmt = catAmanda[cat] || 0;
     const color = CAT_COLORS[cat] || 'var(--amber)';
     const emoji = CAT_EMOJIS[cat] || '📦';
-    const target = (budgetTargets[cat] || 0) * targetMultiplier;
+    const target = showTargets ? (budgetTargets[cat] || 0) * targetMultiplier : 0;
     const barPct = target > 0 ? Math.min(100, Math.round(total/target*100)) : Math.round(total/maxCat*100);
     const barColor = target > 0 && total > target ? 'var(--coral)' : color;
     const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : '';
@@ -7959,7 +7968,8 @@ function renderRecurring() {
   if (loadBtn && recurringItems.length) {
     const month = document.getElementById('rec-load-month')?.value || monthName(new Date());
     const year  = document.getElementById('rec-load-year')?.value || new Date().getFullYear().toString();
-    const allLoaded = recurringItems.every(r => _isRecurringLoaded(r, month, year));
+    const ymP = `${year}-${String(MONTHS_LIST.indexOf(month) + 1).padStart(2, '0')}`;
+    const allLoaded = recurringItems.every(r => _isRecurringLoaded(r, month, year, ymP));
     loadBtn.textContent  = allLoaded ? `✓ ${month} loaded` : `Load ${month}`;
     loadBtn.disabled     = allLoaded;
     loadBtn.style.background  = allLoaded ? 'var(--sage)' : '';
@@ -7973,8 +7983,9 @@ function renderRecurring() {
   // whole panel is consistent with the Load button — not hardcoded to the current month.
   const month = document.getElementById('rec-load-month')?.value || monthName(new Date());
   const year  = document.getElementById('rec-load-year')?.value || new Date().getFullYear().toString();
+  const ymP = `${year}-${String(MONTHS_LIST.indexOf(month) + 1).padStart(2, '0')}`;
   el.innerHTML = recurringItems.map(r => {
-    const loaded = _isRecurringLoaded(r, month, year);
+    const loaded = _isRecurringLoaded(r, month, year, ymP);
     return `
     <div class="recurring-item" id="rec-item-${r.id}" onclick="editRecurring('${r.id}')" style="cursor:pointer">
       <span class="rec-person-badge ${r.person}">${r.person==='Aidan'?'AF':'AM'}</span>
@@ -8070,8 +8081,8 @@ function checkRecurringReminder() {
 
   const missing = toCheck.filter(({ year, month, ym }) =>
     !_dismissedRecurring.has(`${month}-${year}`) &&
-    !recurringItems.every(r => _isRecurringLoaded(r, month, year)) &&
-    expenses.some(e => e.date && e.date.startsWith(ym))
+    !recurringItems.every(r => _isRecurringLoaded(r, month, year, ym)) &&
+    expenses.some(e => typeof e.date === 'string' && e.date.startsWith(ym))
   );
   // Show on any specific-month view (not range views like 6M/All, where stacked banners clutter).
   // When shown, list every still-missing completed month so each can be loaded independently.
@@ -8079,13 +8090,13 @@ function checkRecurringReminder() {
   const visible = rangeViews.includes(_budgetMonth) ? [] : missing;
   if (!visible.length) { el.style.display = 'none'; return; }
   el.style.display = '';
-  el.innerHTML = visible.map(({ year, month }) => {
+  el.innerHTML = visible.map(({ year, month, ym }) => {
     const key = `${month}-${year}`;
     const minimized = _minimizedRecurring.has(key);
     // The big-ticket categories worth calling out explicitly so they never slip through.
     const KEY_CATS = ['Income', 'Housing'];
     const missingKeyCats = KEY_CATS.filter(cat =>
-      recurringItems.some(r => r.category === cat && !_isRecurringLoaded(r, month, year))
+      recurringItems.some(r => r.category === cat && !_isRecurringLoaded(r, month, year, ym))
     );
     return `
     <div class="card" style="border-color:var(--amber);background:var(--amber-bg);margin-bottom:8px">
@@ -8101,7 +8112,7 @@ function checkRecurringReminder() {
       </div>
       <div id="rec-reminder-form-${key}" style="${minimized?'display:none':''}">
         ${recurringItems.map(r => {
-          const loaded = _isRecurringLoaded(r, month, year);
+          const loaded = _isRecurringLoaded(r, month, year, ym);
           const isKey = KEY_CATS.includes(r.category);
           return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light)">
             <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;${r.person==='Amanda'?'background:var(--coral-bg);color:var(--coral)':'background:var(--blue-bg);color:var(--blue)'}">${r.person}</span>
