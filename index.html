@@ -7223,9 +7223,10 @@ function renderBudget() {
   const income    = snapSrc.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
   const spending  = snapSrc.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
   const saved     = snapSrc.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
-  // Net = what's left (or short) after spending and setting money aside. Sign is shown explicitly
-  // because fmt() strips it via Math.abs.
-  const net       = income - spending - saved;
+  // Net = what's left (or short) after everyday spending. Set Aside is NOT subtracted — money
+  // moved to savings/investments is still yours, so a negative Net means true overspending, not
+  // saving. Sign is shown explicitly because fmt() strips it via Math.abs.
+  const net       = income - spending;
   const netStr    = (net < -0.005 ? '−' : '') + fmt(net);
   const netColor  = net < -0.005 ? 'var(--coral)' : 'var(--sage)';
   const owes = calcOwes(monthTx);
@@ -7241,8 +7242,8 @@ function renderBudget() {
   document.getElementById('budget-snapshot').innerHTML = filterHint + `
     <div class="bsnap" tabindex="0" data-tip="Money in — transactions categorized Income this period."><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
     <div class="bsnap" tabindex="0" data-tip="Everyday expenses — everything except Income, Savings and Investments."><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Income − Spent. What's left over, or short, this period. Money set aside still counts as yours."><div class="bsnap-label">Net</div><div class="bsnap-val" style="color:${netColor}">${netStr}</div></div>
     <div class="bsnap" tabindex="0" data-tip="Money you moved into Savings or Investments — not leftover cash."><div class="bsnap-label">Set Aside</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
-    <div class="bsnap" tabindex="0" data-tip="Income − Spent − Set Aside. What's left over, or short, this period."><div class="bsnap-label">Net</div><div class="bsnap-val" style="color:${netColor}">${netStr}</div></div>
     <div class="bsnap" tabindex="0" data-tip="Who owes who, after splitting shared expenses. Always the full period, ignores filters."><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleAmt<0.01?'14':'18'}px">${settleStr}</div></div>`;
 
   // Monthly trend bars — keyed by YYYY-MM so the same calendar month in different years doesn't
