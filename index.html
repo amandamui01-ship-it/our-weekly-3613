@@ -2094,10 +2094,11 @@ function teardownFirestore() {
   }
   // User-private localStorage caches — on a shared device (one phone), the next account's
   // form would otherwise pre-fill with the previous account's draft, dismissed-overlap list,
-  // recurring-reminder dismissals, etc. Device-scoped prefs (theme, accent, widget order)
-  // are deliberately preserved.
+  // etc. Device-scoped prefs (theme, accent, widget order) are deliberately preserved — and so
+  // are recurring-reminder dismissals/minimizes (ow-rec-*), so signing out and back in on your
+  // own device doesn't resurface reminders you already dismissed.
   ['ow-review-draft', 'ow-bulk-person', 'ow-bq-person', 'ow-bq-cat',
-   'ow-dismissed-overlaps', 'ow-rec-dismissed', 'ow-rec-minimized'].forEach(k => {
+   'ow-dismissed-overlaps'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
   // DOM cleanup for the review-photo preview — the in-memory File array was already cleared
