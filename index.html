@@ -1444,12 +1444,10 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
 <!-- ── BUDGET ── -->
 <div class="page" id="page-budget">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-    <div>
-      <div class="page-title">Budget</div>
-      <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
-    </div>
-    <button id="budget-settings-btn" class="budget-settings-btn" onclick="openBudgetSettings()" title="Budget settings" aria-label="Budget settings"><span class="gear">⚙️</span> Settings</button>
+  <div style="position:relative">
+    <div class="page-title">Budget</div>
+    <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
+    <button id="budget-settings-btn" class="budget-settings-btn" onclick="openBudgetSettings()" title="Budget settings" aria-label="Budget settings" style="position:absolute;top:0;right:0"><span class="gear">⚙️</span> Settings</button>
   </div>
 
   <!-- Period picker -->
