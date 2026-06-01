@@ -7490,8 +7490,8 @@ function renderBudget() {
       <div class="budget-cat-bars">
         <div class="budget-cat-bar-wrap"><div class="budget-cat-bar" style="width:${barPct}%;background:${barColor}"></div></div>
         <div style="display:flex;gap:8px;margin-top:2px;align-items:center">
-          <span style="font-size:10px;color:var(--blue)">Aidan: ${fmt(aidanAmt)}</span>
-          <span style="font-size:10px;color:var(--coral)">Amanda: ${fmt(amandaAmt)}</span>
+          ${personSel ? '' : `<span style="font-size:10px;color:var(--blue)">Aidan: ${fmt(aidanAmt)}</span>
+          <span style="font-size:10px;color:var(--coral)">Amanda: ${fmt(amandaAmt)}</span>`}
           ${targetStr}
         </div>
       </div>
@@ -7635,7 +7635,10 @@ function addExpense() {
   const desc     = document.getElementById('b-desc').value.trim();
   const amount   = parseFloat(document.getElementById('b-amount').value);
   const shared   = document.getElementById('b-shared').checked;
-  if (!date || !category || !desc || !Number.isFinite(amount)) return;
+  if (!date || !category || !desc || !Number.isFinite(amount)) {
+    showToast('⚠️ Need a category, description, valid amount, and date');
+    return;
+  }
   const month = monthName(new Date(date + 'T12:00:00'));
   const newItem = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date, month, person, category, description:desc, amount, shared};
   expenses.push(newItem);
@@ -8254,8 +8257,10 @@ function _evalAmount(str) {
   // ambiguous input like "5 - -3" (user expects 8, naive split gives 2).
   if (/[+\-]\s*$/.test(cleaned)) return NaN;
   if (/[+\-]\s*[+\-]/.test(cleaned.replace(/^-/, ''))) return NaN;
-  // Split on + and - to support simple math like "15.63 + 20.26"
-  const tokens = cleaned.split(/\s*([\+\-])\s*/).filter(s => s !== '');
+  // Split on + and - ONLY when surrounded by spaces, to support simple math like "15.63 + 20.26"
+  // while NOT misreading a date typed into the amount slot ("3-20") as 3 − 20 = −17. A leading
+  // minus (refund, "-50") stays attached to its number.
+  const tokens = cleaned.split(/\s+([+\-])\s+/).filter(s => s !== '');
   let result = 0, op = '+';
   for (const tok of tokens) {
     if (tok === '+' || tok === '-') { op = tok; continue; }
@@ -8289,20 +8294,23 @@ function _parseBulkLine(line, fallback) {
   let date = fallback, offset = 0;
   const maybeDate = _parseBulkDate(parts[0]);
   if (maybeDate) { date = maybeDate; offset = 1; }
-  const catRaw = parts[offset];
+  let rest = parts.slice(offset); // [Category, (description...,) amount, (y/n)]
+  // Strip an optional trailing shared flag so the amount is unambiguously the LAST field. This
+  // avoids mistaking a numeric-looking description ("50") for the amount and shifting fields.
+  let shared = false;
+  const lastTok = (rest[rest.length - 1] || '').toLowerCase();
+  if (['y', 'n', 'yes', 'no'].includes(lastTok)) { shared = (lastTok === 'y' || lastTok === 'yes'); rest = rest.slice(0, -1); }
+  const catRaw = rest[0];
   if (!catRaw) return {error: 'missing category'};
+  if (rest.length < 2) return {error: 'missing amount'};
   const m = _matchBulkCategory(catRaw);
-  const category = m.category;
-  const warnMisc = m.warn === 'misc';
-  const warnAmbiguous = m.warn === 'ambiguous';
-  const candidates = m.candidates || null;
-  const hasDesc = isNaN(_evalAmount(parts[offset + 1]));
-  const description = hasDesc ? (parts[offset + 1] || '') : '';
-  const amtIdx = offset + (hasDesc ? 2 : 1);
-  const amount = _evalAmount(parts[amtIdx]);
-  if (!Number.isFinite(amount)) return {error: `couldn't parse amount "${parts[amtIdx] || ''}"`};
-  const shared = (parts[amtIdx + 1] || '').toLowerCase() === 'y';
-  return {date, category, catRaw, warnMisc, warnAmbiguous, candidates, description, amount, shared};
+  // Amount = last remaining field; anything between category and amount is the description
+  // (re-joined, so commas inside a description survive).
+  const amtRaw = rest[rest.length - 1];
+  const amount = _evalAmount(amtRaw);
+  if (!Number.isFinite(amount)) return {error: `couldn't parse amount "${amtRaw || ''}"`};
+  const description = rest.length >= 3 ? rest.slice(1, -1).join(', ') : '';
+  return {date, category: m.category, catRaw, warnMisc: m.warn === 'misc', warnAmbiguous: m.warn === 'ambiguous', candidates: m.candidates || null, description, amount, shared};
 }
 
 function renderBulkPreview() {
@@ -8312,7 +8320,9 @@ function renderBulkPreview() {
   if (!text) { el.style.display = 'none'; return; }
   const fallback = _todayLocal();
   const lines = text.split('\n').filter(l => l.trim());
-  const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}`; };
+  const _curYr = String(new Date().getFullYear());
+  // Show the year only when it isn't the current year, so a guessed/rolled-over year is visible.
+  const fmtDate = d => { if (!d) return '—'; const [y,m,dy] = d.split('-'); return `${+m}/${+dy}${y !== _curYr ? "/" + y.slice(2) : ''}`; };
   // Carry forward the most recent explicit date — bank statement style where consecutive rows
   // on the same day omit the repeated date.
   let _carryDate = fallback;
