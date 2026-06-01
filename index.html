@@ -7198,7 +7198,7 @@ function saveSettledMonths() { db.collection('state').doc('settledMonths').set({
 function toggleMonthSettled(ym, amount) {
   if (!ym) return;
   if (settledMonths[ym] != null) delete settledMonths[ym];
-  else settledMonths[ym] = Math.max(0, Number(amount) || 0);
+  else settledMonths[ym] = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
   saveSettledMonths();
   if (isActive('budget')) renderBudget();
 }
