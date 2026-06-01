@@ -1571,11 +1571,12 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <button onclick="closeBudgetSettings()" title="Close" style="background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:var(--text-3);padding:0 4px;font-family:inherit">×</button>
     </div>
 
-    <!-- Recurring expense templates -->
+    <!-- ── Recurring expenses ── -->
     <div class="card-title" style="text-align:left;margin-bottom:6px">🔁 Recurring Expenses</div>
-    <div style="font-size:12px;color:var(--text-3);margin-bottom:14px;line-height:1.5">Monthly bill templates. Add, edit, or remove them here — then add them to a month with "Load This Month" below, or from the Budget tab's reminder.</div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.5">Monthly bill templates. Add, edit, or remove them here, then add them to a month with “Load This Month” or from the Budget reminder.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <button id="rec-load-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurring()">Load This Month</button>
+      <button onclick="openRecurringAudit()" style="font-size:12px;font-weight:600;padding:6px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);border-radius:8px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">🔍 Review audit</button>
     </div>
     <div id="recurring-list" style="overflow-y:auto;max-height:420px;min-height:40px"></div>
     <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border-light)">
@@ -1597,26 +1598,31 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <button class="btn btn-primary" style="font-size:12px;padding:6px 10px" onclick="addRecurring()">+ Save</button>
     </div>
 
-    <!-- Monthly budget targets -->
-    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border-light)">
+    <!-- ── Budget targets ── -->
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border-light)">
       <div class="card-title" style="text-align:left;margin-bottom:4px">🎯 Monthly Budget Targets</div>
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;line-height:1.5">A monthly spending cap per category. Leave blank for none — shown on the Spending by Category breakdown.</div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.5">A monthly spending cap per category. Leave blank for none — shown on the Spending by Category breakdown.</div>
       <div id="budget-targets-editor"></div>
     </div>
 
-    <!-- Options -->
-    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border-light);display:flex;flex-direction:column;gap:14px">
-      <button onclick="openRecurringAudit()" style="font-size:13px;font-weight:600;padding:9px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);border-radius:10px;cursor:pointer;align-self:flex-start;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">🔍 Review recurring (audit)</button>
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);flex-wrap:wrap">
-        <span>Count income as "logged" at $</span>
+    <!-- ── Preferences ── -->
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border-light)">
+      <div class="card-title" style="text-align:left;margin-bottom:12px">⚙️ Preferences</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);flex-wrap:wrap;margin-bottom:14px">
+        <span>Count income as “logged” at $</span>
         <input type="number" id="set-income-min" min="0" step="100" onchange="setIncomeMin(this.value)" style="width:90px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text)">
         <span>+ / month</span>
       </label>
       <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text);cursor:pointer">
         <input type="checkbox" id="set-show-single-add" onchange="setSingleAddVisible(this.checked)" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer">
-        Show the "Add Single Expense" form on the Budget tab
+        Show the “Add Single Expense” form on the Budget tab
       </label>
-      <button onclick="exportData()" style="font-size:13px;font-weight:600;padding:9px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);border-radius:10px;cursor:pointer;align-self:flex-start;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">💾 Export backup (all data)</button>
+    </div>
+
+    <!-- ── Data ── -->
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border-light)">
+      <div class="card-title" style="text-align:left;margin-bottom:12px">💾 Data</div>
+      <button onclick="exportData()" style="font-size:13px;font-weight:600;padding:9px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);border-radius:10px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">💾 Export backup (all data)</button>
     </div>
   </div>
 </div>
@@ -7391,7 +7397,7 @@ function renderBudget() {
     const target = (budgetTargets[cat] || 0) * targetMultiplier;
     const barPct = target > 0 ? Math.min(100, Math.round(total/target*100)) : Math.round(total/maxCat*100);
     const barColor = target > 0 && total > target ? 'var(--coral)' : color;
-    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : `<span class="bcat-set-target" data-cat="${escHtml(cat)}" onclick="promptTarget(this.dataset.cat);event.stopPropagation()" style="font-size:10px;color:var(--amber);cursor:pointer;text-decoration:underline">set target</span>`;
+    const targetStr = target > 0 ? `<span style="font-size:10px;color:${total>target?'var(--coral)':'var(--text-3)'}">/ ${fmt(target)} target${total>target?' ⚠️':''}</span>` : '';
     return `<div class="budget-cat-row" data-cat="${escHtml(cat)}" onclick="filterByCat(this.dataset.cat)" style="cursor:pointer" title="Filter transactions by ${cat}">
       <div class="budget-cat-name">${emoji} ${cat}</div>
       <div class="budget-cat-bars">
