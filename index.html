@@ -655,6 +655,11 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .bsnap[data-tip]::before{content:'';position:absolute;left:50%;bottom:calc(100% + 2px);transform:translateX(-50%) translateY(4px);border:6px solid transparent;border-top-color:#2d2417;opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease;z-index:20}
 .bsnap[data-tip]:hover::after,.bsnap[data-tip]:focus::after,.bsnap[data-tip]:hover::before,.bsnap[data-tip]:focus::before{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* Budget settings (gear) button in the Budget page header */
+.budget-settings-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:20px;font-size:13px;font-weight:600;color:var(--text-2);padding:8px 14px;cursor:pointer;font-family:inherit;box-shadow:var(--shadow);transition:background .15s,color .15s,border-color .15s;flex-shrink:0;white-space:nowrap}
+.budget-settings-btn:hover{color:var(--amber);border-color:var(--amber);background:var(--amber-bg)}
+.budget-settings-btn .gear{font-size:15px;line-height:1}
+
 /* ── Budget trend bars ── */
 .budget-trend{display:flex;align-items:flex-end;gap:4px;height:72px}
 .btrend-col{display:flex;flex-direction:column-reverse;align-items:center;gap:3px;flex:1}
@@ -1439,12 +1444,12 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
 <!-- ── BUDGET ── -->
 <div class="page" id="page-budget">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
     <div>
       <div class="page-title">Budget</div>
       <div class="page-sub">Track spending, split expenses, and stay on the same page. 💸</div>
     </div>
-    <button id="budget-settings-btn" onclick="openBudgetSettings()" title="Budget settings" aria-label="Budget settings" style="background:none;border:1px solid var(--border);border-radius:10px;font-size:18px;cursor:pointer;padding:7px 11px;line-height:1;color:var(--text-2);flex-shrink:0;margin-top:2px">⚙️</button>
+    <button id="budget-settings-btn" class="budget-settings-btn" onclick="openBudgetSettings()" title="Budget settings" aria-label="Budget settings"><span class="gear">⚙️</span> Settings</button>
   </div>
 
   <!-- Period picker -->
