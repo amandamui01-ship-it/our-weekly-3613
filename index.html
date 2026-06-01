@@ -7236,9 +7236,12 @@ function renderBudget() {
   const thisMon = filterYear === curYear ? monthName(new Date()) : null;
   const available = [...new Set([...expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month), ...(thisMon ? [thisMon] : [])])];
   const rangeViews = ['all', 'year', '3m', '6m'];
-  // Only snap away if on a month that has no data AND isn't the current month
-  if (!rangeViews.includes(_budgetMonth) && available.length && !available.includes(_budgetMonth)) {
-    _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
+  // Keep the selection coherent: if the selected year has NO data at all, fall back to the Year
+  // view (avoids a "phantom" month selected with no matching pill); otherwise, if the chosen
+  // month isn't available, snap to the latest month that is.
+  if (!rangeViews.includes(_budgetMonth)) {
+    if (!available.length) _budgetMonth = 'year';
+    else if (!available.includes(_budgetMonth)) _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
   }
   const filterMonth = _budgetMonth; // derived AFTER snap so it reflects the corrected month
   const pillContainer = document.getElementById('budget-month-pills');
@@ -7303,20 +7306,24 @@ function renderBudget() {
   // 'Both' ('') and '50-50 only' ('shared') use full amounts as before.
   const personSel = (filterPerson === 'Amanda' || filterPerson === 'Aidan') ? filterPerson : null;
   const shareAmt = e => personSel ? (e.shared ? e.amount / 2 : (e.person === personSel ? e.amount : 0)) : e.amount;
-  const filtered = monthTx
-    .filter(e => filterPerson === 'shared' ? e.shared : personSel ? (e.shared || e.person === personSel) : true)
-    .filter(e => filterCat ? e.category === filterCat : true)
-    .filter(e => {
-      if (!searchQ) return true;
-      // Also match the raw amount string ("42", "42.50") so users can find "the $42 expense"
-      // by typing the number — previously only description and category were searched.
+  // Single source of truth for the person/category/search filters, reused by the tx list, the
+  // snapshot tiles, the category breakdown AND the trend chart so they never disagree.
+  const matchesFilters = e => {
+    if (filterPerson === 'shared') { if (!e.shared) return false; }
+    else if (personSel) { if (!(e.shared || e.person === personSel)) return false; }
+    if (filterCat && e.category !== filterCat) return false;
+    if (searchQ) {
+      // Also match the raw amount string ("42", "42.50") so users can find "the $42 expense".
       const amtStr = Math.abs(e.amount).toFixed(2);
       const amtInt = String(Math.abs(Math.round(e.amount)));
-      return e.description.toLowerCase().includes(searchQ)
-        || e.category.toLowerCase().includes(searchQ)
+      if (!((e.description || '').toLowerCase().includes(searchQ)
+        || (e.category || '').toLowerCase().includes(searchQ)
         || amtStr.includes(searchQ)
-        || amtInt.includes(searchQ);
-    });
+        || amtInt.includes(searchQ))) return false;
+    }
+    return true;
+  };
+  const filtered = monthTx.filter(matchesFilters);
 
   // Search/filter total
   const totalEl = document.getElementById('tx-search-total');
@@ -7383,14 +7390,17 @@ function renderBudget() {
   // collapse into a single bar. Source: for specific-month/year views, use the year's expenses;
   // for 3M/6M/All (which can cross year boundaries), use monthTx so the bars correspond to the
   // data feeding the snapshot above.
-  const trendSrc = rangeViews.includes(_budgetMonth)
+  // Respect the active person/category/search filters (and per-person share) so the bars match the
+  // filtered snapshot/breakdown instead of always showing combined totals.
+  const trendSrc = (rangeViews.includes(_budgetMonth)
     ? monthTx
-    : expenses.filter(e => e.date.startsWith(filterYear));
+    : expenses.filter(e => typeof e.date === 'string' && e.date.startsWith(filterYear))
+  ).filter(matchesFilters);
   const monthlySpend = {}; // key: YYYY-MM
   for (const e of trendSrc) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
     const ym = e.date.slice(0, 7);
-    monthlySpend[ym] = (monthlySpend[ym]||0) + e.amount;
+    monthlySpend[ym] = (monthlySpend[ym]||0) + shareAmt(e);
   }
   const ymKeys = Object.keys(monthlySpend).sort();
   const maxSpend = Math.max(...Object.values(monthlySpend), 1);
