@@ -2894,11 +2894,12 @@ function renderHome() {
   // Streak
   const streak = getStreak();
   countUp(document.getElementById('stat-streak'), streak);
-  // Budget stat: current month spending (matches budget tab logic)
-  const _nowYear = new Date().getFullYear().toString();
-  const _nowMonth = monthName(new Date());
+  // Budget stat: current month spending. Match on the authoritative YYYY-MM date prefix (like the
+  // Budget tab) rather than the drift-prone `month` name field, so the two views always agree.
+  const _nowD = new Date();
+  const _nowYm = `${_nowD.getFullYear()}-${String(_nowD.getMonth() + 1).padStart(2, '0')}`;
   const _monthSpend = expenses
-    .filter(e => e.date.startsWith(_nowYear) && e.month === _nowMonth && !EXPENSE_CATS_EXCL.has(e.category))
+    .filter(e => typeof e.date === 'string' && e.date.startsWith(_nowYm) && !EXPENSE_CATS_EXCL.has(e.category))
     .reduce((s, e) => s + e.amount, 0);
   const _budgetEl = document.getElementById('stat-budget');
   if (_budgetEl && _monthSpend > 0) countUp(_budgetEl, Math.round(_monthSpend), '$');
