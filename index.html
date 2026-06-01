@@ -687,7 +687,9 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .budget-tx-list{display:flex;flex-direction:column}
 .budget-tx-group{margin-bottom:8px}
 .budget-tx-date-hdr{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;padding:6px 0 4px;border-bottom:1px solid var(--border-light);margin-bottom:2px}
-.budget-tx{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid var(--border-light);font-size:13px}
+.budget-tx{display:flex;align-items:center;gap:10px;padding:8px 8px;border-bottom:1px solid var(--border-light);font-size:13px;transition:background .12s}
+.budget-tx:hover{background:var(--surface-warm)}
+.budget-tx-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .budget-tx-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
 .budget-tx-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .budget-tx:last-child{border-bottom:none}
@@ -697,7 +699,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .budget-tx-info{display:flex;flex-direction:column;gap:1px;overflow:hidden}
 .budget-tx-desc{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .budget-tx-cat{font-size:11px;color:var(--text-3)}
-.budget-tx-amt{font-weight:700;text-align:right;white-space:nowrap}
+.budget-tx-amt{font-weight:700;text-align:right;white-space:nowrap;min-width:70px}
 .budget-tx-amt.income{color:var(--sage)}
 .budget-tx-amt.refund{color:var(--sage)}
 .budget-tx-shared{font-size:11px;color:var(--amber-dark);font-weight:800;white-space:nowrap;background:var(--amber-bg);border-radius:4px;padding:1px 5px}
@@ -7388,6 +7390,7 @@ function renderBudget() {
     const visible = showAll ? sorted : sorted.slice(0, PREVIEW);
     const txRow = e => `<div class="budget-tx${e.shared?' shared-tx':''}" id="tx-${e.id}" onclick="editExpense('${e.id}')" style="cursor:pointer">
             <div class="budget-tx-left">
+              <span class="budget-tx-dot" style="background:${CAT_COLORS[e.category]||'#aaa'}" title="${e.category}"></span>
               <span class="budget-tx-person ${e.person}">${e.person==='Aidan'?'AF':'AM'}</span>
               <div class="budget-tx-info">
                 <span class="budget-tx-desc">${e.category}</span>
