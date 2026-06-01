@@ -613,6 +613,10 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 
 /* ── Budget ── */
 .budget-period-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;position:sticky;top:var(--nav-h,48px);z-index:50;background:var(--bg);padding:8px 0;box-shadow:0 6px 10px -8px rgba(45,36,23,.18)}
+/* Budget is a dense, data-heavy page — tighten card padding and gaps here only (not app-wide). */
+#page-budget .card{padding:20px 22px}
+#page-budget .card+.card{margin-top:14px}
+#page-budget .card-title{margin-bottom:12px}
 .budget-period-row select{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
 .budget-period-row select:focus{border-color:var(--amber)}
 .budget-month-pills{display:flex;gap:8px;flex-wrap:wrap}
