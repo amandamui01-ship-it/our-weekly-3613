@@ -7796,30 +7796,43 @@ function checkRecurringReminder() {
   const el = document.getElementById('recurring-reminder');
   if (!el || !recurringItems.length) { if (el) el.style.display = 'none'; return; }
   const today = new Date();
-  const toCheck = [];
-  // Always check last month
   const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  toCheck.push({ year: prev.getFullYear(), month: monthName(prev) });
-  // Check current month if past the 20th
-  if (today.getDate() >= 20) toCheck.push({ year: today.getFullYear(), month: monthName(today) });
+  const prevMonth = monthName(prev), curMonth = monthName(today);
+  // Offer BOTH last month and the current month so the start-of-a-new-month case is unambiguous:
+  // on Jun 1 you can load May and/or June, each with its own clearly-labeled button. (Previously
+  // it only nagged about last month until the 20th, while "Load This Month" loaded the current
+  // month — two buttons silently targeting different months.)
+  const toCheck = [
+    { year: prev.getFullYear(),  month: prevMonth },
+    { year: today.getFullYear(), month: curMonth  },
+  ];
 
   const missing = toCheck.filter(({ year, month }) =>
     !_dismissedRecurring.has(`${month}-${year}`) &&
     !recurringItems.every(r => _isRecurringLoaded(r, month, year))
   );
-  // Only nag when the user is actually viewing one of the months with missing recurring —
-  // otherwise the banner clutters every filter view (May, 6M, All, etc).
-  const visible = missing.filter(({ month }) => month === _budgetMonth);
+  // Show the reminders only while viewing one of these recent months (not on range views like
+  // 6M/All, where stacked banners would clutter). When shown, list every still-missing month so
+  // each can be loaded independently.
+  const visible = (_budgetMonth === prevMonth || _budgetMonth === curMonth) ? missing : [];
   if (!visible.length) { el.style.display = 'none'; return; }
   el.style.display = '';
   el.innerHTML = visible.map(({ year, month }) => {
     const key = `${month}-${year}`;
     const minimized = _minimizedRecurring.has(key);
+    // The big-ticket categories worth calling out explicitly so they never slip through.
+    const KEY_CATS = ['Income', 'Housing'];
+    const missingKeyCats = KEY_CATS.filter(cat =>
+      recurringItems.some(r => r.category === cat && !_isRecurringLoaded(r, month, year))
+    );
     return `
     <div class="card" style="border-color:var(--amber);background:var(--amber-bg);margin-bottom:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;${minimized?'':'margin-bottom:12px'}">
-        <div style="font-size:13px;font-weight:700;color:var(--amber-dark)">💳 Recurring expenses not loaded for <strong>${month} ${year}</strong></div>
-        <div style="display:flex;align-items:center;gap:2px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;${minimized?'':'margin-bottom:12px'}">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--amber-dark)">💳 Recurring expenses not loaded for <strong>${month} ${year}</strong></div>
+          ${missingKeyCats.length ? `<div style="font-size:12px;font-weight:700;color:var(--coral);margin-top:3px">⚠️ ${missingKeyCats.join(' & ')} not logged yet</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
           <button onclick="toggleRecurringReminder('${key}')" title="${minimized?'Expand':'Minimize'}" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:4px 6px;line-height:1;transform:${minimized?'rotate(-90deg)':'rotate(0)'};transition:transform .2s">▼</button>
           <button onclick="dismissRecurringReminder('${key}')" title="Dismiss" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
         </div>
@@ -7827,10 +7840,11 @@ function checkRecurringReminder() {
       <div id="rec-reminder-form-${key}" style="${minimized?'display:none':''}">
         ${recurringItems.map(r => {
           const loaded = _isRecurringLoaded(r, month, year);
+          const isKey = KEY_CATS.includes(r.category);
           return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-light)">
             <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;flex-shrink:0;${r.person==='Amanda'?'background:var(--coral-bg);color:var(--coral)':'background:var(--blue-bg);color:var(--blue)'}">${r.person}</span>
-            <span style="flex:1;font-size:13px;color:var(--text);${loaded?'text-decoration:line-through;opacity:.45':''}">${escHtml(r.description)}</span>
-            <span style="font-size:11px;color:var(--text-3);flex-shrink:0">${escHtml(r.category)}</span>
+            <span style="flex:1;font-size:13px;color:var(--text);${isKey&&!loaded?'font-weight:700':''};${loaded?'text-decoration:line-through;opacity:.45':''}">${escHtml(r.description)}</span>
+            <span style="font-size:11px;color:${isKey&&!loaded?'var(--amber-dark)':'var(--text-3)'};font-weight:${isKey?'700':'400'};flex-shrink:0">${escHtml(r.category)}</span>
             <input type="number" step="0.01" min="0" value="${r.amount.toFixed(2)}" data-rec-id="${r.id}"
               style="width:80px;padding:4px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);text-align:right;${loaded?'opacity:.4':''}" ${loaded?'disabled':''}>
           </div>`;
