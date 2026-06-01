@@ -7438,7 +7438,7 @@ function renderBudget() {
     const yr2 = ym.slice(2,4);
     const mLabel = MONTHS_LIST[mIdx];
     const showYear = monthsInMultipleYears.has(ym.slice(5,7));
-    return `<div class="btrend-col${isActive}" onclick="_drillTrendBar('${ym}')" title="${mLabel} 20${yr2}: ${fmt(monthlySpend[ym])}" style="cursor:pointer">
+    return `<div class="btrend-col${isActive}" onclick="_drillTrendBar('${ym}')" title="${mLabel} 20${yr2}: ${monthlySpend[ym] < -0.005 ? '−' : ''}${fmt(monthlySpend[ym])}${monthlySpend[ym] < -0.005 ? ' (net refund)' : ''}" style="cursor:pointer">
       <div class="btrend-bar" style="height:${barPx}px"></div>
       <div class="btrend-lbl">${mLabel.slice(0,3)}${showYear?` '${yr2}`:''}</div>
     </div>`;
@@ -7500,7 +7500,7 @@ function renderBudget() {
   }).join('') : '<div style="color:var(--text-3);font-size:13px;padding:8px 0">No spending data.</div>';
 
   // Transactions grouped by date
-  const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+  const sorted = [...filtered].sort((a,b) => String(b.date || '').localeCompare(String(a.date || '')));
   if (!sorted.length) {
     document.getElementById('budget-transactions').innerHTML = '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No transactions.</div>';
   } else {
