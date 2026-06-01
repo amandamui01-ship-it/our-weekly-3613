@@ -7201,7 +7201,7 @@ function renderBudget() {
   // Always include the current month as a pill when viewing the current year so users can add new data
   const thisMon = filterYear === curYear ? monthName(new Date()) : null;
   const available = [...new Set([...expenses.filter(e=>e.date.startsWith(filterYear)).map(e=>e.month), ...(thisMon ? [thisMon] : [])])];
-  const rangeViews = ['all', '3m', '6m'];
+  const rangeViews = ['all', 'year', '3m', '6m'];
   // Only snap away if on a month that has no data AND isn't the current month
   if (!rangeViews.includes(_budgetMonth) && available.length && !available.includes(_budgetMonth)) {
     _budgetMonth = MONTHS_LIST.filter(m => available.includes(m)).pop();
@@ -7211,6 +7211,7 @@ function renderBudget() {
   if (pillContainer) {
     pillContainer.innerHTML =
       `<div class="bmonth-pill${'all'===_budgetMonth?' active':''}" onclick="setBudgetMonth('all')">All</div>` +
+      `<div class="bmonth-pill${'year'===_budgetMonth?' active':''}" onclick="setBudgetMonth('year')">${filterYear}</div>` +
       `<div class="bmonth-pill${'6m'===_budgetMonth?' active':''}" onclick="setBudgetMonth('6m')">6M</div>` +
       `<div class="bmonth-pill${'3m'===_budgetMonth?' active':''}" onclick="setBudgetMonth('3m')">3M</div>` +
       MONTHS_LIST.filter(m => available.includes(m)).map(m =>
@@ -7234,9 +7235,11 @@ function renderBudget() {
   // a superset of "6M" (which can cross year boundaries). The year filter only narrows monthly pills.
   const monthTx = _budgetMonth === 'all'
     ? expenses.slice()
-    : _budgetMonth === '3m' || _budgetMonth === '6m'
-      ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => ps.some(p => e.date.startsWith(p.year) && e.month === p.month)); })()
-      : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
+    : _budgetMonth === 'year'
+      ? expenses.filter(e => e.date.startsWith(filterYear))
+      : _budgetMonth === '3m' || _budgetMonth === '6m'
+        ? (() => { const ps = getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6); return expenses.filter(e => ps.some(p => e.date.startsWith(p.year) && e.month === p.month)); })()
+        : expenses.filter(e => e.date.startsWith(filterYear) && e.month === filterMonth);
   const searchQ = (document.getElementById('b-search')?.value || '').toLowerCase();
   const catFilterEl = document.getElementById('b-filter-cat');
   const prevCatSel = catFilterEl?.value || '';
@@ -7321,6 +7324,7 @@ function renderBudget() {
   const maxSpend = Math.max(...Object.values(monthlySpend), 1);
   const activeYms = new Set(
     _budgetMonth === 'all' ? ymKeys
+    : _budgetMonth === 'year' ? ymKeys.filter(k => k.startsWith(filterYear))
     : (_budgetMonth === '3m' || _budgetMonth === '6m') ? getLastNMonthPeriods(_budgetMonth === '3m' ? 3 : 6).map(p => `${p.year}-${String(MONTHS_LIST.indexOf(p.month)+1).padStart(2,'0')}`)
     : [`${filterYear}-${String(MONTHS_LIST.indexOf(filterMonth)+1).padStart(2,'0')}`]
   );
@@ -7368,7 +7372,7 @@ function renderBudget() {
   // target should compare against $1800 of spending, not $300).
   const targetMultiplier = _budgetMonth === '3m' ? 3
     : _budgetMonth === '6m' ? 6
-    : _budgetMonth === 'all' ? (new Set(monthTx.map(e => e.date.slice(0, 7))).size || 1)
+    : (_budgetMonth === 'all' || _budgetMonth === 'year') ? (new Set(monthTx.map(e => e.date.slice(0, 7))).size || 1)
     : 1;
   const bannerEl = document.getElementById('budget-overbudget-banner');
   if (bannerEl) {
@@ -7978,7 +7982,7 @@ function checkRecurringReminder() {
   );
   // Show on any specific-month view (not range views like 6M/All, where stacked banners clutter).
   // When shown, list every still-missing completed month so each can be loaded independently.
-  const rangeViews = ['all', '3m', '6m'];
+  const rangeViews = ['all', 'year', '3m', '6m'];
   const visible = rangeViews.includes(_budgetMonth) ? [] : missing;
   if (!visible.length) { el.style.display = 'none'; return; }
   el.style.display = '';
