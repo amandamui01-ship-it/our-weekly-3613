@@ -7656,20 +7656,36 @@ const DEFAULT_RECURRING = [
 // The fallback also requires an approximate amount match (within $1) so a manual expense that
 // happens to share a description with a recurring template (e.g., "Epic Food") doesn't trigger
 // a false-positive "already loaded" and block the user from loading their actual recurring.
+// Income counts as "logged" for a month as soon as a sizable income entry exists — paycheck
+// amount AND description vary too much month to month to match on, so we just look for any real
+// income landing. Tweak the threshold if your paychecks run smaller.
+const INCOME_LOADED_MIN = 4000;
 function _isRecurringLoaded(r, month, year, yearMonthPrefix) {
   // Match by the date's YYYY-MM prefix rather than the derived `month` field. The month
   // field can be missing or stale (a corrupted date during backfill leaves it empty); the
   // date prefix is authoritative. Falls back to month-string for legacy expenses that lack
   // a parseable date.
+  const inMonth = e => yearMonthPrefix && typeof e.date === 'string'
+    ? e.date.startsWith(yearMonthPrefix)
+    : (e.month === month && e.date && e.date.startsWith(String(year)));
+
+  // Income: any income entry >= the threshold this month counts it as logged, regardless of
+  // person/description (paychecks vary too much to match precisely).
+  if (r.category === 'Income') {
+    return expenses.some(e => inMonth(e) && e.category === 'Income' && (e.amount || 0) >= INCOME_LOADED_MIN);
+  }
+
+  const norm = s => (s || '').trim().toLowerCase();
   return expenses.some(e => {
-    const dateMatches = yearMonthPrefix && typeof e.date === 'string'
-      ? e.date.startsWith(yearMonthPrefix)
-      : (e.month === month && e.date && e.date.startsWith(String(year)));
-    if (!dateMatches) return false;
+    if (!inMonth(e)) return false;
     if (e.recurringId) return e.recurringId === r.id;
+    // Legacy / manually-added expenses with no recurringId: match on the stable "subject"
+    // (person + category + description), NOT the amount. Recurring amounts (401k, mortgage,
+    // etc.) drift month to month, so an amount check would wrongly report a logged expense as
+    // "not loaded" and nag for a duplicate.
     return e.person === r.person
-      && e.description === r.description
-      && Math.abs((e.amount || 0) - (r.amount || 0)) < 1;
+      && e.category === r.category
+      && norm(e.description) === norm(r.description);
   });
 }
 function _isBudgetSettingsOpen() {
