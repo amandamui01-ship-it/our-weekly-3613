@@ -644,11 +644,17 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .budget-owes-card{min-width:180px;text-align:center}
 
 /* ── Budget snapshot strip ── */
-.budget-snapshot{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.bsnap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 14px;box-shadow:var(--shadow);text-align:center}
+.budget-snapshot{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.bsnap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 14px;box-shadow:var(--shadow);text-align:center}
 .bsnap-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:6px}
 .bsnap-val{font-family:'Lora',Georgia,serif;font-size:24px;font-weight:700;line-height:1}
 .bsnap-sub{font-size:11px;color:var(--text-3);margin-top:4px}
+/* hover/tap-to-discover tip on snapshot tiles. Tile is focusable so a tap shows it on mobile. */
+.bsnap[data-tip]{cursor:help}
+.bsnap[data-tip] .bsnap-label::after{content:'ⓘ';margin-left:4px;font-size:9px;color:var(--text-3);opacity:.6;vertical-align:super}
+.bsnap[data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%) translateY(4px);width:max-content;max-width:200px;background:var(--text-1);color:var(--surface);font-size:11px;font-weight:500;line-height:1.35;text-align:left;padding:8px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease;z-index:20}
+.bsnap[data-tip]::before{content:'';position:absolute;left:50%;bottom:calc(100% + 2px);transform:translateX(-50%) translateY(4px);border:6px solid transparent;border-top-color:var(--text-1);opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease;z-index:20}
+.bsnap[data-tip]:hover::after,.bsnap[data-tip]:focus::after,.bsnap[data-tip]:hover::before,.bsnap[data-tip]:focus::before{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── Budget trend bars ── */
 .budget-trend{display:flex;align-items:flex-end;gap:4px;height:72px}
@@ -7217,6 +7223,11 @@ function renderBudget() {
   const income    = snapSrc.reduce((s,e)=> e.category==='Income' ? s+e.amount : s, 0);
   const spending  = snapSrc.reduce((s,e)=> !EXPENSE_CATS_EXCL.has(e.category) ? s+e.amount : s, 0);
   const saved     = snapSrc.reduce((s,e)=> e.category==='Savings'||e.category==='Investments' ? s+e.amount : s, 0);
+  // Net = what's left (or short) after spending and setting money aside. Sign is shown explicitly
+  // because fmt() strips it via Math.abs.
+  const net       = income - spending - saved;
+  const netStr    = (net < -0.005 ? '−' : '') + fmt(net);
+  const netColor  = net < -0.005 ? 'var(--coral)' : 'var(--sage)';
   const owes = calcOwes(monthTx);
   // owes.Aidan and owes.Amanda are equal-and-opposite (every shared tx credits one and debits the
   // other by the same half-amount), so the settlement is the magnitude of either side — NOT the
@@ -7228,10 +7239,11 @@ function renderBudget() {
     ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">filters active · Settlement is full period</div>`
     : '';
   document.getElementById('budget-snapshot').innerHTML = filterHint + `
-    <div class="bsnap"><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
-    <div class="bsnap"><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
-    <div class="bsnap"><div class="bsnap-label">Saved</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
-    <div class="bsnap"><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleAmt<0.01?'14':'18'}px">${settleStr}</div></div>`;
+    <div class="bsnap" tabindex="0" data-tip="Money in — transactions categorized Income this period."><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Everyday expenses — everything except Income, Savings and Investments."><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Money you moved into Savings or Investments — not leftover cash."><div class="bsnap-label">Set Aside</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Income − Spent − Set Aside. What's left over, or short, this period."><div class="bsnap-label">Net</div><div class="bsnap-val" style="color:${netColor}">${netStr}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Who owes who, after splitting shared expenses. Always the full period, ignores filters."><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleAmt<0.01?'14':'18'}px">${settleStr}</div></div>`;
 
   // Monthly trend bars — keyed by YYYY-MM so the same calendar month in different years doesn't
   // collapse into a single bar. Source: for specific-month/year views, use the year's expenses;
