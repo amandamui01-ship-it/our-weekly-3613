@@ -7796,25 +7796,27 @@ function checkRecurringReminder() {
   const el = document.getElementById('recurring-reminder');
   if (!el || !recurringItems.length) { if (el) el.style.display = 'none'; return; }
   const today = new Date();
-  const prev = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const prevMonth = monthName(prev), curMonth = monthName(today);
-  // Offer BOTH last month and the current month so the start-of-a-new-month case is unambiguous:
-  // on Jun 1 you can load May and/or June, each with its own clearly-labeled button. (Previously
-  // it only nagged about last month until the 20th, while "Load This Month" loaded the current
-  // month — two buttons silently targeting different months.)
-  const toCheck = [
-    { year: prev.getFullYear(),  month: prevMonth },
-    { year: today.getFullYear(), month: curMonth  },
-  ];
+  // Recurring gets logged right after a month ends, so nag about COMPLETED months — the last few
+  // of them, in case one was forgotten — not the current (still-in-progress) month. Only flag
+  // months that actually have activity, so months from before you started using the app (or empty
+  // future months) don't nag. Most-recently-ended month comes first.
+  const LOOKBACK_MONTHS = 6;
+  const toCheck = [];
+  for (let i = 1; i <= LOOKBACK_MONTHS; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    toCheck.push({ year: d.getFullYear(), month: monthName(d),
+      ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` });
+  }
 
-  const missing = toCheck.filter(({ year, month }) =>
+  const missing = toCheck.filter(({ year, month, ym }) =>
     !_dismissedRecurring.has(`${month}-${year}`) &&
-    !recurringItems.every(r => _isRecurringLoaded(r, month, year))
+    !recurringItems.every(r => _isRecurringLoaded(r, month, year)) &&
+    expenses.some(e => e.date && e.date.startsWith(ym))
   );
-  // Show the reminders only while viewing one of these recent months (not on range views like
-  // 6M/All, where stacked banners would clutter). When shown, list every still-missing month so
-  // each can be loaded independently.
-  const visible = (_budgetMonth === prevMonth || _budgetMonth === curMonth) ? missing : [];
+  // Show on any specific-month view (not range views like 6M/All, where stacked banners clutter).
+  // When shown, list every still-missing completed month so each can be loaded independently.
+  const rangeViews = ['all', '3m', '6m'];
+  const visible = rangeViews.includes(_budgetMonth) ? [] : missing;
   if (!visible.length) { el.style.display = 'none'; return; }
   el.style.display = '';
   el.innerHTML = visible.map(({ year, month }) => {
