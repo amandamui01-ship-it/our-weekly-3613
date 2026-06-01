@@ -1574,8 +1574,16 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
     <!-- ── Recurring expenses ── -->
     <div class="card-title" style="text-align:left;margin-bottom:6px">🔁 Recurring Expenses</div>
     <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.5">Monthly bill templates. Add, edit, or remove them here, then add them to a month with “Load This Month” or from the Budget reminder.</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <button id="rec-load-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurring()">Load This Month</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <select id="rec-load-month" class="bq-sel" style="width:auto" onchange="renderRecurring()">
+        <option>January</option><option>February</option><option>March</option><option>April</option>
+        <option>May</option><option>June</option><option>July</option><option>August</option>
+        <option>September</option><option>October</option><option>November</option><option>December</option>
+      </select>
+      <select id="rec-load-year" class="bq-sel" style="width:80px" onchange="renderRecurring()">
+        <option>2025</option><option>2026</option><option>2027</option>
+      </select>
+      <button id="rec-load-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurringSelected()">Load</button>
       <button onclick="openRecurringAudit()" style="font-size:12px;font-weight:600;padding:6px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);border-radius:8px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">🔍 Review audit</button>
     </div>
     <div id="recurring-list" style="overflow-y:auto;max-height:420px;min-height:40px"></div>
@@ -7792,6 +7800,11 @@ function openBudgetSettings() {
   if (chk) chk.checked = localStorage.getItem('ow-show-single-add') === '1';
   const inc = document.getElementById('set-income-min');
   if (inc) inc.value = INCOME_LOADED_MIN;
+  // Default the recurring load month/year selectors to the current month.
+  const lm = document.getElementById('rec-load-month');
+  if (lm) lm.value = monthName(new Date());
+  const ly = document.getElementById('rec-load-year');
+  if (ly) ly.value = String(new Date().getFullYear());
   renderBudgetTargetsEditor();
   o.style.display = 'flex';
   renderRecurring();
@@ -7906,13 +7919,14 @@ function renderRecurring() {
   const el = document.getElementById('recurring-list');
   if (!el) return;
 
-  // Update load button state
+  // Update load button to reflect the SELECTED month (the month/year dropdowns), falling back
+  // to the current month if the selectors aren't present.
   const loadBtn = document.getElementById('rec-load-btn');
   if (loadBtn && recurringItems.length) {
-    const month = monthName(new Date());
-    const year  = new Date().getFullYear().toString();
+    const month = document.getElementById('rec-load-month')?.value || monthName(new Date());
+    const year  = document.getElementById('rec-load-year')?.value || new Date().getFullYear().toString();
     const allLoaded = recurringItems.every(r => _isRecurringLoaded(r, month, year));
-    loadBtn.textContent  = allLoaded ? `✓ ${month} loaded` : 'Load This Month';
+    loadBtn.textContent  = allLoaded ? `✓ ${month} loaded` : `Load ${month}`;
     loadBtn.disabled     = allLoaded;
     loadBtn.style.background  = allLoaded ? 'var(--sage)' : '';
     loadBtn.style.cursor      = allLoaded ? 'default' : '';
@@ -8067,6 +8081,14 @@ function checkRecurringReminder() {
       </div>
     </div>`;
   }).join('');
+}
+
+function loadRecurringSelected() {
+  const y = document.getElementById('rec-load-year')?.value;
+  const m = document.getElementById('rec-load-month')?.value;
+  if (!y || !m) return;
+  loadRecurringForMonth(y, m);
+  renderRecurring();
 }
 
 function loadRecurringForMonth(year, month) {
