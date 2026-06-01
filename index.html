@@ -8097,9 +8097,16 @@ function checkRecurringReminder() {
 function loadRecurringSelected() {
   const y = document.getElementById('rec-load-year')?.value;
   const m = document.getElementById('rec-load-month')?.value;
-  if (!y || !m) return;
+  if (!y || !m || MONTHS_LIST.indexOf(m) < 0) return;
   loadRecurringForMonth(y, m);
-  renderRecurring();
+  // Jump the Budget view to the month we just loaded so the result is visible immediately —
+  // otherwise the view stays on the current month and it looks like nothing happened (or like it
+  // loaded into the wrong month).
+  const ySel = document.getElementById('b-filter-year');
+  if (ySel) ySel.value = y;
+  _budgetMonth = m;
+  closeBudgetSettings();
+  renderBudget();
 }
 
 function loadRecurringForMonth(year, month) {
