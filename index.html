@@ -2104,6 +2104,7 @@ function teardownFirestore() {
   _currentTripId = null;
   _editingHistoryId = null;
   budgetTargets = {};
+  settledMonths = {};
   heartValAmanda = 0;
   heartValAidan = 0;
   heartVal = 0;
@@ -2174,6 +2175,11 @@ function initFirestore() {
 
   _listen('budgetTargets', snap => {
     budgetTargets = snap.exists ? (snap.data().targets || {}) : {};
+    if (isActive('budget')) renderBudget();
+  });
+
+  _listen('settledMonths', snap => {
+    settledMonths = snap.exists ? (snap.data().months || {}) : {};
     if (isActive('budget')) renderBudget();
   });
 
@@ -6667,6 +6673,7 @@ function exportData() {
     entries: newEntries,
     expenses,
     budgetTargets,
+    settledMonths,
     recurringItems,
     weekPlan,
     logisticsList,
@@ -7175,6 +7182,18 @@ let _datesYear = new Date().getFullYear();
 let budgetTargets = {};
 function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}).catch(_onSaveErr); }
 
+// Months checked off as "settled" (squared up). Shared across partners via Firestore. Keyed by
+// YYYY-MM → the amount that was owed when it was marked paid (so the tile can show "$X paid").
+let settledMonths = {};
+function saveSettledMonths() { db.collection('state').doc('settledMonths').set({months: settledMonths}).catch(_onSaveErr); }
+function toggleMonthSettled(ym, amount) {
+  if (!ym) return;
+  if (settledMonths[ym] != null) delete settledMonths[ym];
+  else settledMonths[ym] = Math.max(0, Number(amount) || 0);
+  saveSettledMonths();
+  if (isActive('budget')) renderBudget();
+}
+
 const monthName = d => MONTHS_LIST[d.getMonth()];
 // Local-timezone today as YYYY-MM-DD. Plain `new Date().toISOString().slice(0,10)` returns the
 // UTC date, which can be a day ahead in evening hours and put expenses on the wrong day.
@@ -7301,8 +7320,26 @@ function renderBudget() {
   // other by the same half-amount), so the settlement is the magnitude of either side — NOT the
   // difference, which would double-count it.
   const settleAmt = Math.abs(owes.Aidan);
-  const settleStr = settleAmt < 0.01 ? 'All square ✅' : `${owes.Aidan>0?'Amanda':'Aidan'} owes ${owes.Aidan>0?'Aidan':'Amanda'} ${fmt(settleAmt)}`;
-  const settleColor = settleAmt < 0.01 ? 'var(--sage)' : 'var(--amber)';
+  // A specific month can be checked off as "settled" (paid up). Clicking the tile records the
+  // amount owed at that moment; clicking again undoes it. Only meaningful on a single-month view.
+  const isSpecificMonth = !rangeViews.includes(_budgetMonth);
+  const settleYm = isSpecificMonth ? `${filterYear}-${String(MONTHS_LIST.indexOf(_budgetMonth) + 1).padStart(2, '0')}` : null;
+  const isSettled = !!(settleYm && settledMonths[settleYm] != null);
+  let settleStr, settleColor, settleSize, settleTip, settleClick = '';
+  if (isSettled) {
+    const paid = settledMonths[settleYm];
+    settleStr   = paid >= 0.01 ? `✓ ${fmt(paid)} paid` : '✓ Settled';
+    settleColor = 'var(--sage)';
+    settleSize  = '15';
+    settleTip   = 'Marked settled — click to undo';
+    settleClick = `onclick="toggleMonthSettled('${settleYm}', 0)" style="cursor:pointer"`;
+  } else {
+    settleStr   = settleAmt < 0.01 ? 'All square ✅' : `${owes.Aidan>0?'Amanda':'Aidan'} owes ${owes.Aidan>0?'Aidan':'Amanda'} ${fmt(settleAmt)}`;
+    settleColor = settleAmt < 0.01 ? 'var(--sage)' : 'var(--amber)';
+    settleSize  = settleAmt < 0.01 ? '14' : '18';
+    settleTip   = settleYm ? 'Click when you’ve squared up — records it as paid' : 'Who owes who, after splitting shared expenses. Pick a single month to mark it paid.';
+    if (settleYm) settleClick = `onclick="toggleMonthSettled('${settleYm}', ${settleAmt})" style="cursor:pointer"`;
+  }
   const filterHint = hasNonPeriodFilter
     ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">filters active · Settlement is full period</div>`
     : '';
@@ -7311,7 +7348,7 @@ function renderBudget() {
     <div class="bsnap" tabindex="0" data-tip="Everyday expenses — everything except Income, Savings and Investments."><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
     <div class="bsnap" tabindex="0" data-tip="Income − Spent. What's left over, or short, this period. Money set aside still counts as yours."><div class="bsnap-label">Net</div><div class="bsnap-val" style="color:${netColor}">${netStr}</div></div>
     <div class="bsnap" tabindex="0" data-tip="Money you moved into Savings or Investments — not leftover cash."><div class="bsnap-label">Set Aside</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
-    <div class="bsnap" tabindex="0" data-tip="Who owes who, after splitting shared expenses. Always the full period, ignores filters."><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleAmt<0.01?'14':'18'}px">${settleStr}</div></div>`;
+    <div class="bsnap" tabindex="0" data-tip="${settleTip}" ${settleClick}><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleSize}px">${settleStr}</div></div>`;
 
   // Monthly trend bars — keyed by YYYY-MM so the same calendar month in different years doesn't
   // collapse into a single bar. Source: for specific-month/year views, use the year's expenses;
