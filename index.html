@@ -7253,6 +7253,15 @@ function renderBudget() {
         `<div class="bmonth-pill${m===_budgetMonth?' active':''}" onclick="setBudgetMonth('${m}')">${m.slice(0,3)}</div>`
       ).join('');
   }
+  // The year dropdown only scopes the Year and month views. All / 6M / 3M cross years and ignore
+  // it, so grey it out then — otherwise "dropdown: 2026" while "All" is active looks contradictory.
+  if (yearSel) {
+    const yearApplies = !['all', '6m', '3m'].includes(_budgetMonth);
+    yearSel.disabled = !yearApplies;
+    yearSel.style.opacity = yearApplies ? '' : '0.4';
+    yearSel.style.cursor = yearApplies ? '' : 'not-allowed';
+    yearSel.title = yearApplies ? '' : 'Year applies to the Year and month views — All / 6M / 3M span all years';
+  }
 
   // For 3M/6M views, collect the last N calendar months across any year.
   // Start from the previous month so "3M" = last 3 complete months (not the current partial month).
