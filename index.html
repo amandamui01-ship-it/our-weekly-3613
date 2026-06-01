@@ -612,7 +612,7 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-meal-input:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 
 /* ── Budget ── */
-.budget-period-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap}
+.budget-period-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;position:sticky;top:var(--nav-h,48px);z-index:50;background:var(--bg);padding:8px 0;box-shadow:0 6px 10px -8px rgba(45,36,23,.18)}
 .budget-period-row select{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
 .budget-period-row select:focus{border-color:var(--amber)}
 .budget-month-pills{display:flex;gap:8px;flex-wrap:wrap}
@@ -2665,6 +2665,15 @@ function closeNavMenu() {
 document.addEventListener('click', e => {
   if (!e.target.closest('#nav-menu') && !e.target.closest('#hamburger') && !e.target.closest('#bnav-more')) closeNavMenu();
 });
+// Keep --nav-h in sync with the actual sticky-nav height so sticky elements (e.g. the budget
+// period picker) pin just below it on every screen size, with no guessed offset.
+function _syncNavHeight() {
+  const n = document.getElementById('nav');
+  if (n) document.documentElement.style.setProperty('--nav-h', n.offsetHeight + 'px');
+}
+window.addEventListener('resize', _syncNavHeight);
+window.addEventListener('load', _syncNavHeight);
+_syncNavHeight();
 
 function showPage(name) {
   // Legacy 'plan' navigation (from older bookmarks, home stats, etc.) now lands on the merged Calendar tab.
