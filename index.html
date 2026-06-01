@@ -7495,7 +7495,7 @@ function renderBudget() {
           ${targetStr}
         </div>
       </div>
-      <div class="budget-cat-amt">${fmt(total)}</div>
+      <div class="budget-cat-amt">${total < -0.005 ? '−' : ''}${fmt(total)}</div>
     </div>`;
   }).join('') : '<div style="color:var(--text-3);font-size:13px;padding:8px 0">No spending data.</div>';
 
@@ -8289,7 +8289,10 @@ function _matchBulkCategory(catRaw) {
   return {category: 'Misc', warn: 'ambiguous', candidates: matches};
 }
 function _parseBulkLine(line, fallback) {
-  const parts = line.split(',').map(p => p.trim());
+  // Collapse thousands-grouped numbers (1,234.56 → 1234.56) BEFORE splitting on commas, so a
+  // grouping comma isn't mistaken for a field separator (which silently truncated the amount).
+  const norm = line.replace(/\d{1,3}(?:,\d{3})+(?:\.\d+)?/g, m => m.replace(/,/g, ''));
+  const parts = norm.split(',').map(p => p.trim());
   if (parts.length < 2) return {error: 'too few fields — need at least: Category, amount, y/n'};
   let date = fallback, offset = 0;
   const maybeDate = _parseBulkDate(parts[0]);
