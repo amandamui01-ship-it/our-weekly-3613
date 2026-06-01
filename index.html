@@ -2320,7 +2320,7 @@ function initFirestore() {
     } else {
       recurringItems = snap.data().items || [];
     }
-    if (_isBudgetSettingsOpen() && !_hasTypingFocus('#budget-settings-overlay')) renderRecurring();
+    if (_isBudgetSettingsOpen() && !_hasTypingFocus('#budget-settings-overlay') && _recEditId === null) renderRecurring();
     if (isActive('budget')) checkRecurringReminder();
   });
 
@@ -7960,10 +7960,12 @@ document.addEventListener('keydown', e => {
   if (_isBudgetSettingsOpen()) closeBudgetSettings();
 });
 
+let _recEditId = null; // id of the recurring template currently open for inline edit (if any)
 function renderRecurring() {
   const fmt = n => '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const el = document.getElementById('recurring-list');
   if (!el) return;
+  _recEditId = null; // rebuilding the list ends any in-progress inline edit
 
   // Update load button to reflect the SELECTED month (the month/year dropdowns), falling back
   // to the current month if the selectors aren't present.
@@ -8032,6 +8034,7 @@ function editRecurring(id) {
   if (!r) return;
   const el = document.getElementById('rec-item-' + id);
   if (!el) return;
+  _recEditId = id; // mark edit open so a partner's live update doesn't clobber it
   el.onclick = null;
   el.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:6px;width:100%;align-items:center">
