@@ -233,6 +233,10 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;text-align:center}
 .trip-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tc,var(--amber))}
 .trip-card.past{opacity:.55}
+.past-trips-toggle{grid-column:1/-1;display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;padding:10px 14px;border:1px dashed var(--border);border-radius:var(--radius);background:transparent;color:var(--text-2);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.past-trips-toggle:hover{border-color:var(--amber);color:var(--text)}
+.past-trips-chev{font-size:10px;color:var(--text-3)}
+.past-trips-count{margin-left:auto;font-size:11px;font-weight:700;color:var(--text-3);background:var(--surface-warm);border-radius:10px;padding:2px 9px}
 .trip-card.past::before{background:var(--sage)}
 .trip-card.overlap{border-color:var(--coral);background:var(--coral-bg)}
 .trip-card.overlap::before{background:var(--coral)}
@@ -3618,6 +3622,13 @@ function addCategoryDragListeners() {
 // ─── DATES ───────────────────────────────────────────────────────────────────
 function _setDatesYear(y) { _datesYear = y; renderDates(); }
 
+// Past Adventures section in the cards view — collapsed by default, choice persisted per device.
+function togglePastTrips() {
+  const open = localStorage.getItem('ow-past-trips-open') === '1';
+  _lsSet('ow-past-trips-open', open ? '0' : '1');
+  renderDates();
+}
+
 // Calendar grid view state — initialized lazily in renderCalendar to YYYY-MM of today.
 let _calMonth = null;
 let _datesView = localStorage.getItem('ow-dates-view') || 'cal'; // 'cal' | 'grid'
@@ -4406,11 +4417,19 @@ function renderDates() {
     </div>`;
   };
 
-  // Cards view: show past trips inline (faded via .past class) below upcoming so they're not lost
-  // when there's no Past Adventures collapsible. Calendar view shows past trips via month navigation.
+  // Cards view: upcoming trips first, then past trips tucked behind a collapsible "Past Adventures"
+  // header (collapsed by default) so finished trips don't crowd the planning view. Calendar view
+  // shows past trips via month navigation.
+  const pastOpen = localStorage.getItem('ow-past-trips-open') === '1';
+  const pastHeader = past.length ? `<button class="past-trips-toggle" onclick="togglePastTrips()">
+      <span class="past-trips-chev">${pastOpen ? '▼' : '▶'}</span>
+      <span>Past Adventures</span>
+      <span class="past-trips-count">${past.length}</span>
+    </button>` : '';
   document.getElementById('trip-grid').innerHTML = yearPickerHtml
     + upcoming.map(t => tripCardHtml(t, false)).join('')
-    + past.map(t => tripCardHtml(t, true)).join('');
+    + pastHeader
+    + (pastOpen ? past.map(t => tripCardHtml(t, true)).join('') : '');
 
   const listItemHtml = (item, type, editFn) => {
     const pClass = item.priority === 'critical' ? ' priority-critical' : item.priority === 'urgent' ? ' priority-urgent' : '';
