@@ -7754,12 +7754,39 @@ function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({
 // YYYY-MM → the amount that was owed when it was marked paid (so the tile can show "$X paid").
 let settledMonths = {};
 function saveSettledMonths() { db.collection('state').doc('settledMonths').set({months: settledMonths}).catch(_onSaveErr); }
-function toggleMonthSettled(ym, amount) {
+// Stored value is either a bare number (legacy: just the magnitude paid) or {paid, net} where
+// `net` is the SIGNED calcOwes().Aidan at the moment of settling. The sign matters: without it we
+// can only compare magnitudes, so a balance that flipped direction but kept the same size would
+// look unchanged. Both shapes are read so old records keep working.
+const _settledPaid = v => (v && typeof v === 'object') ? (Number(v.paid) || 0) : (Number(v) || 0);
+const _settledNet  = v => (v && typeof v === 'object' && Number.isFinite(v.net)) ? v.net : null;
+
+// Mark a month settled (or, if it's settled but has drifted since, re-settle it at the current
+// balance). `aidanNet` is the signed net so later renders can tell exactly what changed.
+function toggleMonthSettled(ym, amount, aidanNet) {
   if (!ym) return;
-  if (settledMonths[ym] != null) delete settledMonths[ym];
-  else settledMonths[ym] = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
+  const existing = settledMonths[ym];
+  if (existing != null && !_settledDrift(ym, aidanNet)) {
+    // Settled and still accurate → clicking clears it.
+    delete settledMonths[ym];
+  } else {
+    settledMonths[ym] = {
+      paid: Math.max(0, round2(amount)),
+      ...(Number.isFinite(aidanNet) ? { net: round2(aidanNet) } : {}),
+    };
+  }
   saveSettledMonths();
   if (isActive('budget')) renderBudget();
+}
+// Has the balance moved since this month was marked settled?
+function _settledDrift(ym, aidanNetNow) {
+  const rec = settledMonths[ym];
+  if (rec == null || !Number.isFinite(aidanNetNow)) return false;
+  const netThen = _settledNet(rec);
+  const outstanding = netThen !== null
+    ? round2(aidanNetNow - netThen)                    // exact, sign-aware
+    : round2(Math.abs(aidanNetNow) - _settledPaid(rec)); // legacy record: magnitudes only
+  return Math.abs(outstanding) >= 0.01;
 }
 
 // ─── GIFT CARDS ──────────────────────────────────────────────────────────────
@@ -8065,7 +8092,10 @@ function renderBudget() {
     const isFiltered = searchQ || filterCat || filterPerson;
     if (isFiltered && filtered.length) {
       const total = filtered.reduce((s, e) => s + shareAmt(e), 0);
-      totalEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} · $${total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+      // Same sign-before-dollar convention as the tiles, so a net-refund selection reads
+      // "−$250.00" rather than the "$-250.00" that toLocaleString produces on its own.
+      const totalStr = (total < -0.005 ? '−$' : '$') + Math.abs(total).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+      totalEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} · ${totalStr}`;
     } else {
       totalEl.textContent = '';
     }
@@ -8083,8 +8113,17 @@ function renderBudget() {
   // moved to savings/investments is still yours, so a negative Net means true overspending, not
   // saving. Sign is shown explicitly because fmt() strips it via Math.abs.
   const net       = income - spending;
-  const netStr    = (net < -0.005 ? '−' : '') + fmt(net);
+  // fmt() prints the MAGNITUDE (it uses Math.abs), so every tile has to add its own sign. Missing
+  // that made a net-refund month — where returns exceed purchases — render as "$250.00 spent" when
+  // Amanda was actually $250 ahead. Applied to all four tiles, not just Net.
+  const signed    = n => (n < -0.005 ? '−' : '') + fmt(n);
+  const netStr    = signed(net);
   const netColor  = net < -0.005 ? 'var(--coral)' : 'var(--sage)';
+  // A negative "Spent" is money coming BACK, so it reads as good news, not as overspending.
+  const spendColor = spending < -0.005 ? 'var(--sage)' : 'var(--coral)';
+  // A negative "Set Aside" is a withdrawal FROM savings.
+  const savedColor = saved < -0.005 ? 'var(--coral)' : 'var(--blue)';
+  const incomeColor = income < -0.005 ? 'var(--coral)' : 'var(--sage)';
   const owes = calcOwes(monthTx);
   // owes.Aidan and owes.Amanda are equal-and-opposite (every shared tx credits one and debits the
   // other by the same half-amount), so the settlement is the magnitude of either side — NOT the
@@ -8097,18 +8136,36 @@ function renderBudget() {
   const isSettled = !!(settleYm && settledMonths[settleYm] != null);
   let settleStr, settleColor, settleSize, settleTip, settleClick = '';
   if (isSettled) {
-    const paid = settledMonths[settleYm];
-    settleStr   = paid >= 0.01 ? `✓ ${fmt(paid)} paid` : '✓ Settled';
-    settleColor = 'var(--sage)';
-    settleSize  = '15';
-    settleTip   = 'Marked settled — click to undo';
-    settleClick = `onclick="toggleMonthSettled('${settleYm}', 0)" style="cursor:pointer"`;
+    const rec  = settledMonths[settleYm];
+    const paid = _settledPaid(rec);
+    const netThen = _settledNet(rec);
+    // Money logged AFTER the month was settled used to be invisible: the tile kept showing the
+    // frozen "paid" figure while a real new imbalance quietly accumulated. Now any drift is shown.
+    const outstanding = netThen !== null
+      ? round2(owes.Aidan - netThen)
+      : round2(settleAmt - paid);
+    const hasDrift = Math.abs(outstanding) >= 0.01;
+    if (hasDrift) {
+      // Direction of the NEW amount only (not the whole balance) — that's what's unpaid.
+      const newOwer = outstanding > 0 ? 'Amanda' : 'Aidan';
+      settleStr   = `✓ ${fmt(paid)} paid · +${fmt(outstanding)}`;
+      settleColor = 'var(--amber)';
+      settleSize  = '14';
+      settleTip   = `You settled ${fmt(paid)} for this month, but ${fmt(outstanding)} has been added since — ${newOwer} owes it. Click to settle up again at the current balance.`;
+      settleClick = `onclick="toggleMonthSettled('${settleYm}', ${settleAmt}, ${owes.Aidan})" style="cursor:pointer"`;
+    } else {
+      settleStr   = paid >= 0.01 ? `✓ ${fmt(paid)} paid` : '✓ Settled';
+      settleColor = 'var(--sage)';
+      settleSize  = '15';
+      settleTip   = 'Marked settled — click to undo';
+      settleClick = `onclick="toggleMonthSettled('${settleYm}', 0, ${owes.Aidan})" style="cursor:pointer"`;
+    }
   } else {
     settleStr   = settleAmt < 0.01 ? 'All square ✅' : `${owes.Aidan>0?'Amanda':'Aidan'} owes ${owes.Aidan>0?'Aidan':'Amanda'} ${fmt(settleAmt)}`;
     settleColor = settleAmt < 0.01 ? 'var(--sage)' : 'var(--amber)';
     settleSize  = settleAmt < 0.01 ? '14' : '18';
     settleTip   = settleYm ? 'Click when you’ve squared up — records it as paid' : 'Who owes who, after splitting shared expenses. Pick a single month to mark it paid.';
-    if (settleYm) settleClick = `onclick="toggleMonthSettled('${settleYm}', ${settleAmt})" style="cursor:pointer"`;
+    if (settleYm) settleClick = `onclick="toggleMonthSettled('${settleYm}', ${settleAmt}, ${owes.Aidan})" style="cursor:pointer"`;
   }
   // A period can legitimately contain expenses stamped with DIFFERENT ratios (e.g. the month the
   // split mode changed). List whichever ratios are actually present rather than assuming one, so
@@ -8125,10 +8182,10 @@ function renderBudget() {
     ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">${personSel ? `${personSel}'s share · ${ratioStr ? ratioStr + ' · ' : ''}` : ''}filters active · Settlement is full period</div>`
     : '';
   document.getElementById('budget-snapshot').innerHTML = filterHint + `
-    <div class="bsnap" tabindex="0" data-tip="Money in — transactions categorized Income this period."><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
-    <div class="bsnap" tabindex="0" data-tip="Everyday expenses — everything except Income, Savings and Investments."><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:var(--coral)">${fmt(spending)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Money in — transactions categorized Income this period."><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:${incomeColor}">${signed(income)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Everyday expenses — everything except Income, Savings and Investments. Shows as negative when refunds outweigh purchases."><div class="bsnap-label">Spent</div><div class="bsnap-val" style="color:${spendColor}">${signed(spending)}</div></div>
     <div class="bsnap" tabindex="0" data-tip="Income − Spent. What's left over, or short, this period. Money set aside still counts as yours."><div class="bsnap-label">Net</div><div class="bsnap-val" style="color:${netColor}">${netStr}</div></div>
-    <div class="bsnap" tabindex="0" data-tip="Money you moved into Savings or Investments — not leftover cash."><div class="bsnap-label">Set Aside</div><div class="bsnap-val" style="color:var(--blue)">${fmt(saved)}</div></div>
+    <div class="bsnap" tabindex="0" data-tip="Money you moved into Savings or Investments — not leftover cash. Negative means you withdrew from them."><div class="bsnap-label">Set Aside</div><div class="bsnap-val" style="color:${savedColor}">${signed(saved)}</div></div>
     <div class="bsnap" tabindex="0" data-tip="${settleTip}" ${settleClick}><div class="bsnap-label">Settlement</div><div class="bsnap-val" style="color:${settleColor};font-size:${settleSize}px">${settleStr}</div></div>`;
 
   // Monthly trend bars — keyed by YYYY-MM so the same calendar month in different years doesn't
@@ -8186,12 +8243,18 @@ function renderBudget() {
   // Category breakdown (spending only, no Income/Savings/Investments). Uses the SAME filtered
   // set as the snapshot tiles so the breakdown matches what the user sees in the tx list.
   const catSrc = hasNonPeriodFilter ? filtered : monthTx;
-  const catTotals = {}, catAidan = {}, catAmanda = {};
+  const catTotals = {}, catAidan = {}, catAmanda = {}, catOther = {};
   for (const e of catSrc) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
     catTotals[e.category] = (catTotals[e.category]||0) + shareAmt(e);
-    catAidan[e.category]  = (catAidan[e.category]||0)  + shareFor(e, 'Aidan');
-    catAmanda[e.category] = (catAmanda[e.category]||0) + shareFor(e, 'Amanda');
+    const a = shareFor(e, 'Aidan'), b = shareFor(e, 'Amanda');
+    catAidan[e.category]  = (catAidan[e.category]||0)  + a;
+    catAmanda[e.category] = (catAmanda[e.category]||0) + b;
+    // A solo row whose `person` is neither Aidan nor Amanda (imported/legacy data) belongs to
+    // NEITHER of them, so it used to be counted in the row total but in neither person's figure —
+    // the two labels silently failed to add up to the row. Track the remainder explicitly so the
+    // arithmetic stays honest instead of quietly losing money.
+    catOther[e.category] = (catOther[e.category]||0) + round2((Number(e.amount) || 0) - a - b);
   }
   const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxCat = catSorted[0]?.[1] || 1;
@@ -8218,6 +8281,7 @@ function renderBudget() {
   document.getElementById('budget-cats').innerHTML = catSorted.length ? catSorted.map(([cat, total]) => {
     const aidanAmt  = catAidan[cat]  || 0;
     const amandaAmt = catAmanda[cat] || 0;
+    const otherAmt  = catOther[cat]  || 0;   // rows attributable to neither person; usually 0
     const color = CAT_COLORS[cat] || 'var(--amber)';
     const emoji = CAT_EMOJIS[cat] || '📦';
     const target = showTargets ? (budgetTargets[cat] || 0) * targetMultiplier : 0;
@@ -8230,7 +8294,8 @@ function renderBudget() {
         <div class="budget-cat-bar-wrap"><div class="budget-cat-bar" style="width:${barPct}%;background:${barColor}"></div></div>
         <div style="display:flex;gap:8px;margin-top:2px;align-items:center">
           ${personSel ? '' : `<span style="font-size:10px;color:var(--blue)">Aidan: ${fmt(aidanAmt)}</span>
-          <span style="font-size:10px;color:var(--coral)">Amanda: ${fmt(amandaAmt)}</span>`}
+          <span style="font-size:10px;color:var(--coral)">Amanda: ${fmt(amandaAmt)}</span>${
+            Math.abs(otherAmt) >= 0.005 ? `<span style="font-size:10px;color:var(--text-3)" title="Logged against a person other than Aidan or Amanda — open the row and set who paid so it counts toward someone">Unassigned: ${fmt(otherAmt)}</span>` : ''}`}
           ${targetStr}
         </div>
       </div>

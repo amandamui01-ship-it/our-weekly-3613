@@ -11,6 +11,7 @@ const SUITES = [
   ['split-math.test.js', 'split math'],
   ['emoji.test.js',      'auto-emoji'],
   ['runtime.test.js',    'runtime (jsdom)'],
+  ['budget-audit.test.js','budget math audit (jsdom)'],
 ];
 
 let failed = null;

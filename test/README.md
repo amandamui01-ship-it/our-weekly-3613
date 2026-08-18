@@ -14,6 +14,7 @@ Or individually:
 | `split-math.test.js` | The 56/44 split, settlement, income and refund handling | Wrong math, lost/created pennies, sign errors |
 | `emoji.test.js` | The auto-emoji table | Ordering bugs (a general pattern stealing a specific one's matches) |
 | `runtime.test.js` | Loads the real page in jsdom with Firebase stubbed, pushes data through the listeners, drives the UI | **Runtime** errors: out-of-scope helpers, TDZ, bad element ids, renders that throw on real data |
+| `budget-audit.test.js` | Budget tab money math end to end: amount parsing, tiles vs. category breakdown vs. trend chart, period views, settlement, settled-month drift, recurring "already loaded" | Tiles disagreeing with the rows beneath them, sign errors, money attributed to nobody, double-charged months |
 
 `runtime.test.js` needs jsdom:
 
