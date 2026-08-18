@@ -240,8 +240,11 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .trip-card.past::before{background:var(--sage)}
 .trip-card.overlap{border-color:var(--coral);background:var(--coral-bg)}
 .trip-card.overlap::before{background:var(--coral)}
-.overlap-dismiss{font-size:10px;color:var(--coral);background:none;border:none;padding:0;cursor:pointer;font-family:inherit;text-decoration:underline;opacity:.75;transition:opacity .15s}
-.overlap-dismiss:hover{opacity:1}
+.overlap-dismiss{display:inline-block;margin-top:7px;font-size:10px;font-weight:700;color:var(--coral);background:none;border:1px solid var(--coral);border-radius:20px;padding:3px 10px;cursor:pointer;font-family:inherit;opacity:.85;transition:all .15s}
+.overlap-dismiss:hover{opacity:1;background:var(--coral);color:#fff}
+/* An accepted conflict: no longer alarming, but still discoverable and reversible. */
+.overlap-okd{display:inline-block;margin-top:7px;font-size:10px;font-weight:700;color:var(--text-3);background:none;border:1px dashed var(--border);border-radius:20px;padding:3px 10px;cursor:pointer;font-family:inherit;transition:all .15s}
+.overlap-okd:hover{color:var(--coral);border-color:var(--coral)}
 .trip-dates{font-size:11px;font-weight:700;color:var(--tc,var(--amber));text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .trip-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.3}
 .trip-days{font-size:11px;color:var(--text-3)}
@@ -592,6 +595,17 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 /* Auto-injected trip events */
 .plan-slot-trip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;background:#92590f;color:white;border:1.5px solid #92590f;cursor:default;user-select:none}
 [data-theme="dark"] .plan-slot-trip{background:#7a4a0a;color:white;border-color:#7a4a0a}
+/* Multi-day trip: one span across several day rows. The first day is solid, continuation days are
+   ghosted, and the corners facing the adjacent day are squared off so the rows read as connected
+   segments of a single trip rather than three separate ones. */
+.plan-slot-trip-multi{gap:6px}
+.plan-slot-trip-multi.pst-first{border-bottom-left-radius:3px;border-bottom-right-radius:3px}
+.plan-slot-trip-multi.pst-mid{border-radius:3px;background:transparent;color:#92590f;border-style:dashed}
+.plan-slot-trip-multi.pst-last{border-top-left-radius:3px;border-top-right-radius:3px;background:transparent;color:#92590f;border-style:dashed}
+[data-theme="dark"] .plan-slot-trip-multi.pst-mid,
+[data-theme="dark"] .plan-slot-trip-multi.pst-last{color:#e0a860;border-color:#7a4a0a;background:transparent}
+.pst-cont{opacity:.75;font-weight:800}
+.pst-day{font-size:9px;font-weight:700;opacity:.8;text-transform:none;letter-spacing:.02em;padding-left:5px;border-left:1px solid currentColor}
 /* This Week's Focus — todo picker */
 .week-todo-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;background:var(--surface-warm);border:1px solid var(--border-light);margin-bottom:6px}
 .week-todo-cb{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;transition:all .15s;background:white}
@@ -916,6 +930,51 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .history-edit-done-btn{background:none;border:1px solid var(--amber);color:var(--amber-dark);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
 .history-edit-done-btn:hover{background:var(--amber);color:white}
 
+
+/* ── To-do deadlines ── */
+.todo-due{font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;border:1px solid transparent;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.todo-due.due-late{background:var(--coral-bg);color:var(--coral);border-color:var(--coral)}
+.todo-due.due-today{background:var(--amber);color:#fff;border-color:var(--amber)}
+.todo-due.due-soon{background:var(--amber-bg);color:var(--amber-dark);border-color:#f0d4a8}
+.todo-due.due-far{background:var(--surface-warm);color:var(--text-3);border-color:var(--border)}
+.todo-due:hover{filter:brightness(.95)}
+/* The "add a deadline" affordance stays quiet until you hover the row (always visible on touch,
+   where there is no hover state to discover it with). */
+.todo-due-add{font-size:11px;background:none;border:none;padding:1px 3px;cursor:pointer;opacity:0;transition:opacity .15s;font-family:inherit;line-height:1;flex-shrink:0}
+.todo-item:hover .todo-due-add{opacity:.5}
+.todo-due-add:hover{opacity:1!important}
+@media(hover:none){.todo-due-add{opacity:.4}}
+.todo-due-input{font-size:11px;font-family:inherit;padding:2px 5px;border:1px solid var(--amber);border-radius:6px;background:var(--surface);color:var(--text);outline:none}
+.todo-due-clear{font-size:13px;line-height:1;background:none;border:none;color:var(--text-3);cursor:pointer;padding:0 3px;font-family:inherit}
+.todo-due-clear:hover{color:var(--coral)}
+.todo-item.todo-overdue{border-left:3px solid var(--coral)}
+/* A critical/urgent item that is ALSO overdue keeps its priority stripe — don't double-border. */
+.todo-item.priority-critical.todo-overdue,.todo-item.priority-urgent.todo-overdue{border-left-color:var(--coral)}
+
+/* To-do deadlines on the calendar grid */
+.cal-todo{display:block;font-size:9px;font-weight:700;padding:1px 4px;margin-top:1px;border-radius:4px;background:var(--surface-warm);color:var(--text-2);border:1px solid var(--border);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.5}
+.cal-todo:hover{border-color:var(--amber)}
+.cal-todo.cal-todo-late{background:var(--coral-bg);color:var(--coral);border-color:var(--coral)}
+.cal-todo.cal-todo-done{opacity:.45;text-decoration:line-through}
+
+/* ── Gift cards ── */
+.gc-item{padding:11px 13px;border:1px solid var(--border-light);border-radius:10px;background:var(--surface-warm);margin-bottom:9px}
+.gc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.gc-name{font-size:14px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gc-amt{font-size:15px;font-weight:800;white-space:nowrap}
+.gc-bar-wrap{height:5px;border-radius:3px;background:var(--border-light);overflow:hidden;margin:7px 0 5px}
+.gc-bar{height:100%;background:var(--sage);border-radius:3px;transition:width .3s}
+.gc-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text-3)}
+.gc-actions{display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap}
+.gc-use-input{width:78px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none}
+.gc-use-input:focus{border-color:var(--amber)}
+.gc-btn{padding:5px 11px;border:1px solid #f0d4a8;border-radius:7px;background:var(--amber-bg);color:var(--amber-dark);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
+.gc-btn:hover{background:var(--amber);color:#fff;border-color:var(--amber)}
+.gc-btn-ghost{background:none;border-color:var(--border);color:var(--text-3)}
+.gc-btn-ghost:hover{background:var(--border-light);color:var(--text);border-color:var(--border)}
+.gc-log{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;padding-top:8px;border-top:1px dashed var(--border)}
+.gc-log-entry{font-size:10px;font-weight:600;color:var(--text-3);background:var(--surface);border:1px solid var(--border-light);border-radius:5px;padding:2px 6px}
+@media(max-width:600px){.gc-name{font-size:13px}.gc-use-input{width:66px}}
 
 /* ── Todo Priority & Drag ── */
 .todo-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
@@ -1561,10 +1620,30 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       <div class="bqa-row2">
         <input class="bq-input bq-amt" id="b-amount" type="number" placeholder="$0.00 (or negative for refunds)" step="0.01" onkeydown="if(event.key==='Enter')addExpense()">
         <input type="date" class="bq-input bq-date" id="b-date">
-        <label class="bq-split"><input type="checkbox" id="b-shared"> 50/50 split</label>
+        <label class="bq-split" id="b-shared-label" title="Split this expense with your partner"><input type="checkbox" id="b-shared"> <span id="b-shared-text">50/50 split</span></label>
         <button class="btn btn-primary bq-btn" onclick="addExpense()">+ Add</button>
       </div>
     </div>
+  </div>
+
+  <!-- ── Gift cards ── -->
+  <div class="card" id="giftcards-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="card-title" style="margin-bottom:0">🎁 Gift Cards</div>
+      <div id="gc-total" style="font-size:13px;font-weight:700;color:var(--sage)"></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin:6px 0 12px;line-height:1.5">
+      Cards you're holding, and what's left on each. Log a partial spend and the balance follows.
+    </div>
+    <div id="gc-list"></div>
+    <div class="add-list-row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      <input type="text" id="gc-label" maxlength="80" placeholder="Where it's for (e.g. Target)"
+        style="flex:2;min-width:150px" onkeydown="if(event.key==='Enter')document.getElementById('gc-amount').focus()">
+      <input type="number" id="gc-amount" step="0.01" min="0" placeholder="$ value"
+        style="flex:1;min-width:100px" onkeydown="if(event.key==='Enter')addGiftCard()">
+      <button onclick="addGiftCard()">+ Add Card</button>
+    </div>
+    <div id="gc-spent-wrap"></div>
   </div>
 </div>
 
@@ -1607,8 +1686,19 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       </select>
       <input id="rec-desc" class="bq-input" style="flex:2;min-width:100px" maxlength="200" placeholder="Description">
       <input id="rec-amt" type="number" class="bq-input" style="width:80px" placeholder="$" step="0.01">
-      <label class="bq-split"><input type="checkbox" id="rec-shared"> 50/50</label>
+      <label class="bq-split" id="rec-shared-label"><input type="checkbox" id="rec-shared"> <span id="rec-shared-text">50/50</span></label>
       <button class="btn btn-primary" style="font-size:12px;padding:6px 10px" onclick="addRecurring()">+ Save</button>
+    </div>
+
+    <!-- ── Shared split ratio ── -->
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border-light)">
+      <div class="card-title" style="text-align:left;margin-bottom:4px">⚖️ Shared Expense Split</div>
+      <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.5">
+        How expenses marked <em>shared</em> get divided. Each expense remembers the split that was
+        active when you logged it, so changing this <strong>never</strong> changes a past month.
+      </div>
+      <div id="split-mode-picker"></div>
+      <div id="split-mode-preview" style="font-size:12px;color:var(--text-3);margin-top:10px;line-height:1.6"></div>
     </div>
 
     <!-- ── Budget targets ── -->
@@ -2047,6 +2137,11 @@ let datedEvents = []; // [{id, date:'YYYY-MM-DD', text, time?:'HH:MM'}] — perm
 let expenses = [];
 let recurringItems = [];
 let mood = { amanda: '', aidan: '', week: '' };
+// Date conflicts the couple has explicitly accepted, as a Set of sorted "tripIdA|tripIdB" keys.
+// Declared up here with the rest of the shared state (not next to okOverlap far below) because
+// renderDates reads it, and renderDates can run before that point in the script is reached — a
+// `let` referenced before its declaration line executes throws instead of reading undefined.
+let okdOverlaps = new Set();
 
 // One-time migration guards. These prevent in-listener data fixups from re-running on every
 // snapshot, which would otherwise race with concurrent arrayUnion writes from the partner
@@ -2118,6 +2213,9 @@ function teardownFirestore() {
   _editingHistoryId = null;
   budgetTargets = {};
   settledMonths = {};
+  splitPct = DEFAULT_SPLIT_PCT;
+  giftCards = [];
+  okdOverlaps = new Set();
   heartValAmanda = 0;
   heartValAidan = 0;
   heartVal = 0;
@@ -2132,6 +2230,8 @@ function teardownFirestore() {
   // etc. Device-scoped prefs (theme, accent, widget order) are deliberately preserved — and so
   // are recurring-reminder dismissals/minimizes (ow-rec-*), so signing out and back in on your
   // own device doesn't resurface reminders you already dismissed.
+  // 'ow-dismissed-overlaps' is the retired localStorage home for accepted date conflicts (now in
+  // Firestore as okdOverlaps). Still cleared so the stale key doesn't linger on shared devices.
   ['ow-review-draft', 'ow-bulk-person', 'ow-bq-person', 'ow-bq-cat',
    'ow-dismissed-overlaps'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
@@ -2166,6 +2266,8 @@ function initFirestore() {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
     todos = snap.data().items || [];
     if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
+    // Deadlines render on the calendar grid too, so a due date the partner sets has to repaint it.
+    if (isActive('dates')) renderCalendar();
     scheduleRenderHome();
     const el = document.getElementById('stat-todos');
     if (el) el.textContent = todos.filter(t=>!t.done).length;
@@ -2193,6 +2295,26 @@ function initFirestore() {
 
   _listen('settledMonths', snap => {
     settledMonths = snap.exists ? (snap.data().months || {}) : {};
+    if (isActive('budget')) renderBudget();
+  });
+
+  _listen('okdOverlaps', snap => {
+    okdOverlaps = new Set(snap.exists ? (snap.data().pairs || []) : []);
+    if (isActive('dates')) renderDates();
+  });
+
+  _listen('giftCards', snap => {
+    if (!snap.exists) { ref('giftCards').set({items: []}); return; }
+    giftCards = snap.data().items || [];
+    // Don't rebuild the list while a spend amount is half-typed — the input would be wiped.
+    if (isActive('budget') && !_hasTypingFocus('#giftcards-card')) renderGiftCards();
+  });
+
+  // The current shared-split mode (Aidan's %). Shared so both partners see the same mode; a
+  // missing/garbage value falls back to 50/50 rather than producing a nonsense ratio.
+  _listen('splitPct', snap => {
+    const raw = snap.exists ? snap.data().aidan : null;
+    splitPct = _isPct(raw) ? _cleanPct(raw) : DEFAULT_SPLIT_PCT;
     if (isActive('budget')) renderBudget();
   });
 
@@ -2658,6 +2780,10 @@ function _getPlanWeekKey() {
   mon.setDate(t.getDate() - daysBack);
   return _fmtDateKey(mon);
 }
+// Declared up here with the other date helpers rather than down by the calendar code: the to-do
+// deadline badges and the gift-card redemption log both format dates, and both live above the
+// calendar section. A `const` used before its declaration line runs throws.
+const _MONTH_NAMES_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function _fmtDateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -3298,8 +3424,13 @@ function saveEntry() {
 function renderTodos() {
   const activeHtml = todoCategories.map((cat, idx) => {
     const pOrder = {critical:0,urgent:1};
+    // Priority first (unchanged), then soonest deadline, then original order. Dated items sort
+    // ahead of undated ones at the same priority so what's actually due next rises to the top;
+    // Infinity for undated keeps the comparison total and the sort stable for equal keys.
+    const dueKey = t => (typeof t.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.due)) ? t.due : '9999-99-99';
     const items = todos.filter(t => t.cat === cat.id && !t.done)
-      .sort((a,b) => (pOrder[a.priority]??2) - (pOrder[b.priority]??2));
+      .sort((a,b) => ((pOrder[a.priority]??2) - (pOrder[b.priority]??2))
+                  || dueKey(a).localeCompare(dueKey(b)));
     return `
       <div class="card todo-category" draggable="true" data-cat-id="${cat.id}" style="cursor:default">
         <div class="todo-cat-title">
@@ -3353,19 +3484,109 @@ function renderTodos() {
   setTimeout(addCategoryDragListeners, 50);
 }
 
+// ─── TO-DO DEADLINES ─────────────────────────────────────────────────────────
+// Due-date → to-dos index, rebuilt once per calendar render (see _rebuildTodoDueIndex).
+let _todoDueIndex = new Map();
+function _rebuildTodoDueIndex() {
+  _todoDueIndex = new Map();
+  for (const t of todos) {
+    if (typeof t.due !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(t.due)) continue;
+    if (!_todoDueIndex.has(t.due)) _todoDueIndex.set(t.due, []);
+    _todoDueIndex.get(t.due).push(t);
+  }
+}
+const _todosDueOn = iso => _todoDueIndex.get(iso) || [];
+
+// A to-do can carry `due` (a plain 'YYYY-MM-DD' string). Due to-dos also appear on the Calendar
+// grid on their due date. Dates are compared as strings against _todayLocal() rather than as Date
+// objects, which keeps everything in local time and avoids the UTC off-by-one-day trap.
+function _dueInfo(due) {
+  if (typeof due !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(due)) return null;
+  const today = _todayLocal();
+  const [y, m, d] = due.split('-').map(Number);
+  const days = _daysBetween(new Date(today + 'T00:00:00'), new Date(due + 'T00:00:00'));
+  let label, cls;
+  if (days < 0)       { label = days === -1 ? '1 day late' : `${-days} days late`; cls = 'due-late'; }
+  else if (days === 0){ label = 'today';    cls = 'due-today'; }
+  else if (days === 1){ label = 'tomorrow'; cls = 'due-soon'; }
+  else if (days <= 7) { label = `in ${days}d`; cls = 'due-soon'; }
+  else                { label = `${_MONTH_NAMES_SHORT[m-1]} ${d}`; cls = 'due-far'; }
+  return { days, label, cls, full: `${_MONTH_NAMES_SHORT[m-1]} ${d}, ${y}` };
+}
+
 function renderTodoItem(t) {
   const pClass = t.priority === 'critical' ? ' priority-critical' : t.priority === 'urgent' ? ' priority-urgent' : '';
   const pIcon  = t.priority === 'critical' ? '🔴' : t.priority === 'urgent' ? '🟡' : '○';
+  // Only nag about overdue items that are still open — a completed to-do isn't late.
+  const due = t.done ? null : _dueInfo(t.due);
+  const dueBadge = due
+    ? `<button class="todo-due ${due.cls}" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Due ${due.full} — click to change, or clear it">📅 ${due.label}</button>`
+    : `<button class="todo-due-add" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Add a deadline">📅</button>`;
   return `
-    <div class="todo-item${t.done?' done':''}${pClass}" id="todo-${t.id}" draggable="true" data-id="${t.id}" data-cat="${t.cat}" onclick="editTodo('${t.id}')" style="cursor:pointer">
+    <div class="todo-item${t.done?' done':''}${pClass}${due && due.days < 0 ? ' todo-overdue' : ''}" id="todo-${t.id}" draggable="true" data-id="${t.id}" data-cat="${t.cat}" onclick="editTodo('${t.id}')" style="cursor:pointer">
       <div class="todo-cb" onclick="toggleTodo('${t.id}');event.stopPropagation()">${t.done ? '✓' : ''}</div>
-      <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0">
+      <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap">
         <span class="todo-text" style="flex:none">${escHtml(t.text)}</span>
         <button class="todo-priority-btn" onclick="cycleTodoPriority('${t.id}');event.stopPropagation()" title="Set priority (○ → urgent → critical)">${pIcon}</button>
+        ${t.done ? '' : dueBadge}
       </span>
       <span class="todo-drag-handle" onclick="event.stopPropagation()">⠿</span>
       <span class="todo-del" onclick="deleteTodo('${t.id}');event.stopPropagation()">×</span>
     </div>`;
+}
+
+// Swap the due badge for a date input. Mirrors editTodo's inline-edit pattern rather than using a
+// modal, so setting a deadline is one tap on mobile.
+function pickTodoDue(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t) return;
+  const row = document.getElementById('todo-' + id);
+  const badge = row?.querySelector('.todo-due, .todo-due-add');
+  if (!badge) return;
+  const wrap = document.createElement('span');
+  wrap.style.cssText = 'display:inline-flex;align-items:center;gap:4px';
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.className = 'todo-due-input';
+  input.value = typeof t.due === 'string' ? t.due : '';
+  input.onclick = e => e.stopPropagation();
+  const clear = document.createElement('button');
+  clear.className = 'todo-due-clear';
+  clear.textContent = '×';
+  clear.title = 'Remove the deadline';
+  wrap.append(input, clear);
+  badge.replaceWith(wrap);
+
+  let settled = false;
+  const commit = value => {
+    if (settled) return;
+    settled = true;
+    // Re-resolve by id: a partner snapshot may have swapped the todos array while the picker was
+    // open, which would otherwise leave the mutation on an orphaned object.
+    const live = todos.find(x => x.id === id);
+    if (live) {
+      const next = value || null;
+      const prev = live.due ?? null;
+      if (next !== prev) {
+        if (next) live.due = next; else delete live.due;
+        saveTodos();
+      }
+    }
+    renderTodos();
+    if (isActive('dates')) renderCalendar();
+    scheduleRenderHome();
+  };
+  clear.onclick = e => { e.stopPropagation(); commit(''); };
+  input.onchange = () => commit(input.value);
+  // Blur is the mobile fallback: iOS Safari fires change on wheel-picker dismissal inconsistently.
+  input.onblur = () => setTimeout(() => commit(input.value), 120);
+  input.onkeydown = e => {
+    e.stopPropagation();
+    if (e.key === 'Enter')  { e.preventDefault(); commit(input.value); }
+    if (e.key === 'Escape') { e.preventDefault(); settled = true; renderTodos(); }
+  };
+  input.focus();
+  if (input.showPicker) { try { input.showPicker(); } catch (_) {} }
 }
 
 function toggleTodo(id) {
@@ -3657,7 +3878,6 @@ function navCalToday() {
 // This split matches the actual data model: trips are heavyweight (status, packing, itinerary,
 // notes), events are lightweight day-anchored items. The day-click defaults to the lightweight
 // path so casual additions don't accidentally spawn full trip records.
-const _MONTH_NAMES_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function _fmtIsoToShort(isoDate) {
   const [y, m, d] = isoDate.split('-').map(Number);
   if (!y || !m || !d) return '';
@@ -4205,6 +4425,10 @@ function renderCalendar() {
   const days = _calMonthDays(_calMonth);
   const currentMonth = m;
 
+  // Index to-dos by due date once per render. The grid has 42 cells, so a per-cell .filter() over
+  // the whole to-do list would be 42 full scans every time the month changes.
+  _rebuildTodoDueIndex();
+
   // Only trips with sortDate can be placed on the grid.
   const datedTrips = trips.filter(t => t.sortDate);
 
@@ -4281,6 +4505,19 @@ function renderCalendar() {
         }).join('');
       }
 
+      // To-dos due on this day. Rendered after events so the cell reads trips → events → tasks.
+      // Completed ones still show (struck through) rather than vanishing, so a day you cleared
+      // doesn't look like a day you never planned anything for.
+      let todosHtml = '';
+      const dayTodos = _todosDueOn(cellIsoForEvents);
+      if (dayTodos.length) {
+        todosHtml = dayTodos.map(t => {
+          const late = !t.done && cellIsoForEvents < _todayLocal();
+          const cls = ['cal-todo', t.done ? 'cal-todo-done' : '', late ? 'cal-todo-late' : ''].filter(Boolean).join(' ');
+          return `<div class="${cls}" onclick="showPage('todos');event.stopPropagation()" title="To-do due ${cellIsoForEvents}${t.done ? ' (done)' : late ? ' — overdue' : ''}: ${escHtml(t.text)}">☑ ${escHtml(t.text)}</div>`;
+        }).join('');
+      }
+
       // Chips for current-plan-week days only
       let chipsHtml = '';
       if (isPlanWeek) {
@@ -4304,6 +4541,7 @@ function renderCalendar() {
         <div class="cal-day-num">${d.getDate()}</div>
         <div class="cal-day-bars">${barsHtml}</div>
         ${eventsHtml}
+        ${todosHtml}
         ${chipsHtml}
       </div>`;
     }
@@ -4350,7 +4588,18 @@ function renderDates() {
   }
 
   // Year picker
-  const allYears = [...new Set(trips.filter(t => t.sortDate).map(t => +t.sortDate.slice(0,4)))].sort();
+  // A trip's year comes from its parsed sortDate, but fall back to any explicit 4-digit year in
+  // the free-text `dates` field. Some older trips never got a sortDate (they predate the current
+  // parser or came in as seed data), and keying the filter on sortDate alone let those leak into
+  // every year — e.g. a "Feb 14, 2027" trip showing up under the 2026 pill. Trips with no year
+  // information anywhere still show in all years, which is intentional: there's nowhere to file
+  // a genuinely undated idea.
+  const _tripYear = t => {
+    if (t.sortDate) return +t.sortDate.slice(0, 4);
+    const m = String(t.dates || '').match(/\b(20\d{2})\b/);
+    return m ? +m[1] : null;
+  };
+  const allYears = [...new Set(trips.map(_tripYear).filter(Boolean))].sort();
   if (allYears.length && !allYears.includes(_datesYear)) _datesYear = allYears[allYears.length - 1];
   const yearStr = String(_datesYear);
   const yearPickerHtml = (allYears.length > 1 && _datesView === 'grid') ? `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
@@ -4362,13 +4611,13 @@ function renderDates() {
   const titleEl = document.getElementById('dates-page-title');
   if (titleEl) titleEl.textContent = 'Calendar';
 
-  // Filter trips to selected year
-  const yearTrips = trips.filter(t => !t.sortDate || t.sortDate.startsWith(yearStr));
+  // Filter trips to selected year, using the derived year so text-dated trips land in the right
+  // one. Only trips with no discoverable year at all fall through to every year.
+  const yearTrips = trips.filter(t => { const y = _tripYear(t); return y === null || y === _datesYear; });
   const upcoming = yearTrips.filter(t => !isPast(t)).sort(sortByDate);
   const past     = yearTrips.filter(t =>  isPast(t)).sort(sortByDate);
 
   // Compute overlapping trip IDs (check upcoming trips only)
-  const dismissedOverlaps = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
   const icsToIso = s => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
   const ranges = upcoming.filter(t => t.sortDate).map(t => ({
     id: t.id,
@@ -4376,26 +4625,27 @@ function renderDates() {
     endExcl: icsToIso(parseICSEndDateMemo(t.dates, t.sortDate)),
   }));
   _overlapPairs = [];
-  const overlapping = new Set();
+  // A trip goes red only if it has at least one conflict that hasn't been OK'd. OK'ing is keyed
+  // to the specific PAIR of trips, not to a trip, so marking "Japan overlaps Xmas, that's fine"
+  // doesn't also pre-approve some unrelated future conflict that Japan picks up later.
+  const overlapping = new Set();   // has an un-OK'd conflict → red
+  const okdTrips = new Set();      // all of its conflicts are OK'd → quiet "double-booked" note
   for (let i = 0; i < ranges.length; i++) {
     for (let j = i + 1; j < ranges.length; j++) {
       const a = ranges[i], b = ranges[j];
       if (a.start < b.endExcl && b.start < a.endExcl) {
         _overlapPairs.push([a.id, b.id]);
-        if (!dismissedOverlaps.has(a.id)) overlapping.add(a.id);
-        if (!dismissedOverlaps.has(b.id)) overlapping.add(b.id);
+        if (isOverlapOkd(a.id, b.id)) { okdTrips.add(a.id); okdTrips.add(b.id); }
+        else { overlapping.add(a.id); overlapping.add(b.id); }
       }
     }
   }
-  // Prune dismissed overlaps that no longer apply (the conflict has been resolved). Otherwise
-  // a re-introduced overlap with the same trip ID would silently stay hidden forever.
-  const stillInOverlap = new Set();
-  _overlapPairs.forEach(([a,b]) => { stillInOverlap.add(a); stillInOverlap.add(b); });
-  let dismissedPruned = false;
-  for (const id of [...dismissedOverlaps]) {
-    if (!stillInOverlap.has(id)) { dismissedOverlaps.delete(id); dismissedPruned = true; }
-  }
-  if (dismissedPruned) _lsSet('ow-dismissed-overlaps', JSON.stringify([...dismissedOverlaps]));
+  // A trip with two conflicts — one OK'd, one not — should still read as a problem.
+  for (const id of overlapping) okdTrips.delete(id);
+  // Garbage-collect OK'd pairs that reference a trip that no longer exists. Deliberately does NOT
+  // drop pairs that merely stopped overlapping: nudging a date and moving it back shouldn't make
+  // an already-settled conflict start shouting again.
+  _pruneOkdOverlaps();
 
   const tripCardHtml = (t, done) => {
     let badge = '';
@@ -4408,12 +4658,23 @@ function renderDates() {
       else badge = `<div class="trip-countdown">in ${days} days</div>`;
       if (days <= 7) pulse = ' trip-pulse';
     }
-    const colorCls = done || overlapping.has(t.id) ? '' : ' ' + tripColor(t.id);
-    return `<div class="trip-card${done ? ' past' : ''}${overlapping.has(t.id) ? ' overlap' : ''}${colorCls}${pulse}" data-id="${t.id}" onclick="openTrip('${t.id}')" style="cursor:pointer">
+    const isConflict = overlapping.has(t.id);
+    const isOkd      = okdTrips.has(t.id);
+    const colorCls = done || isConflict ? '' : ' ' + tripColor(t.id);
+    // Un-OK'd conflict → red card + a one-click "That's fine" to accept it. Once accepted the card
+    // returns to its normal colour and keeps only a small ⇄ note, with an undo to re-flag it.
+    const conflictUi = done ? ''
+      : isConflict ? `<button class="overlap-dismiss" onclick="okOverlap('${t.id}');event.stopPropagation()"
+            title="Keep both — stop flagging this as a conflict">✓ That’s fine</button>`
+      : isOkd ? `<button class="overlap-okd" onclick="unOkOverlap('${t.id}');event.stopPropagation()"
+            title="Double-booked on purpose. Click to flag it as a conflict again">⇄ double-booked</button>`
+      : '';
+    return `<div class="trip-card${done ? ' past' : ''}${isConflict ? ' overlap' : ''}${colorCls}${pulse}" data-id="${t.id}" onclick="openTrip('${t.id}')" style="cursor:pointer">
       <button class="trip-del" onclick="deleteTrip('${t.id}');event.stopPropagation()">×</button>
-      <div class="trip-dates">${escHtml(t.dates)}${overlapping.has(t.id) ? ' ⚠️' : ''}</div>
+      <div class="trip-dates">${escHtml(t.dates)}${isConflict ? ' ⚠️' : ''}</div>
       <div class="trip-name">${escHtml(t.label)}</div>
       ${badge}
+      ${conflictUi}
     </div>`;
   };
 
@@ -4727,16 +4988,29 @@ function renderPlan() {
   const _planMon = _planMondayDate();
   const _dayOff = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
 
-  // Pre-compute which trips overlap each day of the plan week
+  // Pre-compute which trips overlap each day of the plan week.
+  // Each entry carries WHERE in the trip that day falls (day 2 of 4, is it the first/last day) so
+  // a multi-day trip renders as one continuous span instead of the same label repeated on three
+  // rows — which read as three separate camping trips.
   const _tripsByDay = {};
   PLAN_DAYS.forEach(({key}, i) => {
     const dayDate = new Date(_planMon); dayDate.setDate(_planMon.getDate() + i);
-    const dayStr = dayDate.toISOString().slice(0,10); // YYYY-MM-DD
+    const dayStr = _fmtDateKey(dayDate);   // local YYYY-MM-DD, not the UTC-shifted toISOString
     _tripsByDay[key] = trips.filter(t => {
       if (!t.sortDate) return false;
       const endICS = parseICSEndDateMemo(t.dates, t.sortDate); // YYYYMMDD exclusive
       const endStr = endICS.slice(0,4)+'-'+endICS.slice(4,6)+'-'+endICS.slice(6,8);
       return dayStr >= t.sortDate && dayStr < endStr;
+    }).map(t => {
+      const endICS = parseICSEndDateMemo(t.dates, t.sortDate);
+      const endStr = endICS.slice(0,4)+'-'+endICS.slice(4,6)+'-'+endICS.slice(6,8);
+      const start = new Date(t.sortDate + 'T00:00:00');
+      const endExcl = new Date(endStr + 'T00:00:00');
+      const totalDays = Math.max(1, _daysBetween(start, endExcl));
+      const dayNum = _daysBetween(start, dayDate) + 1;
+      return { trip: t, dayNum, totalDays,
+               isFirst: dayNum === 1, isLast: dayNum === totalDays,
+               isMulti: totalDays > 1 };
     });
   });
 
@@ -4758,7 +5032,21 @@ function renderPlan() {
           <span class="plan-slot-chip gym ${gymOn}" onclick="toggleChip('${key}','gym')" title="Gym day">💪 Gym</span>
           <span class="plan-slot-chip date ${dateOn}" onclick="toggleChip('${key}','date')" title="Night together">🌙 Night Together</span>
           <span class="plan-slot-chip friends ${friendsOn}" onclick="toggleChip('${key}','friends')" title="Hang with friends">👫 Friends</span>
-          ${autoTrips.map(t => `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`).join('')}
+          ${autoTrips.map(s => {
+            const t = s.trip;
+            // Single-day trip: unchanged. Multi-day: the first day carries the name and a day
+            // counter; later days are ghosted with a ↳ so the eye reads one continuing trip
+            // rather than repeats. The name stays on every row (dimmed) so two overlapping trips
+            // are still tellable apart.
+            if (!s.isMulti) {
+              return `<span class="plan-slot-trip" title="${escHtml(t.dates||'')}">${escHtml(t.label)}</span>`;
+            }
+            const cls = ['plan-slot-trip', 'plan-slot-trip-multi',
+              s.isFirst ? 'pst-first' : s.isLast ? 'pst-last' : 'pst-mid'].join(' ');
+            const counter = `<span class="pst-day">day ${s.dayNum} of ${s.totalDays}</span>`;
+            const tip = `${escHtml(t.label)} · ${escHtml(t.dates||'')} — day ${s.dayNum} of ${s.totalDays}`;
+            return `<span class="${cls}" title="${tip}">${s.isFirst ? '' : '<span class="pst-cont">↳</span>'}${escHtml(t.label)}${counter}</span>`;
+          }).join('')}
           ${dayEvents.map((evt, i) => {
             const timeChip = evt.time ? `<span class="plan-slot-event-time" contenteditable="false">${formatTimeRange(evt.time, evt.endTime)}</span>` : '';
             const safeId = escHtml(evt.id);
@@ -5132,26 +5420,156 @@ document.addEventListener('input', e => {
   }
 });
 
+// Auto-emoji for trip/event labels. FIRST MATCH WINS, so this list runs most-specific first:
+// "bachelorette" must be tested before "bachelor" (otherwise every bachelorette party gets 🍺),
+// and "state park" before "park". Every alternation is explicitly grouped — the old
+// `/\bcamping|camp\b/i` only anchored \b to the first branch, which matched inside other words.
 const TRIP_EMOJIS = [
-  [/\bjapan\b/i,           '🗾'],
-  [/\bcamping|camp\b/i,    '🏕️'],
-  [/\bwedding\b/i,         '💒'],
-  [/\bbachelor\b/i,        '🍺'],
-  [/\bbachelorette\b/i,    '👯'],
-  [/\bengagement\b/i,      '💍'],
-  [/\bconcert|music|lollapalooza\b/i, '🎵'],
-  [/\bchicago\b/i,         '🌆'],
-  [/\bfishing\b/i,         '🎣'],
-  [/\bski|skiing|snowboard\b/i, '⛷️'],
-  [/\bbeach\b/i,           '🏖️'],
-  [/\bhike|hiking\b/i,     '🥾'],
-  [/\bchristmas|holiday\b/i, '🎄'],
-  [/\bbirthday\b/i,        '🎂'],
-  [/\bvisiting|visit\b/i,  '🏠'],
-  [/\bparents|family\b/i,  '👨‍👩‍👧'],
-  [/\btrip|travel|flight\b/i, '✈️'],
-  [/\bspa\b/i,             '💆'],
-  [/\bstate park|park\b/i, '🌲'],
+  // ── Specific-before-general pairs (order is load-bearing) ──
+  [/\bbachelorette\b/i,                     '👯'],
+  [/\bbachelor\b/i,                         '🍺'],
+  [/\bstate\s*park\b/i,                     '🌲'],
+  [/\bnational\s*park\b/i,                  '🏞️'],
+  [/\bwater\s*park\b/i,                     '🛝'],
+  [/\bamusement|theme\s*park|six\s*flags\b/i, '🎢'],
+  [/\bball\s*park|ballgame\b/i,             '⚾'],
+
+  // ── Places & travel ──
+  [/\bjapan|tokyo|kyoto|osaka\b/i,          '🗾'],
+  [/\b(korea|seoul)\b/i,                    '🇰🇷'],
+  [/\b(paris|france)\b/i,                   '🗼'],
+  [/\b(italy|rome|venice|florence)\b/i,     '🇮🇹'],
+  [/\b(london|england|uk)\b/i,              '🇬🇧'],
+  [/\b(mexico|cancun|tulum)\b/i,            '🇲🇽'],
+  [/\b(hawaii|maui|oahu)\b/i,               '🌺'],
+  [/\b(vegas|las\s*vegas)\b/i,              '🎰'],
+  [/\b(nyc|new\s*york|brooklyn|manhattan)\b/i, '🗽'],
+  [/\b(chicago|milwaukee|madison|minneapolis|downtown|city)\b/i, '🌆'],
+  [/\b(nashville|austin|memphis)\b/i,       '🎸'],
+  [/\b(seattle|portland)\b/i,               '☕'],
+  [/\b(denver|colorado|montana|wyoming)\b/i,'🏔️'],
+  [/\b(florida|miami|california|san\s*diego)\b/i, '🌴'],
+  [/\b(canada|toronto|vancouver)\b/i,       '🍁'],
+  [/\b(cruise|cruising)\b/i,                '🛳️'],
+  [/\b(road\s*trip|drive|driving)\b/i,      '🚗'],
+  [/\b(train|amtrak|railway)\b/i,           '🚆'],
+  [/\b(airport|flight|flying|fly)\b/i,      '✈️'],
+  [/\b(hotel|resort|airbnb|cabin|lodge)\b/i,'🏡'],
+
+  // ── Outdoors ──
+  [/\b(camp|camping|campsite|tent)\b/i,     '🏕️'],
+  [/\b(hike|hiking|trail|backpacking)\b/i,  '🥾'],
+  [/\b(beach|ocean|coast|shore)\b/i,        '🏖️'],
+  [/\b(lake|kayak|canoe|paddle)\b/i,        '🛶'],
+  [/\b(boat|boating|sail|sailing|pontoon)\b/i, '⛵'],
+  [/\b(fish|fishing)\b/i,                   '🎣'],
+  [/\b(ski|skiing|snowboard|snowboarding|slopes)\b/i, '⛷️'],
+  [/\b(golf|golfing)\b/i,                   '⛳'],
+  [/\b(bike|biking|cycling|bicycle)\b/i,    '🚲'],
+  [/\b(climb|climbing|bouldering)\b/i,      '🧗'],
+  [/\b(swim|swimming|pool)\b/i,             '🏊'],
+  [/\b(night\s*market)\b/i,                 '🏮'],
+  [/\b(garden|gardening|farmers?\s*market)\b/i, '🌱'],
+  [/\b(market|bazaar|craft\s*fair|flea)\b/i,'🧺'],
+  [/\b(zoo|aquarium|safari)\b/i,            '🦁'],
+  [/\b(apple|pumpkin|orchard|picking)\b/i,  '🍎'],
+  [/\b(waterfall|falls|canyon)\b/i,         '🏞️'],
+
+  // ── Celebrations & milestones ──
+  [/\b(wedding|ceremony)\b/i,               '💒'],
+  [/\b(rehearsal\s*dinner)\b/i,             '🥂'],
+  [/\b(engagement|engaged|proposal)\b/i,    '💍'],
+  [/\b(anniversary)\b/i,                    '💞'],
+  [/\b(birthday|bday|b-day)\b/i,            '🎂'],
+  [/\b(baby\s*shower|newborn|maternity)\b/i,'👶'],
+  [/\b(bridal\s*shower)\b/i,                '💐'],
+  [/\b(graduation|graduate|commencement)\b/i,'🎓'],
+  [/\b(retirement|retiring)\b/i,            '🎉'],
+  [/\b(funeral|memorial|celebration\s*of\s*life)\b/i, '🕊️'],
+  [/\b(housewarming|moving|move|closing)\b/i,'📦'],
+
+  // ── Music, arts, entertainment ──
+  [/\b(festival|lollapalooza|coachella|bonnaroo|summerfest)\b/i, '🎪'],
+  [/\b(concert|show|tour|live\s*music|gig)\b/i, '🎤'],
+  [/\b(musical|broadway|theater|theatre|play)\b/i, '🎭'],
+  [/\b(opera|symphony|orchestra|philharmonic)\b/i, '🎻'],
+  [/\b(movie|film|cinema|premiere)\b/i,     '🎬'],
+  [/\b(museum|gallery|exhibit|art)\b/i,     '🖼️'],
+  [/\b(comedy|standup|stand-up|improv)\b/i, '🎙️'],
+  [/\b(karaoke)\b/i,                        '🎶'],
+  [/\b(dance|dancing|ballet)\b/i,           '💃'],
+  [/\b(book|reading|library|author)\b/i,    '📚'],
+  [/\b(game\s*night|board\s*game|trivia|puzzle)\b/i, '🎲'],
+  [/\b(arcade|video\s*game|gaming)\b/i,     '🎮'],
+
+  // ── Sports ──
+  [/\b(packers|football|nfl|tailgate|super\s*bowl)\b/i, '🏈'],
+  [/\b(brewers|baseball|mlb)\b/i,           '⚾'],
+  [/\b(bucks|basketball|nba|march\s*madness)\b/i, '🏀'],
+  [/\b(hockey|nhl|blackhawks)\b/i,          '🏒'],
+  [/\b(soccer|fifa|world\s*cup)\b/i,        '⚽'],
+  [/\b(tennis|pickleball)\b/i,              '🎾'],
+  [/\b(marathon|5k|10k|half\s*marathon|race|running)\b/i, '🏃'],
+  [/\b(yoga|pilates|barre)\b/i,             '🧘'],
+  [/\b(gym|workout|lifting|crossfit)\b/i,   '💪'],
+  [/\b(bowling)\b/i,                        '🎳'],
+
+  // ── Food & drink ──
+  [/\b(brunch|breakfast|pancakes)\b/i,      '🥞'],
+  [/\b(dinner|dine|restaurant|reservation|res)\b/i, '🍽️'],
+  [/\b(lunch)\b/i,                          '🥗'],
+  [/\b(coffee|cafe|café|espresso)\b/i,      '☕'],
+  [/\b(brewery|beer|brew|taproom)\b/i,      '🍺'],
+  [/\b(winery|wine|vineyard|tasting)\b/i,   '🍷'],
+  [/\b(cocktail|bar|drinks|happy\s*hour)\b/i, '🍸'],
+  [/\b(pizza)\b/i,                          '🍕'],
+  [/\b(sushi|ramen)\b/i,                    '🍣'],
+  [/\b(taco|tacos|burrito)\b/i,             '🌮'],
+  [/\b(bbq|barbecue|grill|cookout)\b/i,     '🍖'],
+  [/\b(ice\s*cream|custard|gelato)\b/i,     '🍦'],
+  [/\b(bake|baking|cookies|dessert)\b/i,    '🍪'],
+  [/\b(supper\s*club|fish\s*fry)\b/i,       '🐟'],
+  [/\b(picnic)\b/i,                         '🧺'],
+
+  // ── Holidays & seasons ──
+  [/\b(christmas|xmas|noel)\b/i,            '🎄'],
+  [/\b(thanksgiving|turkey)\b/i,            '🦃'],
+  [/\b(halloween|spooky|haunted|costume)\b/i,'🎃'],
+  [/\b(new\s*year|nye)\b/i,                 '🎆'],
+  [/\b(valentine|valentines)\b/i,           '💘'],
+  [/\b(easter)\b/i,                         '🐰'],
+  [/\b(fourth\s*of\s*july|4th\s*of\s*july|july\s*4|independence)\b/i, '🎇'],
+  // No trailing \b: "St Patricks Day" has an "s" right after "patrick", which a \b would reject.
+  [/\b(st\.?\s*patrick|st\.?\s*pattys?|shamrock)/i, '🍀'],
+  [/\b(mothers?\s*day)\b/i,                 '💐'],
+  [/\b(fathers?\s*day)\b/i,                 '👔'],
+  [/\b(labor\s*day|memorial\s*day)\b/i,     '🇺🇸'],
+  [/\b(holiday|vacation|pto|time\s*off)\b/i,'🌞'],
+
+  // ── People & home ──
+  [/\b(parents|mom|dad|grandma|grandpa|in-?laws)\b/i, '👨‍👩‍👧'],
+  [/\b(family|fam|reunion)\b/i,             '👨‍👩‍👧‍👦'],
+  [/\b(friends|hangout|hang\s*out|catch\s*up)\b/i, '👫'],
+  [/\b(date\s*night|date)\b/i,              '🌙'],
+  [/\b(party|celebrate|celebration)\b/i,    '🎉'],
+  [/\b(visit|visiting|stay|staying)\b/i,    '🏠'],
+  [/\b(dog|puppy|cat|kitten|vet|pet)\b/i,   '🐾'],
+
+  // ── Appointments & life admin ──
+  [/\b(doctor|dr\.?|dentist|appointment|appt|checkup)\b/i, '🩺'],
+  [/\b(spa|massage|facial|nails)\b/i,       '💆'],
+  [/\b(haircut|salon|barber)\b/i,           '💇'],
+  [/\b(interview|conference|summit|work|meeting)\b/i, '💼'],
+  [/\b(class|course|lesson|workshop|training)\b/i, '📝'],
+  [/\b(shopping|mall|outlet|thrift|thrifting)\b/i, '🛍️'],
+  [/\b(photo|photos|photoshoot|pictures)\b/i, '📸'],
+  [/\b(volunteer|charity|fundraiser)\b/i,   '🤝'],
+
+  // ── Generic catch-alls (last) ──
+  [/\b(park)\b/i,                           '🌳'],
+  [/\b(music)\b/i,                          '🎵'],
+  [/\b(trip|travel|getaway|weekend\s*away)\b/i, '✈️'],
+  [/\b(birth|born)\b/i,                     '🎉'],
 ];
 
 function tripEmoji(label) {
@@ -5502,15 +5920,59 @@ function addTrip() {
   }
 }
 
-function dismissOverlap(id) {
-  const dismissed = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
-  dismissed.add(id);
+// ─── ACCEPTED DATE CONFLICTS ─────────────────────────────────────────────────
+// Overlapping trips are flagged red. Some overlaps are deliberate (a day-trip inside a longer
+// visit, two things you're genuinely doing both of), so a conflict can be accepted.
+//
+// Accepted conflicts are stored in Firestore rather than localStorage: the previous version kept
+// them in localStorage, which meant Aidan still saw red on his phone, and signing out wiped them.
+// They're keyed by the PAIR of trip ids so accepting one conflict never silently accepts another.
+const _pairKey = (a, b) => [a, b].sort().join('|');
+const isOverlapOkd = (a, b) => okdOverlaps.has(_pairKey(a, b));
+
+function saveOkdOverlaps() {
+  db.collection('state').doc('okdOverlaps').set({pairs: [...okdOverlaps]}).catch(_onSaveErr);
+}
+
+// Accept every conflict this trip is currently part of.
+function okOverlap(id) {
+  const added = [];
   _overlapPairs.forEach(([a, b]) => {
-    if (a === id) dismissed.add(b);
-    if (b === id) dismissed.add(a);
+    if (a !== id && b !== id) return;
+    const k = _pairKey(a, b);
+    if (!okdOverlaps.has(k)) { okdOverlaps.add(k); added.push(k); }
   });
-  _lsSet('ow-dismissed-overlaps', JSON.stringify([...dismissed]));
+  if (!added.length) return;
+  saveOkdOverlaps();
   renderDates();
+  showToast('Conflict accepted — both trips kept', () => {
+    added.forEach(k => okdOverlaps.delete(k));
+    saveOkdOverlaps();
+    renderDates();
+  });
+}
+
+// Put this trip's conflicts back on the radar.
+function unOkOverlap(id) {
+  let changed = false;
+  _overlapPairs.forEach(([a, b]) => {
+    if (a !== id && b !== id) return;
+    if (okdOverlaps.delete(_pairKey(a, b))) changed = true;
+  });
+  if (!changed) return;
+  saveOkdOverlaps();
+  renderDates();
+}
+
+// Drop accepted pairs whose trips are gone, so the list can't grow forever.
+function _pruneOkdOverlaps() {
+  const live = new Set(trips.map(t => t.id));
+  let changed = false;
+  for (const k of [...okdOverlaps]) {
+    const [a, b] = k.split('|');
+    if (!live.has(a) || !live.has(b)) { okdOverlaps.delete(k); changed = true; }
+  }
+  if (changed) saveOkdOverlaps();
 }
 
 function deleteTrip(id) {
@@ -6703,6 +7165,9 @@ function exportData() {
     expenses,
     budgetTargets,
     settledMonths,
+    splitPct,
+    giftCards,
+    okdOverlaps: [...okdOverlaps],   // a Set would serialize to {} in JSON
     recurringItems,
     weekPlan,
     logisticsList,
@@ -7188,19 +7653,93 @@ if (isActive('home')) startJapanTicker();
 
 const EXPENSE_CATS_EXCL = new Set(['Income','Savings','Investments']);
 
+// ─── SHARED-EXPENSE SPLIT ────────────────────────────────────────────────────
+// A shared expense is divided between Aidan and Amanda by a percentage. Historically that was
+// always 50/50; Amanda added an income-weighted mode (Aidan 56 / Amanda 44) on 2026-08-17.
+//
+// The ratio is STAMPED ONTO EACH EXPENSE (`splitPct` = Aidan's percent) at the moment it's
+// created. Changing the mode therefore only affects expenses logged from then on — it can never
+// retroactively rewrite a past month's settlement, including months already squared up. Expenses
+// created before this feature existed have no `splitPct` and are 50/50 forever.
+const LEGACY_SPLIT_PCT = 50;          // ratio for expenses predating the stamp
+const DEFAULT_SPLIT_PCT = 50;
+let splitPct = DEFAULT_SPLIT_PCT;     // the CURRENT mode (Aidan's %), shared via Firestore
+function saveSplitPct() { db.collection('state').doc('splitPct').set({aidan: splitPct}).catch(_onSaveErr); }
+
+// Clamp to a sane whole-percent range. Guards against a corrupt Firestore value or a typo in the
+// custom field producing negative/over-100 shares.
+const _cleanPct = p => Math.min(100, Math.max(0, Math.round(Number(p))));
+// Deliberately strict about null/''/[]/booleans: `Number(null)` and `Number('')` are both 0, so a
+// loose `Number.isFinite(Number(p))` check would accept a missing Firestore field as "Aidan pays
+// 0%" and hand Amanda 100% of every shared expense. Only real numbers and numeric strings pass.
+const _isPct = p => {
+  if (p === null || p === undefined || p === '' || typeof p === 'boolean') return false;
+  if (typeof p !== 'number' && typeof p !== 'string') return false;
+  const n = Number(p);
+  return Number.isFinite(n) && n >= 0 && n <= 100;
+};
+// Aidan's percent for one transaction. Anything missing/garbage falls back to 50/50.
+const txSplitPct = tx => _isPct(tx?.splitPct) ? _cleanPct(tx.splitPct) : LEGACY_SPLIT_PCT;
+const round2 = n => Math.round((Number(n) || 0) * 100) / 100;
+// Module-scope money formatter. renderBudget has its own identical local `fmt`; this exists so
+// code OUTSIDE that function (gift cards, toasts) can format money without depending on it.
+// Like that local, it formats the MAGNITUDE — callers add their own sign.
+const fmtMoney = n => '$' + Math.abs(Number(n) || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+// Income splits 50/50 regardless of the expense ratio. The 56/44 expense split exists precisely
+// BECAUSE Aidan earns more; applying that same tilt to incoming money would give him 56% of
+// Amanda's resale proceeds, double-counting the income difference. Shared money IN is shared
+// evenly. Declared above splitShares because splitShares consults it.
+const INCOME_CATS = new Set(['Income']);
+const INCOME_SPLIT_PCT = 50;
+// The ratio actually applied to a row: its stamped ratio, or an even split if it's income.
+const effectiveSplitPct = tx => INCOME_CATS.has(tx?.category) ? INCOME_SPLIT_PCT : txSplitPct(tx);
+
+// Both people's shares of one shared row. Aidan's share is rounded to the cent and Amanda's is
+// taken as THE REMAINDER — never rounded independently. That guarantees the two shares always sum
+// to exactly the amount, so no stray penny can ever appear or vanish in the settlement.
+function splitShares(tx) {
+  const amount = Number(tx?.amount) || 0;
+  const a = round2(amount * effectiveSplitPct(tx) / 100);
+  return { Aidan: a, Amanda: round2(amount - a) };
+}
+
+// What `person` is responsible for on one transaction: their percentage of a shared expense,
+// the full amount of their own solo expense, nothing for their partner's solo expense.
+// Single source of truth for every per-person figure on the Budget tab.
+function shareFor(tx, person) {
+  if (!tx) return 0;
+  if (!tx.shared) return tx.person === person ? (Number(tx.amount) || 0) : 0;
+  return splitShares(tx)[person] ?? 0;
+}
+
+// Display label for a ratio, always Aidan-first (he's the larger share in 56/44).
+const splitLabel = pct => `${_cleanPct(pct)}/${100 - _cleanPct(pct)}`;
+const splitTitle = pct => `Aidan ${_cleanPct(pct)}% · Amanda ${100 - _cleanPct(pct)}%`;
+
+// Shared INCOME (Amanda's reselling, a joint refund cheque, interest) flows the opposite way from
+// a shared expense: the person who RECEIVED it is holding money that's partly their partner's, so
+// the receiver OWES rather than is owed. Without this, logging $400 of shared resale income made
+// the app report Amanda was owed $200 instead of owing $200 — a settlement error of twice the
+// partner's share, in the wrong direction.
 function calcOwes(txList) {
-  // For each shared expense: payer is owed half by the other person
-  // net[person] = positive means they are owed money, negative means they owe
+  // For each shared expense the payer fronted the whole bill, so the OTHER person owes their
+  // own share of it. net[person] > 0 means they're owed money, < 0 means they owe.
   let net = {Aidan: 0, Amanda: 0};
   for (const tx of txList) {
     if (!tx.shared) continue;
     if (tx.person !== 'Aidan' && tx.person !== 'Amanda') continue;
-    const half = tx.amount / 2;
-    net[tx.person] += half;        // payer gets credited half back
     const other = tx.person === 'Aidan' ? 'Amanda' : 'Aidan';
-    net[other] -= half;            // other person owes half
+    const isIncome = INCOME_CATS.has(tx.category);
+    const owed = splitShares(tx)[other];   // the non-payer's share (evenly split if income)
+    const dir = isIncome ? -1 : 1;         // income reverses who owes whom
+    net[tx.person] += dir * owed;          // payer gets reimbursed / receiver owes it out
+    net[other]     -= dir * owed;
   }
-  return net;
+  // Rounded once at the end so accumulated float dust (0.1+0.2 problems) can't show up as a
+  // $0.0000001 imbalance. The two sides stay exactly equal-and-opposite, which the settlement
+  // tile depends on — it reports Math.abs(owes.Aidan), not the difference.
+  return {Aidan: round2(net.Aidan), Amanda: round2(net.Amanda)};
 }
 
 const MONTHS_LIST = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -7221,6 +7760,174 @@ function toggleMonthSettled(ym, amount) {
   else settledMonths[ym] = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
   saveSettledMonths();
   if (isActive('budget')) renderBudget();
+}
+
+// ─── GIFT CARDS ──────────────────────────────────────────────────────────────
+// Cards Amanda accumulates from reward programs. Each card tracks its face value plus a log of
+// partial redemptions, so the remaining balance is always derived (never stored) — a stored
+// balance would drift out of sync with the log the first time an entry was edited or undone.
+let giftCards = [];
+function saveGiftCards() { db.collection('state').doc('giftCards').set({items: giftCards}).catch(_onSaveErr); }
+
+const gcSpent     = c => round2((c?.redemptions || []).reduce((s, r) => s + (Number(r.amount) || 0), 0));
+const gcRemaining = c => round2((Number(c?.amount) || 0) - gcSpent(c));
+// "Used up" = under a cent left. Kept as a threshold rather than === 0 so float dust from a
+// sequence of odd partial spends can't leave a card stuck at $0.00 but technically unfinished.
+const gcIsDone    = c => gcRemaining(c) < 0.01;
+
+function renderGiftCards() {
+  const list = document.getElementById('gc-list');
+  if (!list) return;
+  const active = giftCards.filter(c => !gcIsDone(c));
+  const done   = giftCards.filter(c => gcIsDone(c));
+
+  const totalEl = document.getElementById('gc-total');
+  if (totalEl) {
+    const total = round2(active.reduce((s, c) => s + gcRemaining(c), 0));
+    totalEl.textContent = active.length
+      ? `${fmtMoney(total)} left on ${active.length} card${active.length === 1 ? '' : 's'}`
+      : '';
+  }
+
+  list.innerHTML = active.length ? active.map(c => {
+    const remaining = gcRemaining(c), spent = gcSpent(c), face = Number(c.amount) || 0;
+    const usedPct = face > 0 ? Math.min(100, Math.round(spent / face * 100)) : 0;
+    // A card can go "overdrawn" if a redemption is logged for more than the balance. Surface it
+    // rather than clamping to zero, so a typo is visible instead of silently swallowed.
+    const over = remaining < -0.005;
+    return `
+    <div class="gc-item" data-id="${escHtml(c.id)}">
+      <div class="gc-row">
+        <div class="gc-name">${escHtml(c.label || 'Gift card')}</div>
+        <div class="gc-amt" style="color:${over ? 'var(--coral)' : 'var(--sage)'}">${over ? '−' : ''}${fmtMoney(remaining)}</div>
+      </div>
+      <div class="gc-bar-wrap"><div class="gc-bar" style="width:${usedPct}%"></div></div>
+      <div class="gc-meta">
+        <span>${spent > 0.005 ? `${fmtMoney(spent)} of ${fmtMoney(face)} used` : `${fmtMoney(face)} unused`}</span>
+        ${over ? '<span style="color:var(--coral);font-weight:700">over balance — check the entries</span>' : ''}
+      </div>
+      <div class="gc-actions">
+        <span style="font-size:12px;color:var(--text-3)">Spend $</span>
+        <input type="number" step="0.01" min="0" class="gc-use-input" id="gc-use-${escHtml(c.id)}"
+          placeholder="0.00" onkeydown="if(event.key==='Enter')useGiftCard('${escHtml(c.id)}')">
+        <button class="gc-btn" onclick="useGiftCard('${escHtml(c.id)}')">Log</button>
+        <button class="gc-btn gc-btn-ghost" onclick="useGiftCard('${escHtml(c.id)}', ${remaining})"
+          title="Log the whole remaining ${fmtMoney(remaining)}">All</button>
+        ${(c.redemptions || []).length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the most recent spend">↩ Undo</button>` : ''}
+        <button class="gc-btn gc-btn-ghost" style="margin-left:auto;color:var(--coral)" onclick="deleteGiftCard('${escHtml(c.id)}')" title="Remove this card">×</button>
+      </div>
+      ${(c.redemptions || []).length ? `<div class="gc-log">${
+        [...c.redemptions].reverse().map(r => `<span class="gc-log-entry">${escHtml(_gcNiceDate(r.date))} · ${fmtMoney(r.amount)}</span>`).join('')
+      }</div>` : ''}
+    </div>`;
+  }).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">No cards yet — add one below.</div>';
+
+  // Used-up cards, collapsed. Preserve the open/closed state across re-renders.
+  const wrap = document.getElementById('gc-spent-wrap');
+  if (wrap) {
+    const wasOpen = document.getElementById('gc-done-list')?.style.display !== 'none';
+    wrap.innerHTML = done.length ? `
+      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleGiftCardsDone()">
+          <div style="font-size:12px;font-weight:700;color:var(--text-3)">✅ Used up (${done.length})</div>
+          <span id="gc-done-chevron" style="font-size:11px;color:var(--text-3)">${wasOpen ? '▼' : '▶'}</span>
+        </div>
+        <div id="gc-done-list" style="display:${wasOpen ? '' : 'none'};margin-top:8px">
+          ${done.map(c => `
+            <div class="gc-row" style="padding:5px 0;opacity:.6">
+              <div style="font-size:13px;color:var(--text-3);text-decoration:line-through">${escHtml(c.label || 'Gift card')}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:12px;color:var(--text-3)">${fmtMoney(c.amount)}</span>
+                ${(c.redemptions || []).length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the last spend to reopen this card">↩</button>` : ''}
+                <button class="gc-btn gc-btn-ghost" style="color:var(--coral)" onclick="deleteGiftCard('${escHtml(c.id)}')">×</button>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+  }
+}
+// Short date for the redemption log. Built from parts, never via toISOString, so an evening entry
+// doesn't display as the next day (the same UTC trap _todayLocal exists to avoid).
+function _gcNiceDate(iso) {
+  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+}
+function toggleGiftCardsDone() {
+  const l = document.getElementById('gc-done-list');
+  const c = document.getElementById('gc-done-chevron');
+  if (!l) return;
+  const open = l.style.display === 'none';
+  l.style.display = open ? '' : 'none';
+  if (c) c.textContent = open ? '▼' : '▶';
+}
+
+function addGiftCard() {
+  const labelEl = document.getElementById('gc-label');
+  const amtEl   = document.getElementById('gc-amount');
+  const label   = (labelEl?.value || '').trim();
+  const amount  = round2(parseFloat(amtEl?.value ?? ''));
+  if (!label)  { showToast('⚠️ Give the card a name'); labelEl?.focus(); return; }
+  if (!Number.isFinite(amount) || amount <= 0) { showToast('⚠️ Enter the card’s dollar value'); amtEl?.focus(); return; }
+  const card = { id: _uid('gc-'), label, amount, redemptions: [], added: _todayLocal() };
+  giftCards.push(card);
+  // arrayUnion so two devices adding cards at once don't clobber each other.
+  db.collection('state').doc('giftCards').update({
+    items: firebase.firestore.FieldValue.arrayUnion(card)
+  }).catch(() => saveGiftCards());   // doc may not exist yet — fall back to a full set()
+  if (labelEl) labelEl.value = '';
+  if (amtEl)   amtEl.value = '';
+  renderGiftCards();
+  labelEl?.focus();
+}
+
+// Log a spend against a card. `preset` is used by the "All" button.
+function useGiftCard(id, preset) {
+  const c = giftCards.find(x => x.id === id);
+  if (!c) { showToast('⚠️ That card is gone — refresh'); return; }
+  const inputEl = document.getElementById('gc-use-' + id);
+  const raw = preset !== undefined ? preset : inputEl?.value;
+  const amount = round2(parseFloat(raw ?? ''));
+  if (!Number.isFinite(amount) || amount <= 0) { showToast('⚠️ Enter how much you spent'); inputEl?.focus(); return; }
+  const remaining = gcRemaining(c);
+  if (amount - remaining > 0.005) {
+    showToast(`⚠️ Only ${fmtMoney(remaining)} left on that card`);
+    inputEl?.focus();
+    return;
+  }
+  if (!Array.isArray(c.redemptions)) c.redemptions = [];
+  c.redemptions.push({ id: _uid('gcr-'), date: _todayLocal(), amount });
+  saveGiftCards();
+  renderGiftCards();
+  const left = gcRemaining(c);
+  showToast(left < 0.01
+    ? `🎉 ${c.label} is all used up!`
+    : `Logged ${fmtMoney(amount)} — ${fmtMoney(left)} left on ${c.label}`);
+}
+
+function undoGiftCardUse(id) {
+  const c = giftCards.find(x => x.id === id);
+  if (!c || !(c.redemptions || []).length) return;
+  const removed = c.redemptions.pop();
+  saveGiftCards();
+  renderGiftCards();
+  showToast(`Removed ${fmtMoney(removed.amount)} from ${c.label}`);
+}
+
+function deleteGiftCard(id) {
+  const card = giftCards.find(x => x.id === id);
+  if (!card) return;
+  giftCards = giftCards.filter(x => x.id !== id);
+  saveGiftCards();
+  renderGiftCards();
+  showToast(`Removed ${card.label}`, () => {
+    // Re-check by id: if a partner's snapshot already re-added it, don't create a duplicate.
+    if (!giftCards.some(x => x.id === card.id)) {
+      giftCards.push(card);
+      saveGiftCards();
+      renderGiftCards();
+    }
+  });
 }
 
 const monthName = d => MONTHS_LIST[d.getMonth()];
@@ -7326,12 +8033,13 @@ function renderBudget() {
       availCats.map(c => `<option${c===prevCatSel?' selected':''}>${c}</option>`).join('');
   }
   const filterCat = catFilterEl?.value || '';
-  // When a single person is selected, count their SHARE: shared (50/50) expenses count half
-  // (whoever logged them), their own solo expenses count full, the partner's solo expenses don't
-  // count. This matches the per-person category breakdown so the tiles can't disagree with it.
-  // 'Both' ('') and '50-50 only' ('shared') use full amounts as before.
+  // When a single person is selected, count their SHARE: a shared expense counts only their
+  // percentage of it (whoever logged it), their own solo expenses count full, the partner's solo
+  // expenses don't count. Uses the same shareFor() as the per-person category breakdown and the
+  // settlement, so the tiles can't disagree with them.
+  // 'Both' ('') and 'Shared only' ('shared') use full amounts as before.
   const personSel = (filterPerson === 'Amanda' || filterPerson === 'Aidan') ? filterPerson : null;
-  const shareAmt = e => personSel ? (e.shared ? e.amount / 2 : (e.person === personSel ? e.amount : 0)) : e.amount;
+  const shareAmt = e => personSel ? shareFor(e, personSel) : e.amount;
   // Single source of truth for the person/category/search filters, reused by the tx list, the
   // snapshot tiles, the category breakdown AND the trend chart so they never disagree.
   const matchesFilters = e => {
@@ -7402,8 +8110,19 @@ function renderBudget() {
     settleTip   = settleYm ? 'Click when you’ve squared up — records it as paid' : 'Who owes who, after splitting shared expenses. Pick a single month to mark it paid.';
     if (settleYm) settleClick = `onclick="toggleMonthSettled('${settleYm}', ${settleAmt})" style="cursor:pointer"`;
   }
+  // A period can legitimately contain expenses stamped with DIFFERENT ratios (e.g. the month the
+  // split mode changed). List whichever ratios are actually present rather than assuming one, so
+  // the hint can never claim a split the numbers weren't computed with.
+  const ratiosPresent = [...new Set(monthTx.filter(e => e.shared && !INCOME_CATS.has(e.category))
+    .map(e => txSplitPct(e)))].sort((a, b) => a - b);
+  const ratioStr = ratiosPresent.length === 0 ? ''
+    : ratiosPresent.length === 1 ? `shared split ${splitLabel(ratiosPresent[0])}`
+    : `mixed splits (${ratiosPresent.map(splitLabel).join(', ')})`;
+  // Show the ratio(s) behind the settlement number right in its tooltip — the whole point of the
+  // stamped-ratio design is that you can always tell which split produced a given figure.
+  if (!isSettled && settleAmt >= 0.01 && ratioStr) settleTip += ` Based on ${ratioStr}.`;
   const filterHint = hasNonPeriodFilter
-    ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">${personSel ? `${personSel}'s share · shared split 50/50 · ` : ''}filters active · Settlement is full period</div>`
+    ? `<div style="grid-column:1/-1;font-size:10px;font-weight:600;color:var(--amber);text-align:center;margin-bottom:-4px;letter-spacing:.04em;text-transform:uppercase">${personSel ? `${personSel}'s share · ${ratioStr ? ratioStr + ' · ' : ''}` : ''}filters active · Settlement is full period</div>`
     : '';
   document.getElementById('budget-snapshot').innerHTML = filterHint + `
     <div class="bsnap" tabindex="0" data-tip="Money in — transactions categorized Income this period."><div class="bsnap-label">Income</div><div class="bsnap-val" style="color:var(--sage)">${fmt(income)}</div></div>
@@ -7471,8 +8190,8 @@ function renderBudget() {
   for (const e of catSrc) {
     if (EXPENSE_CATS_EXCL.has(e.category)) continue;
     catTotals[e.category] = (catTotals[e.category]||0) + shareAmt(e);
-    catAidan[e.category]  = (catAidan[e.category]||0)  + (e.shared ? e.amount/2 : e.person==='Aidan'  ? e.amount : 0);
-    catAmanda[e.category] = (catAmanda[e.category]||0) + (e.shared ? e.amount/2 : e.person==='Amanda' ? e.amount : 0);
+    catAidan[e.category]  = (catAidan[e.category]||0)  + shareFor(e, 'Aidan');
+    catAmanda[e.category] = (catAmanda[e.category]||0) + shareFor(e, 'Amanda');
   }
   const catSorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
   const maxCat = catSorted[0]?.[1] || 1;
@@ -7536,7 +8255,7 @@ function renderBudget() {
               </div>
             </div>
             <div class="budget-tx-right">
-              ${e.shared?`<span class="budget-tx-shared">50/50</span>`:''}
+              ${e.shared?`<span class="budget-tx-shared" title="${splitTitle(effectiveSplitPct(e))}${INCOME_CATS.has(e.category)?' — shared income always splits evenly':''}">${splitLabel(effectiveSplitPct(e))}</span>`:''}
               <span class="budget-tx-amt ${e.category==='Income'?'income':''}${e.amount<0?' refund':''}">${e.amount<0?'−':(e.category==='Income'?'+':'')}${fmt(e.amount)}</span>
               <button class="budget-tx-del" onclick="deleteExpense('${e.id}');event.stopPropagation()">×</button>
             </div>
@@ -7558,6 +8277,19 @@ function renderBudget() {
   // Default date input
   const dateEl = document.getElementById('b-date');
   if (dateEl && !dateEl.value) dateEl.value = _todayLocal();
+
+  // Keep the "shared" checkbox labels showing the ratio that a NEW expense would actually be
+  // stamped with, so the add form never claims 50/50 while 56/44 mode is on.
+  const shTxt = document.getElementById('b-shared-text');
+  if (shTxt) shTxt.textContent = `${splitLabel(splitPct)} split`;
+  const shLbl = document.getElementById('b-shared-label');
+  if (shLbl) shLbl.title = `Split this expense — ${splitTitle(splitPct)}`;
+  const recTxt = document.getElementById('rec-shared-text');
+  if (recTxt) recTxt.textContent = splitLabel(splitPct);
+  const recLbl = document.getElementById('rec-shared-label');
+  if (recLbl) recLbl.title = splitTitle(splitPct);
+
+  renderGiftCards();
 
   // Banner visibility depends on _budgetMonth — re-check on every filter change
   checkRecurringReminder();
@@ -7660,7 +8392,9 @@ function addExpense() {
     return;
   }
   const month = monthName(new Date(date + 'T12:00:00'));
-  const newItem = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date, month, person, category, description:desc, amount, shared};
+  // Stamp the split ratio in effect right now (see splitShares). Stamped even on solo expenses so
+  // that flipping one to shared later doesn't silently pick up a ratio from a different era.
+  const newItem = {id:'exp-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), date, month, person, category, description:desc, amount, shared, splitPct};
   expenses.push(newItem);
   // arrayUnion appends atomically — safe if both people add at the same time
   db.collection('state').doc('expenses').update({
@@ -7730,7 +8464,11 @@ function editExpense(id) {
       <input id="txe-desc-${id}" value="${escHtml(e.description)}" placeholder="Description" class="bq-input" style="flex:1;min-width:120px;padding:4px 8px">
       <input id="txe-amt-${id}" type="number" step="0.01" value="${e.amount}" class="bq-input" style="width:90px;padding:4px 8px">
       <input id="txe-date-${id}" type="date" value="${e.date}" class="bq-input" style="padding:4px 8px">
-      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:14px"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> 50/50</label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:14px" title="Split this expense with your partner"><input type="checkbox" id="txe-shared-${id}"${e.shared?' checked':''}> shared</label>
+      ${INCOME_CATS.has(e.category)
+        ? `<span style="font-size:11px;color:var(--text-3)" title="Shared income always splits evenly, regardless of the expense ratio">even split</span>`
+        : `<label style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--text-3)" title="Aidan's share of this one expense. Set when the expense was logged — change it only to correct a row.">Aidan
+             <input id="txe-pct-${id}" type="number" min="0" max="100" step="1" value="${txSplitPct(e)}" class="bq-input" style="width:52px;padding:4px 6px">%</label>`}
       <button class="trip-edit-save" onclick="commitExpenseEdit('${id}');event.stopPropagation()">Save</button>
       <button class="trip-edit-cancel" onclick="_cleanExpEdit();renderBudget();event.stopPropagation()">Cancel</button>
     </div>`;
@@ -7777,6 +8515,13 @@ function saveExpenseEdit(id) {
   const prev = {...e};
   e.person = person; e.description = desc; e.category = cat;
   e.amount = amt; e.date = date; e.shared = shared;
+  // An expense KEEPS the ratio it was stamped with — editing the amount or date must not move a
+  // past expense onto today's ratio. The edit form exposes the row's own percent so a mis-stamped
+  // row can be corrected deliberately; an absent/invalid entry falls back to the legacy 50/50
+  // rather than the current mode, since that's what its month was settled under.
+  const pctRaw = document.getElementById('txe-pct-' + id)?.value;
+  if (_isPct(pctRaw)) e.splitPct = _cleanPct(pctRaw);
+  else if (!_isPct(e.splitPct)) e.splitPct = LEGACY_SPLIT_PCT;
   e.month = monthName(new Date(date + 'T12:00:00'));
   // Transaction: swap old object for updated one atomically. If the transaction fails (most
   // commonly: offline — runTransaction doesn't queue), roll the local mutation back so the
@@ -7871,6 +8616,7 @@ function openBudgetSettings() {
   if (lm) lm.value = monthName(new Date());
   const ly = document.getElementById('rec-load-year');
   if (ly) ly.value = String(new Date().getFullYear());
+  renderSplitModePicker();
   renderBudgetTargetsEditor();
   o.style.display = 'flex';
   renderRecurring();
@@ -7878,6 +8624,53 @@ function openBudgetSettings() {
 function closeBudgetSettings() {
   const o = document.getElementById('budget-settings-overlay');
   if (o) o.style.display = 'none';
+}
+
+// Split-mode picker (in Settings). Two presets plus a custom percent. The preview underneath
+// works a real $100 example through the math so the ratio is never ambiguous about who pays more.
+const SPLIT_PRESETS = [
+  {pct: 50, label: 'Even 50/50',   sub: 'Aidan 50% · Amanda 50%'},
+  {pct: 56, label: 'Income-based 56/44', sub: 'Aidan 56% · Amanda 44%'},
+];
+function renderSplitModePicker() {
+  const el = document.getElementById('split-mode-picker');
+  if (!el) return;
+  const isPreset = SPLIT_PRESETS.some(p => p.pct === splitPct);
+  el.innerHTML = SPLIT_PRESETS.map(p => `
+    <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text);cursor:pointer;padding:7px 0">
+      <input type="radio" name="split-mode" ${p.pct === splitPct ? 'checked' : ''}
+        onchange="setSplitPct(${p.pct})" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer">
+      <span style="flex:1"><strong>${p.label}</strong><br><span style="font-size:11px;color:var(--text-3)">${p.sub}</span></span>
+    </label>`).join('') + `
+    <label style="display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text);cursor:pointer;padding:7px 0;flex-wrap:wrap">
+      <input type="radio" name="split-mode" ${isPreset ? '' : 'checked'}
+        onchange="document.getElementById('split-custom').focus()" style="width:15px;height:15px;accent-color:var(--amber);cursor:pointer">
+      <span>Custom — Aidan pays</span>
+      <input type="number" id="split-custom" min="0" max="100" step="1" value="${splitPct}"
+        onchange="setSplitPct(this.value)"
+        style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text)">
+      <span>%</span>
+    </label>`;
+  renderSplitPreview();
+}
+function renderSplitPreview() {
+  const el = document.getElementById('split-mode-preview');
+  if (!el) return;
+  // Run a real $100 shared expense through the SAME splitShares() the settlement uses — not a
+  // hand-written formula — so this preview can't drift from the actual math.
+  const ex = splitShares({amount: 100, shared: true, splitPct});
+  // fmtMoney, not fmt — `fmt` is a local inside renderBudget and is not in scope here.
+  el.innerHTML = `<strong>Example:</strong> a $100 shared expense →
+    Aidan ${fmtMoney(ex.Aidan)}, Amanda ${fmtMoney(ex.Amanda)}.<br>
+    If Amanda pays it, Aidan owes her ${fmtMoney(ex.Aidan)}.`;
+}
+function setSplitPct(v) {
+  if (!_isPct(v)) { showToast('⚠️ Split must be a number from 0 to 100'); renderSplitModePicker(); return; }
+  splitPct = _cleanPct(v);
+  saveSplitPct();
+  renderSplitModePicker();
+  if (isActive('budget')) renderBudget();
+  showToast(`Shared split set to ${splitLabel(splitPct)} — ${splitTitle(splitPct)}. Applies to new expenses.`, null, {duration: 6000});
 }
 
 // Monthly budget targets editor (in Settings) — one row per spending category. Writes the same
@@ -8015,7 +8808,7 @@ function renderRecurring() {
     <div class="recurring-item" id="rec-item-${r.id}" onclick="editRecurring('${r.id}')" style="cursor:pointer">
       <span class="rec-person-badge ${r.person}">${r.person==='Aidan'?'AF':'AM'}</span>
       <div class="rec-info">
-        <div class="rec-desc">${r.category}${r.shared?' <span style="font-size:10px;color:var(--amber);font-weight:700">50/50</span>':''}</div>
+        <div class="rec-desc">${r.category}${r.shared?` <span style="font-size:10px;color:var(--amber);font-weight:700" title="Loaded expenses get whatever split is active at load time — currently ${splitTitle(splitPct)}">shared</span>`:''}</div>
         ${r.description?`<div class="rec-meta">${escHtml(r.description)}</div>`:''}
       </div>
       <span class="rec-amt">${fmt(r.amount)}</span>
@@ -8068,7 +8861,7 @@ function editRecurring(id) {
       <input id="rece-amt-${id}" type="number" value="${r.amount}" class="bq-input" style="width:80px;padding:4px 6px">
       <input id="rece-desc-${id}" type="text" value="${escHtml(r.description||'')}" placeholder="Description (optional)" class="bq-input" style="flex:1;min-width:120px;padding:4px 6px">
       <label style="color:var(--text-2);display:flex;align-items:center;gap:4px;cursor:pointer;font-size:14px">
-        <input type="checkbox" id="rece-shared-${id}" ${r.shared?'checked':''}> 50/50
+        <input type="checkbox" id="rece-shared-${id}" ${r.shared?'checked':''}> shared
       </label>
       <button class="trip-edit-save" onclick="saveRecurringEdit('${id}')">Save</button>
       <button class="trip-edit-cancel" onclick="renderRecurring()">Cancel</button>
@@ -8189,7 +8982,7 @@ function loadRecurringForMonth(year, month) {
     // both partners click "Load <month>" simultaneously via arrayUnion's deep-equality dedup.
     added.push({ id: `exp-rec-${r.id}-${ymPrefix}`,
       date: firstDay, month, person: r.person, category: r.category,
-      description: r.description, amount: amt, shared: r.shared, recurringId: r.id });
+      description: r.description, amount: amt, shared: r.shared, recurringId: r.id, splitPct });
   }
   if (!added.length) { showToast('All already loaded!'); return; }
   expenses.push(...added);
@@ -8232,7 +9025,7 @@ function loadRecurring() {
     // random id, each device would generate a different id and both inserts would go through.
     expenses.push({id: `exp-rec-${r.id}-${ymPrefix}`,
       date:dateStr, month, person:r.person, category:r.category,
-      description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id});
+      description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id, splitPct});
     added++;
   }
   if (added) {
@@ -8261,7 +9054,7 @@ function loadSingleRecurring(id) {
   if (_isRecurringLoaded(r, month, year, ymPrefix)) { showToast(`Already loaded for ${month}!`); return; }
   const item = {id: `exp-rec-${r.id}-${ymPrefix}`,
     date:dateStr, month, person:r.person, category:r.category,
-    description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id};
+    description:r.description, amount:r.amount, shared:r.shared, recurringId: r.id, splitPct};
   expenses.push(item);
   db.collection('state').doc('expenses').update({
     items: firebase.firestore.FieldValue.arrayUnion(item)
@@ -8449,7 +9242,7 @@ function _executeBulkImport() {
     if (r.warnAmbiguous) miscWarns.push(`${r.catRaw} (ambiguous: ${r.candidates.join(', ')})`);
     const month = monthName(new Date(r.date + 'T12:00:00'));
     const candidate = { id: _uid('exp-'),
-      date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared };
+      date: r.date, month, person, category: r.category, description: r.description, amount: r.amount, shared: r.shared, splitPct };
     const sig = sigOf(candidate);
     if (existingSigs.has(sig)) { dupes++; continue; }
     existingSigs.add(sig);

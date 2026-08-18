@@ -4,6 +4,10 @@ _diff*.txt
 _*.local.txt
 _runtests.js
 
+# Test dependencies (jsdom, installed with --no-save for test/runtime.test.js)
+node_modules/
+package-lock.json
+
 # Firebase function build/deploy artifacts
 firebase-debug.log
 firebase-debug.*.log
