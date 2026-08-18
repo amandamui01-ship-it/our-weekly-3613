@@ -37,7 +37,7 @@ const firebaseStub = {
     enablePersistence: () => Promise.resolve(), settings: () => {},
   }),
 };
-firebaseStub.firestore.FieldValue = { arrayUnion: (...v) => ({ v }), arrayRemove: (...v) => ({ v }) };
+firebaseStub.firestore.FieldValue = { arrayUnion: (...v) => ({ v }), arrayRemove: (...v) => ({ v }), delete: () => ({ __delete: true }) };
 
 const html = HTML.replace(/<script[^>]*\bsrc=["'][^"']*["'][^>]*>\s*<\/script>/gi, '');
 const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true,

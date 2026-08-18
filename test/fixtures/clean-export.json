@@ -1,0 +1,16 @@
+{
+  "exportedAt": "2026-08-18T12:00:00.000Z",
+  "version": 2,
+  "expenses": [
+    {"id":"c1","date":"2026-08-02","month":"August","person":"Amanda","category":"Groceries","description":"Woodmans","amount":210.45,"shared":true,"splitPct":56},
+    {"id":"c2","date":"2026-08-05","month":"August","person":"Aidan","category":"Dining","description":"Sushi","amount":90,"shared":true,"splitPct":56},
+    {"id":"c3","date":"2026-08-07","month":"August","person":"Amanda","category":"Income","description":"Poshmark","amount":640,"shared":false,"splitPct":56}
+  ],
+  "settledMonths": {},
+  "giftCards": [{"id":"gc1","label":"Target","amount":25}],
+  "giftCardSpends": [{"id":"s1","cardId":"gc1","date":"2026-08-01","amount":12.34}],
+  "trips": [{"id":"t1","dates":"Aug 21-23","sortDate":"2026-08-21","label":"Camping"}],
+  "todos": [{"id":"td1","text":"Book campsite","cat":"todo","done":false,"due":"2026-08-25"}],
+  "todoCategories": [{"id":"todo","label":"To-Do"}],
+  "recurringItems": []
+}

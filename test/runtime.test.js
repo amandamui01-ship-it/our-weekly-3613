@@ -66,6 +66,7 @@ const firebaseStub = {
 firebaseStub.firestore.FieldValue = {
   arrayUnion: (...v) => ({ __arrayUnion: v }),
   arrayRemove: (...v) => ({ __arrayRemove: v }),
+  delete: () => ({ __delete: true }),
 };
 
 // Strip external <script src> tags (the firebase CDN) — we inject the stub instead.

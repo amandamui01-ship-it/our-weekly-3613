@@ -1,0 +1,14 @@
+{
+  "name": "our-weekly",
+  "private": true,
+  "description": "Test tooling for the Our Weekly app. The app itself is the single index.html at the repo root and has no build step — this file exists only so the test dependencies are pinned.",
+  "scripts": {
+    "test": "node test/run-all.js",
+    "test:layout": "node test/layout.test.js",
+    "audit-data": "node test/data-audit.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "playwright": "^1.62.0"
+  }
+}

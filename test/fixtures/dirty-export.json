@@ -1,0 +1,39 @@
+{
+  "exportedAt": "2026-08-18T12:00:00.000Z",
+  "version": 2,
+  "expenses": [
+    {"id":"x1","date":"2026-08-02","month":"August","person":"Amanda","category":"Groceries","description":"Woodmans","amount":210.45,"shared":true,"splitPct":56},
+    {"id":"x2","date":"2026-08-02","month":"August","person":"Amanda","category":"Groceries","description":"Woodmans","amount":210.45,"shared":true,"splitPct":56},
+    {"id":"x3","date":"2026-08-05","month":"July","person":"Aidan","category":"Dining","description":"Sushi","amount":90,"shared":true,"splitPct":56},
+    {"id":"x4","date":"2026-08-06","month":"August","person":"Someone","category":"Dining","description":"Imported row","amount":50,"shared":false},
+    {"id":"x5","month":"August","person":"Amanda","category":"Misc","description":"No date row","amount":20,"shared":false},
+    {"id":"x6","date":"2026-08-07","month":"August","person":"Amanda","category":"Misc","description":"String amount","amount":"42.50","shared":false},
+    {"id":"x7","date":"2026-08-08","month":"August","person":"Amanda","category":"Misc","description":"Sub cent","amount":12.345,"shared":false},
+    {"id":"x1","date":"2026-08-09","month":"August","person":"Aidan","category":"Misc","description":"Duplicate id","amount":15,"shared":false},
+    {"id":"x8","date":"2026-08-10","month":"August","person":"Amanda","category":"Income","description":"Joint refund","amount":400,"shared":true,"splitPct":56},
+    {"id":"x9","date":"2026-08-11","month":"August","person":"Aidan","category":"Savings","description":"Joint transfer","amount":1000,"shared":true,"splitPct":56},
+    {"id":"x10","date":"2026-03-01","month":"March","person":"Aidan","category":"Housing","description":"Mortgage","amount":1833,"shared":false,"recurringId":"rec-a"},
+    {"id":"x11","date":"2026-03-01","month":"March","person":"Aidan","category":"Housing","description":"Mortgage","amount":1833,"shared":false,"recurringId":"rec-a"},
+    {"id":"x12","date":"2019-05-01","month":"May","person":"Amanda","category":"Misc","description":"Typo year","amount":30,"shared":false},
+    {"id":"x13","date":"2026-08-12","month":"August","person":"Amanda","category":"Vacation","description":"Odd category","amount":75,"shared":false},
+    {"id":"x14","date":"2026-08-13","month":"August","person":"Amanda","category":"Dining","description":"Bad pct","amount":60,"shared":true,"splitPct":150},
+    {"id":"x15","date":"2026-07-04","month":"July","person":"Amanda","category":"Groceries","description":"July shop","amount":120,"shared":true,"splitPct":50}
+  ],
+  "settledMonths": {"2026-07": {"paid": 30, "net": -30}},
+  "giftCards": [{"id":"gc1","label":"Target","amount":25}],
+  "giftCardSpends": [
+    {"id":"s1","cardId":"gc1","date":"2026-08-01","amount":30},
+    {"id":"s2","cardId":"gone","date":"2026-08-02","amount":5}
+  ],
+  "trips": [
+    {"id":"t1","dates":"Feb 14, 2027","label":"Gracie Abrams"},
+    {"id":"t2","dates":"Aug 21-23","sortDate":"2026-08-21","label":"Camping"},
+    {"id":"t1","dates":"Sep 1","sortDate":"2026-09-01","label":"Dup id trip"}
+  ],
+  "todos": [
+    {"id":"td1","text":"Bad due","cat":"todo","done":false,"due":"soon"},
+    {"id":"td2","text":"Orphan section","cat":"gone","done":false}
+  ],
+  "todoCategories": [{"id":"todo","label":"To-Do"}],
+  "recurringItems": [{"id":"rec-a","person":"Aidan","category":"Housing","description":"Mortgage","amount":1833,"shared":false}]
+}

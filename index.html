@@ -959,8 +959,10 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
 /* ── Gift cards ── */
 .gc-item{padding:11px 13px;border:1px solid var(--border-light);border-radius:10px;background:var(--surface-warm);margin-bottom:9px}
-.gc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.gc-name{font-size:14px;font-weight:700;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gc-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+/* Wraps rather than truncating: a gift card's name is what you need to READ at the register, so
+   "Bath & Body Works rewards…" is worse than two short lines. */
+.gc-name{font-size:14px;font-weight:700;color:var(--text);min-width:0;overflow-wrap:anywhere;line-height:1.3}
 .gc-amt{font-size:15px;font-weight:800;white-space:nowrap}
 .gc-bar-wrap{height:5px;border-radius:3px;background:var(--border-light);overflow:hidden;margin:7px 0 5px}
 .gc-bar{height:100%;background:var(--sage);border-radius:3px;transition:width .3s}
@@ -974,7 +976,14 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .gc-btn-ghost:hover{background:var(--border-light);color:var(--text);border-color:var(--border)}
 .gc-log{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;padding-top:8px;border-top:1px dashed var(--border)}
 .gc-log-entry{font-size:10px;font-weight:600;color:var(--text-3);background:var(--surface);border:1px solid var(--border-light);border-radius:5px;padding:2px 6px}
-@media(max-width:600px){.gc-name{font-size:13px}.gc-use-input{width:66px}}
+@media(max-width:600px){
+  .gc-name{font-size:13px}
+  /* Bigger touch targets on phones — these were 27px tall, which is a coin-flip to hit one-handed
+     at a checkout counter. Apple's guidance is 44pt; 36 is the practical floor for a chip button. */
+  .gc-use-input{width:72px;padding:8px 9px;font-size:15px}
+  .gc-btn{padding:9px 14px;font-size:13px;min-height:36px}
+  .gc-actions{gap:8px}
+}
 
 /* ── Todo Priority & Drag ── */
 .todo-item.priority-urgent{border-left:3px solid var(--amber);background:var(--amber-bg)}
@@ -2215,6 +2224,7 @@ function teardownFirestore() {
   settledMonths = {};
   splitPct = DEFAULT_SPLIT_PCT;
   giftCards = [];
+  giftCardSpends = [];
   okdOverlaps = new Set();
   heartValAmanda = 0;
   heartValAidan = 0;
@@ -2304,8 +2314,9 @@ function initFirestore() {
   });
 
   _listen('giftCards', snap => {
-    if (!snap.exists) { ref('giftCards').set({items: []}); return; }
+    if (!snap.exists) { ref('giftCards').set({items: [], spends: []}); return; }
     giftCards = snap.data().items || [];
+    giftCardSpends = snap.data().spends || [];
     // Don't rebuild the list while a spend amount is half-typed — the input would be wiped.
     if (isActive('budget') && !_hasTypingFocus('#giftcards-card')) renderGiftCards();
   });
@@ -5930,8 +5941,27 @@ function addTrip() {
 const _pairKey = (a, b) => [a, b].sort().join('|');
 const isOverlapOkd = (a, b) => okdOverlaps.has(_pairKey(a, b));
 
-function saveOkdOverlaps() {
-  db.collection('state').doc('okdOverlaps').set({pairs: [...okdOverlaps]}).catch(_onSaveErr);
+// Adds/removes individual pairs rather than replacing the whole array, so two people accepting
+// two different conflicts at the same time don't erase each other's decision.
+function saveOkdOverlaps(added = [], removed = []) {
+  const ref = db.collection('state').doc('okdOverlaps');
+  const FV = firebase.firestore.FieldValue;
+  const ops = {};
+  if (added.length)   ops.pairs = FV.arrayUnion(...added);
+  if (removed.length) ops.pairs = FV.arrayRemove(...removed);
+  // Nothing specific to merge (e.g. the prune path) → fall back to a full write.
+  if (!added.length && !removed.length) {
+    ref.set({pairs: [...okdOverlaps]}).catch(_onSaveErr);
+    return;
+  }
+  // arrayUnion and arrayRemove can't both target `pairs` in one update, so split them.
+  if (added.length && removed.length) {
+    ref.update({pairs: FV.arrayUnion(...added)})
+      .then(() => ref.update({pairs: FV.arrayRemove(...removed)}))
+      .catch(() => ref.set({pairs: [...okdOverlaps]}).catch(_onSaveErr));
+    return;
+  }
+  ref.update(ops).catch(() => ref.set({pairs: [...okdOverlaps]}).catch(_onSaveErr));
 }
 
 // Accept every conflict this trip is currently part of.
@@ -5943,36 +5973,42 @@ function okOverlap(id) {
     if (!okdOverlaps.has(k)) { okdOverlaps.add(k); added.push(k); }
   });
   if (!added.length) return;
-  saveOkdOverlaps();
+  saveOkdOverlaps(added, []);
   renderDates();
   showToast('Conflict accepted — both trips kept', () => {
     added.forEach(k => okdOverlaps.delete(k));
-    saveOkdOverlaps();
+    saveOkdOverlaps([], added);
     renderDates();
   });
 }
 
 // Put this trip's conflicts back on the radar.
 function unOkOverlap(id) {
-  let changed = false;
+  const removed = [];
   _overlapPairs.forEach(([a, b]) => {
     if (a !== id && b !== id) return;
-    if (okdOverlaps.delete(_pairKey(a, b))) changed = true;
+    const k = _pairKey(a, b);
+    if (okdOverlaps.delete(k)) removed.push(k);
   });
-  if (!changed) return;
-  saveOkdOverlaps();
+  if (!removed.length) return;
+  saveOkdOverlaps([], removed);
   renderDates();
 }
 
 // Drop accepted pairs whose trips are gone, so the list can't grow forever.
 function _pruneOkdOverlaps() {
+  // Bail when there are no trips loaded. Firestore listeners fire in whatever order the snapshots
+  // arrive, so renderDates can run with okdOverlaps populated but `trips` still empty — and then
+  // every accepted conflict looks like it references a deleted trip and gets permanently erased.
+  // An empty trip list gives us nothing to validate against, so there's nothing safe to prune.
+  if (!trips.length) return;
   const live = new Set(trips.map(t => t.id));
-  let changed = false;
+  const removed = [];
   for (const k of [...okdOverlaps]) {
     const [a, b] = k.split('|');
-    if (!live.has(a) || !live.has(b)) { okdOverlaps.delete(k); changed = true; }
+    if (!live.has(a) || !live.has(b)) { okdOverlaps.delete(k); removed.push(k); }
   }
-  if (changed) saveOkdOverlaps();
+  if (removed.length) saveOkdOverlaps([], removed);
 }
 
 function deleteTrip(id) {
@@ -7167,6 +7203,7 @@ function exportData() {
     settledMonths,
     splitPct,
     giftCards,
+    giftCardSpends,
     okdOverlaps: [...okdOverlaps],   // a Set would serialize to {} in JSON
     recurringItems,
     weekPlan,
@@ -7753,7 +7790,20 @@ function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({
 // Months checked off as "settled" (squared up). Shared across partners via Firestore. Keyed by
 // YYYY-MM → the amount that was owed when it was marked paid (so the tile can show "$X paid").
 let settledMonths = {};
-function saveSettledMonths() { db.collection('state').doc('settledMonths').set({months: settledMonths}).catch(_onSaveErr); }
+// Writes ONE month's key, not the whole map. The old version did `set({months: settledMonths})`,
+// which replaced the entire map — so if Amanda settled January on her phone while Aidan settled
+// February on his, whichever write landed second erased the other's settlement record entirely.
+// A dotted field path touches only that key and leaves its siblings alone.
+function saveSettledMonth(ym) {
+  const val = settledMonths[ym];
+  const payload = val === undefined
+    ? { [`months.${ym}`]: firebase.firestore.FieldValue.delete() }
+    : { [`months.${ym}`]: val };
+  db.collection('state').doc('settledMonths').update(payload).catch(err => {
+    // The document may not exist yet, in which case update() fails — fall back to creating it.
+    db.collection('state').doc('settledMonths').set({months: settledMonths}).catch(_onSaveErr);
+  });
+}
 // Stored value is either a bare number (legacy: just the magnitude paid) or {paid, net} where
 // `net` is the SIGNED calcOwes().Aidan at the moment of settling. The sign matters: without it we
 // can only compare magnitudes, so a balance that flipped direction but kept the same size would
@@ -7775,7 +7825,7 @@ function toggleMonthSettled(ym, amount, aidanNet) {
       ...(Number.isFinite(aidanNet) ? { net: round2(aidanNet) } : {}),
     };
   }
-  saveSettledMonths();
+  saveSettledMonth(ym);
   if (isActive('budget')) renderBudget();
 }
 // Has the balance moved since this month was marked settled?
@@ -7794,9 +7844,28 @@ function _settledDrift(ym, aidanNetNow) {
 // partial redemptions, so the remaining balance is always derived (never stored) — a stored
 // balance would drift out of sync with the log the first time an entry was edited or undone.
 let giftCards = [];
-function saveGiftCards() { db.collection('state').doc('giftCards').set({items: giftCards}).catch(_onSaveErr); }
+// Spends live in their OWN top-level array, not nested inside each card, so they can be appended
+// with arrayUnion. They started out embedded as `card.redemptions`, which meant every spend had to
+// rewrite the whole card list with set() — and if Amanda logged a Target spend while Aidan logged
+// an Amazon one, whichever write landed second erased the other. A lost spend is the dangerous
+// direction of wrong: the card shows MORE money left than it really has.
+// Shape: {id, cardId, date, amount}
+let giftCardSpends = [];
+const _gcRef = () => db.collection('state').doc('giftCards');
+// Full-document write. Only for structural changes (deleting a card) where there's nothing to
+// merge; the add and spend paths use arrayUnion/arrayRemove instead.
+function saveGiftCards() {
+  _gcRef().set({items: giftCards, spends: giftCardSpends}).catch(_onSaveErr);
+}
 
-const gcSpent     = c => round2((c?.redemptions || []).reduce((s, r) => s + (Number(r.amount) || 0), 0));
+// Every spend against a card: the top-level rows plus any still embedded on the card itself from
+// before the split-out. Reading both means existing cards keep their history with no migration.
+function gcSpendsFor(card) {
+  if (!card) return [];
+  const legacy = (card.redemptions || []).map(r => ({...r, cardId: card.id, _legacy: true}));
+  return legacy.concat(giftCardSpends.filter(s => s && s.cardId === card.id));
+}
+const gcSpent     = c => round2(gcSpendsFor(c).reduce((s, r) => s + (Number(r.amount) || 0), 0));
 const gcRemaining = c => round2((Number(c?.amount) || 0) - gcSpent(c));
 // "Used up" = under a cent left. Kept as a threshold rather than === 0 so float dust from a
 // sequence of odd partial spends can't leave a card stuck at $0.00 but technically unfinished.
@@ -7817,6 +7886,7 @@ function renderGiftCards() {
   }
 
   list.innerHTML = active.length ? active.map(c => {
+    const spends = gcSpendsFor(c);
     const remaining = gcRemaining(c), spent = gcSpent(c), face = Number(c.amount) || 0;
     const usedPct = face > 0 ? Math.min(100, Math.round(spent / face * 100)) : 0;
     // A card can go "overdrawn" if a redemption is logged for more than the balance. Surface it
@@ -7840,11 +7910,11 @@ function renderGiftCards() {
         <button class="gc-btn" onclick="useGiftCard('${escHtml(c.id)}')">Log</button>
         <button class="gc-btn gc-btn-ghost" onclick="useGiftCard('${escHtml(c.id)}', ${remaining})"
           title="Log the whole remaining ${fmtMoney(remaining)}">All</button>
-        ${(c.redemptions || []).length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the most recent spend">↩ Undo</button>` : ''}
+        ${spends.length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the most recent spend">↩ Undo</button>` : ''}
         <button class="gc-btn gc-btn-ghost" style="margin-left:auto;color:var(--coral)" onclick="deleteGiftCard('${escHtml(c.id)}')" title="Remove this card">×</button>
       </div>
-      ${(c.redemptions || []).length ? `<div class="gc-log">${
-        [...c.redemptions].reverse().map(r => `<span class="gc-log-entry">${escHtml(_gcNiceDate(r.date))} · ${fmtMoney(r.amount)}</span>`).join('')
+      ${spends.length ? `<div class="gc-log">${
+        [...spends].reverse().map(r => `<span class="gc-log-entry">${escHtml(_gcNiceDate(r.date))} · ${fmtMoney(r.amount)}</span>`).join('')
       }</div>` : ''}
     </div>`;
   }).join('') : '<div style="font-size:13px;color:var(--text-3);padding:4px 0">No cards yet — add one below.</div>';
@@ -7865,7 +7935,7 @@ function renderGiftCards() {
               <div style="font-size:13px;color:var(--text-3);text-decoration:line-through">${escHtml(c.label || 'Gift card')}</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <span style="font-size:12px;color:var(--text-3)">${fmtMoney(c.amount)}</span>
-                ${(c.redemptions || []).length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the last spend to reopen this card">↩</button>` : ''}
+                ${gcSpendsFor(c).length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the last spend to reopen this card">↩</button>` : ''}
                 <button class="gc-btn gc-btn-ghost" style="color:var(--coral)" onclick="deleteGiftCard('${escHtml(c.id)}')">×</button>
               </div>
             </div>`).join('')}
@@ -7896,7 +7966,8 @@ function addGiftCard() {
   const amount  = round2(parseFloat(amtEl?.value ?? ''));
   if (!label)  { showToast('⚠️ Give the card a name'); labelEl?.focus(); return; }
   if (!Number.isFinite(amount) || amount <= 0) { showToast('⚠️ Enter the card’s dollar value'); amtEl?.focus(); return; }
-  const card = { id: _uid('gc-'), label, amount, redemptions: [], added: _todayLocal() };
+  // No embedded `redemptions` — spends go in the top-level giftCardSpends array (see gcSpendsFor).
+  const card = { id: _uid('gc-'), label, amount, added: _todayLocal() };
   giftCards.push(card);
   // arrayUnion so two devices adding cards at once don't clobber each other.
   db.collection('state').doc('giftCards').update({
@@ -7922,9 +7993,12 @@ function useGiftCard(id, preset) {
     inputEl?.focus();
     return;
   }
-  if (!Array.isArray(c.redemptions)) c.redemptions = [];
-  c.redemptions.push({ id: _uid('gcr-'), date: _todayLocal(), amount });
-  saveGiftCards();
+  const spend = { id: _uid('gcr-'), cardId: c.id, date: _todayLocal(), amount };
+  giftCardSpends.push(spend);
+  // arrayUnion appends without touching anything else, so a spend logged on the other phone at the
+  // same moment survives too.
+  _gcRef().update({ spends: firebase.firestore.FieldValue.arrayUnion(spend) })
+    .catch(() => saveGiftCards());   // doc/field may not exist yet
   renderGiftCards();
   const left = gcRemaining(c);
   showToast(left < 0.01
@@ -7934,9 +8008,20 @@ function useGiftCard(id, preset) {
 
 function undoGiftCardUse(id) {
   const c = giftCards.find(x => x.id === id);
-  if (!c || !(c.redemptions || []).length) return;
-  const removed = c.redemptions.pop();
-  saveGiftCards();
+  if (!c) return;
+  const all = gcSpendsFor(c);
+  if (!all.length) return;
+  const removed = all[all.length - 1];
+  if (removed._legacy) {
+    // Still embedded on the card from before spends were split out — has to be a full write.
+    c.redemptions = (c.redemptions || []).filter(r => r.id !== removed.id);
+    saveGiftCards();
+  } else {
+    giftCardSpends = giftCardSpends.filter(s => s.id !== removed.id);
+    const { _legacy, ...stored } = removed;   // arrayRemove matches by deep equality
+    _gcRef().update({ spends: firebase.firestore.FieldValue.arrayRemove(stored) })
+      .catch(() => saveGiftCards());
+  }
   renderGiftCards();
   showToast(`Removed ${fmtMoney(removed.amount)} from ${c.label}`);
 }
@@ -7944,13 +8029,16 @@ function undoGiftCardUse(id) {
 function deleteGiftCard(id) {
   const card = giftCards.find(x => x.id === id);
   if (!card) return;
+  const orphaned = giftCardSpends.filter(s => s.cardId === id);
   giftCards = giftCards.filter(x => x.id !== id);
+  giftCardSpends = giftCardSpends.filter(s => s.cardId !== id);   // don't leave dangling spends
   saveGiftCards();
   renderGiftCards();
   showToast(`Removed ${card.label}`, () => {
     // Re-check by id: if a partner's snapshot already re-added it, don't create a duplicate.
     if (!giftCards.some(x => x.id === card.id)) {
       giftCards.push(card);
+      for (const s of orphaned) if (!giftCardSpends.some(x => x.id === s.id)) giftCardSpends.push(s);
       saveGiftCards();
       renderGiftCards();
     }
