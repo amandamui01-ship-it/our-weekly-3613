@@ -189,13 +189,34 @@ function calcOwes(list) {
   }
   return { Aidan: round2(net.Aidan), Amanda: round2(net.Amanda) };
 }
-const drifted = [];
+const drifted = [];       // genuinely new activity since settling
+const recalcNoise = [];   // pennies from the rounding change, not money owed
 for (const [ym, rec] of Object.entries(settled)) {
   const paid = (rec && typeof rec === 'object') ? Number(rec.paid) || 0 : Number(rec) || 0;
   const netThen = (rec && typeof rec === 'object' && Number.isFinite(rec.net)) ? rec.net : null;
-  const live = calcOwes(expenses.filter(e => typeof e.date === 'string' && e.date.slice(0, 7) === ym));
+  const monthRows = expenses.filter(e => typeof e.date === 'string' && e.date.slice(0, 7) === ym);
+  const live = calcOwes(monthRows);
   const outstanding = netThen !== null ? round2(live.Aidan - netThen) : round2(Math.abs(live.Aidan) - paid);
-  if (Math.abs(outstanding) >= 0.01) drifted.push({ ym, paid, outstanding, live: live.Aidan });
+  if (Math.abs(outstanding) < 0.01) continue;
+
+  if (netThen !== null) {
+    // Signed record → the comparison is exact, so any difference is real activity.
+    drifted.push({ ym, paid, outstanding, live: live.Aidan });
+    continue;
+  }
+  // LEGACY record (a bare magnitude, written before the settlement stored its sign). Those totals
+  // were produced by the old settlement code, which summed UNROUNDED halves (amount / 2) and only
+  // rounded at the very end. The current code rounds each row's share to the cent, which is what
+  // guarantees the displayed rows sum exactly to the tile. For any shared row with an odd cent, a
+  // half lands on a half-cent and the two approaches differ by up to half a cent per row.
+  //
+  // So the maximum difference attributable purely to that change is ~0.005 per shared row. Below
+  // that, the delta is recomputation noise rather than money that never got paid — reporting it as
+  // "unpaid" would be a false alarm, which is worse than useless in a health check.
+  const sharedRows = monthRows.filter(e => e.shared && (e.person === 'Amanda' || e.person === 'Aidan')).length;
+  const tolerance = round2(0.005 * sharedRows + 0.01);
+  if (Math.abs(outstanding) <= tolerance) recalcNoise.push({ ym, paid, outstanding, sharedRows, tolerance });
+  else drifted.push({ ym, paid, outstanding, live: live.Aidan });
 }
 if (drifted.length) {
   const tot = drifted.reduce((s, d) => s + Math.abs(d.outstanding), 0);
@@ -204,6 +225,15 @@ if (drifted.length) {
     'The Settlement tile now flags this, but these predate that.',
     drifted.map(d => `${d.ym}: ${money(d.paid)} was paid, ${money(d.outstanding)} added since ` +
                      `(balance is now ${money(d.live)} ${d.live > 0 ? 'owed by Amanda' : 'owed by Aidan'})`));
+}
+if (recalcNoise.length) {
+  const tot = recalcNoise.reduce((s, d) => s + Math.abs(d.outstanding), 0);
+  add('note', `${recalcNoise.length} settled month(s) recompute a few cents differently (${money(tot)} in total)`,
+    'NOT money owed. These were settled before shared amounts were rounded per-transaction; the ' +
+    'old code summed unrounded halves. Recomputing them now shifts the total by a fraction of a ' +
+    'cent per shared row. Nothing to do — listed only so the difference is accounted for.',
+    recalcNoise.map(d => `${d.ym}: recorded ${money(d.paid)}, recomputes ${money(d.outstanding)} ` +
+                         `different across ${d.sharedRows} shared rows (rounding accounts for up to ${money(d.tolerance)})`));
 }
 
 // ═══ GIFT CARDS ══════════════════════════════════════════════════════════════

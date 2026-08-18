@@ -1,0 +1,110 @@
+{
+  "exportedAt": "2026-08-18T00:00:00.000Z",
+  "version": 2,
+  "expenses": [
+    {
+      "id": "L0",
+      "date": "2026-01-02",
+      "month": "January",
+      "person": "Amanda",
+      "category": "Groceries",
+      "description": "Shop 0",
+      "amount": 10.05,
+      "shared": true
+    },
+    {
+      "id": "L1",
+      "date": "2026-01-03",
+      "month": "January",
+      "person": "Aidan",
+      "category": "Groceries",
+      "description": "Shop 1",
+      "amount": 23.17,
+      "shared": true
+    },
+    {
+      "id": "L2",
+      "date": "2026-01-04",
+      "month": "January",
+      "person": "Amanda",
+      "category": "Groceries",
+      "description": "Shop 2",
+      "amount": 7.99,
+      "shared": true
+    },
+    {
+      "id": "L3",
+      "date": "2026-01-05",
+      "month": "January",
+      "person": "Aidan",
+      "category": "Groceries",
+      "description": "Shop 3",
+      "amount": 45.01,
+      "shared": true
+    },
+    {
+      "id": "L4",
+      "date": "2026-01-06",
+      "month": "January",
+      "person": "Amanda",
+      "category": "Groceries",
+      "description": "Shop 4",
+      "amount": 12.33,
+      "shared": true
+    },
+    {
+      "id": "L5",
+      "date": "2026-01-07",
+      "month": "January",
+      "person": "Aidan",
+      "category": "Groceries",
+      "description": "Shop 5",
+      "amount": 88.75,
+      "shared": true
+    },
+    {
+      "id": "L6",
+      "date": "2026-01-08",
+      "month": "January",
+      "person": "Amanda",
+      "category": "Groceries",
+      "description": "Shop 6",
+      "amount": 19.49,
+      "shared": true
+    },
+    {
+      "id": "L7",
+      "date": "2026-01-09",
+      "month": "January",
+      "person": "Aidan",
+      "category": "Groceries",
+      "description": "Shop 7",
+      "amount": 3.27,
+      "shared": true
+    },
+    {
+      "id": "L8",
+      "date": "2026-01-10",
+      "month": "January",
+      "person": "Amanda",
+      "category": "Groceries",
+      "description": "Shop 8",
+      "amount": 61.11,
+      "shared": true
+    }
+  ],
+  "settledMonths": {
+    "2026-01": 24.615000000000002
+  },
+  "giftCards": [],
+  "giftCardSpends": [],
+  "trips": [],
+  "todos": [],
+  "todoCategories": [
+    {
+      "id": "todo",
+      "label": "To-Do"
+    }
+  ],
+  "recurringItems": []
+}

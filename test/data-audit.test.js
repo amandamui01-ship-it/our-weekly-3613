@@ -60,6 +60,25 @@ ok(/2026:\s+14 rows · spent\s+\$4,551\.75 · income\s+\$400\.00/.test(out),
   'year totals separate spending from income',
   out.split('\n').filter(l => l.trim().startsWith('2026:')).join(' '));
 
+// ── Legacy settled months must NOT be reported as unpaid money ──────────────
+// Real-world case (found in Amanda's actual export, 2026-08-18): seven months settled under the
+// OLD settlement code, which summed UNROUNDED halves. The current code rounds each row's share to
+// the cent, so recomputing those months differs by 3-6 cents. Reporting that as "money that never
+// got paid" is a false alarm — worse than useless in a health check. It must land as a note.
+const legacy = run('legacy-settled-export.json');
+ok(legacy.status === 0, 'auditor exits cleanly on the legacy-settlement fixture', legacy.stderr);
+ok(/0 problem\(s\)/.test(legacy.stdout),
+  'penny-level recomputation of a legacy settled month is NOT reported as a problem',
+  legacy.stdout.split('\n').filter(l => l.includes('problem(s)')).join(' '));
+ok(/recompute a few cents differently/.test(legacy.stdout),
+  'the recomputation difference is still surfaced, as a note',
+  legacy.stdout.slice(-500));
+ok(/NOT money owed/.test(legacy.stdout), 'the note says plainly that nothing is owed');
+// But a real post-settlement addition must still be caught. The dirty fixture uses the NEW signed
+// record shape, where the comparison is exact, and it IS reported as a problem.
+ok(/activity logged after they were settled/.test(out),
+  'genuine post-settlement activity is still reported as a problem (signed records are exact)');
+
 // ── Clean fixture: must NOT invent problems ─────────────────────────────────
 const clean = run('clean-export.json');
 ok(clean.status === 0, 'auditor exits cleanly on the clean fixture', clean.stderr);
