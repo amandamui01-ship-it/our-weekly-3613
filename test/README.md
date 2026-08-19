@@ -19,7 +19,7 @@ Or individually:
 | `ics.test.js` | Trip end-date parsing, asserting the `index.html` and `functions/index.js` copies agree case-for-case; plus feed structure | The two implementations drifting apart, off-by-one-day on all-day events, DST/leap-year/cross-year errors |
 | `concurrency.test.js` | TWO jsdom clients against one shared fake Firestore, with controllable snapshot delay | Last-write-wins data loss when you and Aidan act at the same time; double-charged recurring months |
 | `data-audit.test.js` | Self-test for `data-audit.js` against fixtures with planted faults | A health check that silently stops detecting anything — the worst failure mode for a health check |
-| `layout.test.js` | Real Chromium at iPhone SE / iPhone 14 / desktop widths: horizontal overflow, clipped text, tap-target size, dark mode. Writes `test/screenshots/` | Anything about actual layout — jsdom has no layout engine and cannot see it at all |
+| `layout.test.js` | Real Chromium at iPhone SE / iPhone 14 / iPad (both orientations) / 13" laptop / desktop widths: horizontal overflow, clipped text, tap-target size, dark mode. Writes `test/screenshots/` | Anything about actual layout — jsdom has no layout engine and cannot see it at all |
 
 ## Auditing your real data
 
@@ -40,9 +40,9 @@ gift cards, and trips with unparseable dates.
 npm install --no-save jsdom
 ```
 
-## Two traps these harnesses fell into (worth remembering)
+## Four traps these harnesses fell into (worth remembering)
 
-Both produced confidently passing tests that were measuring nothing:
+Every one produced confidently passing tests that were measuring nothing:
 
 1. **The layout test measured the login screen.** The Firebase stub never fired an auth callback,
    so the overlay never lifted and 36 assertions "passed" against an empty gate. `layout.test.js`
