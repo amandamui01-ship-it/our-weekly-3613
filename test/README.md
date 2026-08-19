@@ -41,7 +41,7 @@ with unusable anchor dates, and `!yearly` markers left un-stripped in a label.
 npm install --no-save jsdom
 ```
 
-## Four traps these harnesses fell into (worth remembering)
+## Five traps these harnesses fell into (worth remembering)
 
 Every one produced confidently passing tests that were measuring nothing:
 
@@ -65,6 +65,12 @@ Every one produced confidently passing tests that were measuring nothing:
    thought had a mouse. Found by mutation testing: removing the real iPad fix didn't fail anything.
    Fixed by moving the check above the screenshot loop AND asserting `pointer:coarse` is live, so
    ordering can't silently regress.
+
+5. **`.click()` did nothing at all.** `runtime.test.js` loads the page with
+   `runScripts: 'outside-only'`, which executes the inline `<script>` bodies but does **not** compile
+   inline `onclick=` attributes. So `document.getElementById('confirm-ok').click()` was a silent
+   no-op — the assertion after it failed for a reason that had nothing to do with the app. Call the
+   handler directly (`_confirmOk()`, `_confirmCancel()`) instead of simulating the click.
 
 If a harness reports everything green on the first run, be suspicious and check it can fail.
 
