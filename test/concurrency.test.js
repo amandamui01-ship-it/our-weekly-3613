@@ -124,7 +124,13 @@ function makeClient(name) {
         const syncThenable = value => ({ then: cb => syncThenable(cb(value)) });
         return Promise.resolve(fn({
           get: ref => syncThenable({ exists: true, data: () => server.get(ref.__id) }),
-          set: (ref, data) => server.set(ref.__id, data, client),
+          // {merge:true} is a FIELD-level write: fields not named in `data` are left alone. Without
+          // modelling that, a transaction writing only {items} to the giftCards doc would appear to
+          // erase `spends` — a failure the real database would never produce. server.update() has
+          // exactly merge semantics for plain values, so route through it.
+          set: (ref, data, opts) => (opts && opts.merge)
+            ? server.update(ref.__id, data, client)
+            : server.set(ref.__id, data, client),
         }));
       },
       enablePersistence: () => Promise.resolve(), settings: () => {},
@@ -495,6 +501,203 @@ ok(offline.tries === 1, 'an offline failure is not retried (pointless while disc
 ok(offline.writes === 1,
   'but it DOES fall back to the whole-array write the app has always done',
   `whole-array writes=${offline.writes}`);
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 5g. Whole-document writes that were still left over after the first pass. Each of these used to
+// overwrite an entire array (or, for giftCards, an entire two-array document) with the local copy.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Deleting a gift card while the partner logs a redemption on a DIFFERENT card. The delete has to
+// take the card AND its own spends, and nothing else.
+amanda.holdSnapshots(); aidan.holdSnapshots();
+// Aidan writes FIRST, then Amanda acts on her now-stale copy. That ordering is what makes a
+// whole-document write destructive — reverse it and even the buggy version passes.
+aidan.call("useGiftCard('gcA', 5)");
+amanda.call("deleteGiftCard('gcT')");
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const gcAfter = server.get('giftCards') || {};
+ok(!(gcAfter.items || []).some(c => c.id === 'gcT'), 'the deleted gift card is gone',
+  JSON.stringify(gcAfter.items));
+ok((gcAfter.items || []).some(c => c.id === 'gcA'), "the partner's card is untouched",
+  JSON.stringify(gcAfter.items));
+ok(!(gcAfter.spends || []).some(s => s.cardId === 'gcT'),
+  "the deleted card's spends go with it — no dangling redemptions",
+  JSON.stringify(gcAfter.spends));
+ok((gcAfter.spends || []).some(s => s.cardId === 'gcA' && s.amount === 5),
+  'the redemption logged on the other card at the same moment SURVIVES the delete',
+  JSON.stringify(gcAfter.spends));
+
+// Setting an expiry writes only {items}; `spends` must survive because it is a merge, not a set.
+const spendsBefore = ((server.get('giftCards') || {}).spends || []).length;
+amanda.call("setGiftCardExpiry('gcA', '2027-01-15')");
+const gcExp = server.get('giftCards') || {};
+ok((gcExp.items || []).find(c => c.id === 'gcA') && (gcExp.items || []).find(c => c.id === 'gcA').expires === '2027-01-15',
+  'the expiry lands on the card', JSON.stringify(gcExp.items));
+ok((gcExp.spends || []).length === spendsBefore,
+  'and writing it does not drop the spends array alongside it',
+  ((gcExp.spends || []).length) + ' spends, expected ' + spendsBefore);
+
+// Offline: transactions are unavailable, so setGiftCardExpiry falls back to a whole-document
+// set(). That write is NOT a merge, so it has to carry `spends` too — otherwise editing an expiry
+// with no signal would silently erase every redemption ever logged.
+amanda.call(`(function(){
+  window.__realTx = db.runTransaction;
+  db.runTransaction = function(){
+    return { catch: function(cb){ return cb({code: 'unavailable'}); } };
+  };
+  setGiftCardExpiry('gcA', '2028-03-01');
+  db.runTransaction = window.__realTx;
+})()`);
+const gcOff = server.get('giftCards') || {};
+ok((gcOff.items || []).find(c => c.id === 'gcA') && (gcOff.items || []).find(c => c.id === 'gcA').expires === '2028-03-01',
+  'an expiry set while offline still lands', JSON.stringify(gcOff.items));
+ok((gcOff.spends || []).some(s => s.cardId === 'gcA'),
+  'and the offline fallback write does NOT wipe the redemption history',
+  JSON.stringify(gcOff.spends));
+
+// Recurring templates: delete one while the partner edits another. These are monthly bills.
+amanda.holdSnapshots(); aidan.holdSnapshots();
+aidan.call(`(function(){
+  const r = recurringItems.find(x => x.id === 'rec-a');
+  r.amount = 1900;
+  saveRecurringItem('rec-a');
+})()`);
+amanda.call("deleteRecurring('rec-c')");   // stale client writes last — see note above
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const recAfter = ((server.get('recurring') || {}).items) || [];
+ok(!recAfter.some(r => r.id === 'rec-c'), 'the deleted template is gone', JSON.stringify(recAfter));
+ok(recAfter.find(r => r.id === 'rec-a') && recAfter.find(r => r.id === 'rec-a').amount === 1900,
+  "the partner's simultaneous edit to a different template survives",
+  JSON.stringify(recAfter.find(r => r.id === 'rec-a')));
+ok(recAfter.length === 2, 'no template was duplicated or lost', recAfter.length + ' present');
+
+// Clearing completed to-dos while the partner adds a new one.
+// Seed both clients explicitly — scenario 5f above replaced Amanda's local todos array.
+for (const c of [amanda, aidan]) {
+  c.call(`(function(){
+    todos = [{id:'tc-done', text:'Finished thing', cat:'todo', done:true}];
+    saveTodos();
+  })()`);
+}
+amanda.holdSnapshots(); aidan.holdSnapshots();
+aidan.call(`(function(){
+  const el = document.getElementById('add-todo');
+  if (!el) throw new Error('no add-todo input');
+  el.value = 'Aidan new task';
+  addTodo('todo');
+})()`);
+amanda.call('clearCompletedTodos()');   // stale client writes last — see note above
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const todosAfter = ((server.get('todos') || {}).items) || [];
+ok(!todosAfter.some(t => t.id === 'tc-done'), 'the completed to-do was cleared',
+  JSON.stringify(todosAfter.map(t => t.text)));
+ok(todosAfter.some(t => t.text === 'Aidan new task'),
+  'the to-do the partner added while the done pile was being cleared SURVIVES',
+  JSON.stringify(todosAfter.map(t => t.text)));
+
+// Deleting a calendar event while the partner creates a different one.
+for (const c of [amanda, aidan]) {
+  c.call(`(function(){
+    datedEvents = [{id:'ev-del', date:'2026-09-20', text:'Old thing', time:null, endTime:null}];
+    saveDatedEvents();
+  })()`);
+}
+amanda.holdSnapshots(); aidan.holdSnapshots();
+aidan.call(`(function(){
+  const e = {id:'ev-new', date:'2026-09-21', text:'Aidan new event', time:null, endTime:null};
+  datedEvents.push(e);
+  _addDatedEvent(e);
+})()`);
+amanda.call("removeEvent('ev-del')");   // stale client writes last — see note above
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const evAfter = ((server.get('datedEvents') || {}).items) || [];
+ok(!evAfter.some(e => e.id === 'ev-del'), 'the deleted event is gone', JSON.stringify(evAfter));
+ok(evAfter.some(e => e.id === 'ev-new'),
+  'the event the partner created at the same moment is NOT erased by the delete',
+  JSON.stringify(evAfter));
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 5h. The SAME races with the roles reversed. A whole-array write only destroys what is already on
+// the server, so each ordering catches a different call site: 5g catches the deleter, 5h catches
+// the adder/editor. Both are needed — with only one ordering, half these conversions could be
+// reverted and the suite would stay green.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Amanda deletes a template first; Aidan then edits a DIFFERENT one from a stale copy.
+// If his edit wrote the whole array, it would resurrect the template she just deleted.
+for (const c of [amanda, aidan]) {
+  c.call(`(function(){
+    recurringItems = [
+      {id:'rm-1', person:'Aidan',  category:'Utilities', description:'Water', amount:60, shared:true},
+      {id:'rm-2', person:'Amanda', category:'Subscriptions', description:'Spotify', amount:12, shared:true}
+    ];
+    saveRecurring();
+  })()`);
+}
+amanda.holdSnapshots(); aidan.holdSnapshots();
+amanda.call("deleteRecurring('rm-1')");
+aidan.call(`(function(){
+  renderRecurring();
+  editRecurring('rm-2');
+  const amt = document.getElementById('rece-amt-rm-2');
+  if (!amt) throw new Error('recurring edit row did not render');
+  amt.value = '15';
+  saveRecurringEdit('rm-2');
+})()`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const recMirror = ((server.get('recurring') || {}).items) || [];
+ok(!recMirror.some(r => r.id === 'rm-1'),
+  "editing a template does not resurrect one the partner deleted a moment earlier",
+  JSON.stringify(recMirror));
+ok(recMirror.find(r => r.id === 'rm-2') && recMirror.find(r => r.id === 'rm-2').amount === 15,
+  'and the edit itself still lands', JSON.stringify(recMirror));
+
+// Amanda deletes an event first; Aidan then creates one from a stale copy.
+for (const c of [amanda, aidan]) {
+  c.call(`(function(){
+    datedEvents = [{id:'em-gone', date:'2026-10-01', text:'Cancelled thing', time:null, endTime:null}];
+    saveDatedEvents();
+  })()`);
+}
+amanda.holdSnapshots(); aidan.holdSnapshots();
+amanda.call("removeEvent('em-gone')");
+aidan.call(`(function(){
+  const e = {id:'em-fresh', date:'2026-10-02', text:'Brand new', time:null, endTime:null};
+  datedEvents.push(e);
+  _addDatedEvent(e);
+})()`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const evMirror = ((server.get('datedEvents') || {}).items) || [];
+ok(!evMirror.some(e => e.id === 'em-gone'),
+  'creating an event does not resurrect one the partner just deleted',
+  JSON.stringify(evMirror));
+ok(evMirror.some(e => e.id === 'em-fresh'), 'and the new event is there',
+  JSON.stringify(evMirror));
+
+// Amanda clears the done pile first; Aidan then completes a to-do from a stale copy.
+for (const c of [amanda, aidan]) {
+  c.call(`(function(){
+    todos = [
+      {id:'tm-done', text:'Already finished', cat:'todo', done:true},
+      {id:'tm-open', text:'Still open', cat:'todo', done:false}
+    ];
+    saveTodos();
+  })()`);
+}
+amanda.holdSnapshots(); aidan.holdSnapshots();
+amanda.call('clearCompletedTodos()');
+aidan.call(`(function(){
+  const t = todos.find(x => x.id === 'tm-open');
+  t.text = 'Still open (renamed)';
+  saveTodoItem('tm-open');
+})()`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const todosMirror = ((server.get('todos') || {}).items) || [];
+ok(!todosMirror.some(t => t.id === 'tm-done'),
+  'renaming a to-do does not resurrect the completed pile the partner just cleared',
+  JSON.stringify(todosMirror.map(t => t.text)));
+ok(todosMirror.find(t => t.id === 'tm-open') && todosMirror.find(t => t.id === 'tm-open').text === 'Still open (renamed)',
+  'and the rename lands', JSON.stringify(todosMirror.map(t => t.text)));
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 6. Settled months — both settle a DIFFERENT month at the same time

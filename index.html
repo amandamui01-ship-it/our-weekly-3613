@@ -2666,19 +2666,23 @@ function _removeFromDoc(docName, item) {
 const _TX_CONTENTION = new Set(['aborted', 'failed-precondition']);
 const _TX_RETRIES = 2;
 
-function _txUpdateItems(docName, mutate, localArray) {
+// General form: `mutate` receives the whole current server document and returns a patch object to
+// merge, or null to write nothing. `fallbackDoc()` is what gets written if transactions aren't
+// available at all (offline) — it MUST include every field the doc owns, because that write is not
+// a merge. The giftCards doc holds two arrays (items + spends), which is why this exists.
+function _txUpdateDoc(docName, mutate, fallbackDoc) {
   const ref = db.collection('state').doc(docName);
-  // Set when OUR mutate callback throws. That's a bug in this code, not a network condition, and
-  // it must never fall through to a whole-array write — that would turn a code error into data loss.
+  // Set when OUR mutate callback throws. That's a bug in this code, not a network condition, and it
+  // must never fall through to a whole-doc write — that would turn a code error into data loss.
   let mutateThrew = false;
   const attempt = tries => db.runTransaction(t => t.get(ref).then(snap => {
-    const server = snap.exists ? (snap.data().items || []) : null;
-    // Doc missing entirely, or no items field: nothing to merge against. Write our copy.
-    if (!server) { t.set(ref, {items: localArray()}, {merge: true}); return; }
-    let next;
-    try { next = mutate(server.slice()); }
+    const data = snap.exists ? (snap.data() || null) : null;
+    // Doc missing entirely: nothing to merge against. Write our copy.
+    if (!data) { t.set(ref, fallbackDoc(), {merge: true}); return; }
+    let patch;
+    try { patch = mutate(data); }
     catch (e) { mutateThrew = true; throw e; }
-    if (next) t.set(ref, {items: next}, {merge: true});
+    if (patch) t.set(ref, patch, {merge: true});
   })).catch(err => {
     if (mutateThrew) { _onSaveErr(err); return; }
     if (_TX_CONTENTION.has(err && err.code)) {
@@ -2687,10 +2691,21 @@ function _txUpdateItems(docName, mutate, localArray) {
       _onSaveErr(err);
       return;
     }
-    // Offline, or transactions unavailable. Same whole-array write the app has always done.
-    ref.set({items: localArray()}).catch(_onSaveErr);
+    // Offline, or transactions unavailable. Same whole-doc write the app has always done.
+    ref.set(fallbackDoc()).catch(_onSaveErr);
   });
   return attempt(_TX_RETRIES);
+}
+
+// Single-array case, which is most docs: mutate gets a copy of the current server `items`.
+function _txUpdateItems(docName, mutate, localArray) {
+  return _txUpdateDoc(docName, data => {
+    const server = data.items || null;
+    // No items field yet: nothing to merge against, so contribute our copy.
+    if (!server) return {items: localArray()};
+    const next = mutate(server.slice());
+    return next ? {items: next} : null;
+  }, () => ({items: localArray()}));
 }
 
 // Persist a single item by id, leaving every other element of the array as the server has it.
@@ -2715,6 +2730,7 @@ function _saveItemById(docName, list, id) {
 // nothing narrower to write.
 const saveTodoItem  = id => _saveItemById('todos', todos, id);
 const saveDatedEvent = id => _saveItemById('datedEvents', datedEvents, id);
+const saveRecurringItem = id => _saveItemById('recurring', recurringItems, id);
 
 // Debounced trips writer. Field-level edits (notes/itinerary/links/etc) flush as one Firestore
 // write at the trailing edge so a flurry of blurs across the detail page collapses to a single
@@ -2751,6 +2767,20 @@ function saveTrips(opts) {
 function saveLogistics() { db.collection('state').doc('logistics').set({items: logisticsList}).catch(_onSaveErr);}
 function saveBucket()    { db.collection('state').doc('bucket').set({items: bucketList}).catch(_onSaveErr);      }
 function saveDatedEvents(){ db.collection('state').doc('datedEvents').set({items: datedEvents}).catch(_onSaveErr); }
+// Add / remove ONE dated event without rewriting the whole array, so an event the partner creates or
+// deletes in the same moment survives. arrayRemove matches by deep equality, so `evt` has to be the
+// object as stored — pass it before mutating anything. Both fall back to the old whole-array write.
+function _addDatedEvent(evt) {
+  db.collection('state').doc('datedEvents')
+    .update({items: firebase.firestore.FieldValue.arrayUnion(evt)})
+    .catch(() => saveDatedEvents());   // doc may not exist yet
+}
+function _removeDatedEvent(evt) {
+  if (!evt) { saveDatedEvents(); return; }
+  db.collection('state').doc('datedEvents')
+    .update({items: firebase.firestore.FieldValue.arrayRemove(evt)})
+    .catch(() => saveDatedEvents());
+}
 
 // ─── DATED EVENTS HELPERS ────────────────────────────────────────────────────
 const _DAY_OFF = {mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6};
@@ -3997,8 +4027,15 @@ function clearCompletedTodos() {
     .map((t, i) => t.done ? { item: t, idx: i } : null)
     .filter(Boolean);
   if (!clearedWithIdx.length) return;
+  const clearedItems = clearedWithIdx.map(x => x.item);
   todos = todos.filter(t => !t.done);
-  saveTodos();
+  // arrayRemove the specific completed items instead of writing our whole array back: clearing the
+  // done pile while your partner adds a new to-do used to delete theirs along with the old ones.
+  // (The undo below still needs a whole-array write — it restores exact positions, and order only
+  // exists as the array itself.)
+  db.collection('state').doc('todos')
+    .update({items: firebase.firestore.FieldValue.arrayRemove(...clearedItems)})
+    .catch(() => saveTodos());
   renderTodos();
   showToast(`Cleared ${clearedWithIdx.length} completed item${clearedWithIdx.length > 1 ? 's' : ''}`, () => {
     // Splice back in order of original index so earlier slots get filled first; each splice
@@ -4056,10 +4093,24 @@ function deleteTodoSection(id) {
     ? `Delete "${cat?.label}"? This will also delete the ${count} item${count!==1?'s':''} inside.`
     : `Delete "${cat?.label}"?`;
   showConfirm(msg, () => {
+    const doomedTodos = todos.filter(t => t.cat === id);
     todoCategories = todoCategories.filter(c => c.id !== id);
     todos = todos.filter(t => t.cat !== id);
-    saveTodoCategories();
-    saveTodos();
+    // Remove exactly this section and exactly the to-dos inside it, rather than overwriting both
+    // arrays wholesale — otherwise deleting a section also discarded anything the partner had just
+    // added elsewhere. Section ORDER is untouched by a removal, so arrayRemove is safe here.
+    if (cat) {
+      db.collection('state').doc('todoCategories')
+        .update({items: firebase.firestore.FieldValue.arrayRemove(cat)})
+        .catch(() => saveTodoCategories());
+    } else {
+      saveTodoCategories();
+    }
+    if (doomedTodos.length) {
+      db.collection('state').doc('todos')
+        .update({items: firebase.firestore.FieldValue.arrayRemove(...doomedTodos)})
+        .catch(() => saveTodos());
+    }
     renderTodos();
   });
 }
@@ -4161,9 +4212,13 @@ function addCategoryDragListeners() {
       e.preventDefault();
       if (_todoDragId) {
         const todo = todos.find(t => t.id === _todoDragId);
+        const movedId = _todoDragId;
         if (todo) { todo.cat = el.dataset.catId; }
         _todoDragId = null;
-        saveTodos(); renderTodos();
+        // Only this one to-do's section changed, so write only it. (The reorder handler above still
+        // needs the whole array — position IS the array.)
+        if (todo) saveTodoItem(movedId); else saveTodos();
+        renderTodos();
         return;
       }
       if (!_catDragId || el.dataset.catId === _catDragId) return;
@@ -4283,7 +4338,7 @@ function quickAddEventInline(iso) {
     };
     if (parsed.yearly) newEvt.repeat = 'year';
     datedEvents.push(newEvt);
-    saveDatedEvents();
+    _addDatedEvent(newEvt);
     renderCalendar();
     if (isActive('dates')) {
       renderPlan();
@@ -4660,13 +4715,13 @@ function editCalEvent(eventId) {
             `Delete "${escHtml(target.text)}"? It repeats every year, so this removes it from every year — not just this date.`,
             () => {
               datedEvents = datedEvents.filter(e => e.id !== eventId);
-              saveDatedEvents();
+              _removeDatedEvent(target);
               _rerenderAfterEventEdit();
             });
           return;
         }
         datedEvents = datedEvents.filter(e => e.id !== eventId);
-        saveDatedEvents();
+        _removeDatedEvent(target);
       } else if (target) {
         // Time-only update path: "@5pm", "5pm", "3-4pm" with no event text → update just the
         // time and keep the existing label. Previously this overwrote target.text with the
@@ -5635,7 +5690,7 @@ function commitEvent(key) {
   };
   if (parsed.yearly) newEvt.repeat = 'year';
   datedEvents.push(newEvt);
-  saveDatedEvents();
+  _addDatedEvent(newEvt);
   renderDayEvents(key);
   // Also refresh the calendar grid + today banner above — they share the same source of truth
   // and previously waited for the Firestore echo (~100-500ms) before reflecting the new event.
@@ -5703,14 +5758,14 @@ function editEvent(eventId) {
             `Delete "${escHtml(target.text)}"? It repeats every year, so this removes it from every year — not just this date.`,
             () => {
               datedEvents = datedEvents.filter(e => e.id !== eventId);
-              saveDatedEvents();
+              _removeDatedEvent(target);
               if (key) renderDayEvents(key);
               if (isActive('dates')) _rerenderAfterEventEdit();
             });
           return;
         }
         datedEvents = datedEvents.filter(e => e.id !== eventId);
-        saveDatedEvents();
+        _removeDatedEvent(target);
       } else if (target) {
         // Time-only update path — see editCalEvent for rationale.
         // The yearly marker is handled on both branches: a time-only edit ("@5pm !yearly") must
@@ -5754,7 +5809,7 @@ function removeEvent(eventId) {
   if (!target) return;
   const key = _isoToDayKey(target.date);
   datedEvents = datedEvents.filter(e => e.id !== eventId);
-  saveDatedEvents();
+  _removeDatedEvent(target);
   if (key) renderDayEvents(key);
   if (isActive('dates')) {
     renderCalendar();
@@ -6297,7 +6352,7 @@ function addTrip() {
     };
     if (parsedName.yearly) newEvt.repeat = 'year';
     datedEvents.push(newEvt);
-    saveDatedEvents();
+    _addDatedEvent(newEvt);
     document.getElementById('new-trip-dates').value = '';
     document.getElementById('new-trip-name').value = '';
     burst();
@@ -8469,16 +8524,17 @@ function setGiftCardExpiry(id, value) {
   if ((prev || '') === next) return;   // no-op: the date picker fires change even when unchanged
   if (next) card.expires = next; else delete card.expires;
 
-  const docRef = _gcRef();
-  db.runTransaction(t => t.get(docRef).then(snap => {
-    const items = (snap.data()?.items || []).map(x => {
+  // Via _txUpdateDoc so this gets the shared retry/never-clobber policy: an 'aborted' transaction
+  // means a partner wrote first, and falling back to a whole-doc write there would erase their
+  // change. The fallback carries BOTH arrays because it is a plain set(), not a merge.
+  _txUpdateDoc('giftCards', data => ({
+    items: (data.items || []).map(x => {
       if (!x || x.id !== id) return x;
       const copy = {...x};
       if (next) copy.expires = next; else delete copy.expires;
       return copy;
-    });
-    t.set(docRef, {items}, {merge: true});
-  })).catch(() => saveGiftCards());
+    }),
+  }), () => ({items: giftCards, spends: giftCardSpends}));
 
   renderGiftCards();
   const info = gcExpiryInfo(card);
@@ -8540,14 +8596,25 @@ function deleteGiftCard(id) {
   const orphaned = giftCardSpends.filter(s => s.cardId === id);
   giftCards = giftCards.filter(x => x.id !== id);
   giftCardSpends = giftCardSpends.filter(s => s.cardId !== id);   // don't leave dangling spends
-  saveGiftCards();
+  // Was a whole-doc set() of both arrays: deleting a card while your partner logged a redemption on
+  // a DIFFERENT card erased their redemption. Filter the server's own copy by id instead, so only
+  // this card and its spends go. Both fields move in one transaction — a card must never outlive
+  // its spends or vice versa.
+  _txUpdateDoc('giftCards', data => ({
+    items:  (data.items  || []).filter(x => x && x.id !== id),
+    spends: (data.spends || []).filter(s => s && s.cardId !== id),
+  }), () => ({items: giftCards, spends: giftCardSpends}));
   renderGiftCards();
   showToast(`Removed ${card.label}`, () => {
     // Re-check by id: if a partner's snapshot already re-added it, don't create a duplicate.
     if (!giftCards.some(x => x.id === card.id)) {
       giftCards.push(card);
       for (const s of orphaned) if (!giftCardSpends.some(x => x.id === s.id)) giftCardSpends.push(s);
-      saveGiftCards();
+      // arrayUnion for the same reason as the delete above: an undo must not roll back whatever the
+      // partner did in the seconds the toast was on screen.
+      const ops = { items: firebase.firestore.FieldValue.arrayUnion(card) };
+      if (orphaned.length) ops.spends = firebase.firestore.FieldValue.arrayUnion(...orphaned);
+      _gcRef().update(ops).catch(() => saveGiftCards());
       renderGiftCards();
     }
   });
@@ -9520,8 +9587,13 @@ function addRecurring() {
   const amount   = parseFloat(document.getElementById('rec-amt').value);
   const shared   = document.getElementById('rec-shared').checked;
   if (!person || !cat || !desc || !Number.isFinite(amount)) return;
-  recurringItems.push({id:'rec-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), person, category:cat, description:desc, amount, shared});
-  saveRecurring();
+  const rec = {id:'rec-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), person, category:cat, description:desc, amount, shared};
+  recurringItems.push(rec);
+  // arrayUnion appends without rewriting the array, so a template your partner adds at the same
+  // moment is not lost. These are monthly money templates — a silently missing one is a missing bill.
+  db.collection('state').doc('recurring')
+    .update({items: firebase.firestore.FieldValue.arrayUnion(rec)})
+    .catch(() => saveRecurring());   // doc may not exist yet
   document.getElementById('rec-person-sel').value = '';
   document.getElementById('rec-cat-sel').value    = '';
   document.getElementById('rec-desc').value       = '';
@@ -9532,7 +9604,9 @@ function addRecurring() {
 
 function deleteRecurring(id) {
   recurringItems = recurringItems.filter(r => r.id !== id);
-  saveRecurring();
+  // Filter the server's own array by id rather than overwriting it with ours, so a template the
+  // partner added or edited seconds ago survives this delete.
+  _txUpdateItems('recurring', items => items.filter(r => r && r.id !== id), () => recurringItems);
   renderRecurring();
 }
 
@@ -9573,7 +9647,7 @@ function saveRecurringEdit(id) {
   r.description = document.getElementById('rece-desc-'   + id)?.value.trim();
   r.amount      = amt;
   r.shared      = document.getElementById('rece-shared-' + id)?.checked;
-  saveRecurring();
+  saveRecurringItem(id);
   renderRecurring();
 }
 
