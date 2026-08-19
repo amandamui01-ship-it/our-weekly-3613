@@ -4611,6 +4611,17 @@ function _renderTodayBanner(today) {
 // stable id (data-id), and we look up the event by id at click time AND again inside
 // finish() — index-based lookup would target the wrong event if the partner added an
 // earlier-time event between render and save (sort order shifts everything down by one).
+// Shared by editCalEvent's inline-edit paths, including the deferred showConfirm callback for
+// deleting a yearly event — which lands long after finish() has returned.
+function _rerenderAfterEventEdit() {
+  renderCalendar();
+  if (isActive('dates')) {
+    renderPlan();
+    const today = new Date(); today.setHours(0,0,0,0);
+    _renderTodayBanner(today);
+  }
+}
+
 function editCalEvent(eventId) {
   const el = document.querySelector(`.cal-event[data-id="${eventId}"]`);
   if (!el || el.querySelector('input')) return;
@@ -4639,6 +4650,21 @@ function editCalEvent(eventId) {
       // drop the edit on the next saveDatedEvents() write.
       const target = datedEvents.find(e => e.id === eventId);
       if (!raw) {
+        // Clearing the text deletes the event. A yearly event is stored ONCE and expanded onto every
+        // anniversary, so deleting it from any single occurrence removes it from every year — and you
+        // may well be looking at a cell years out when you do it. Confirm first; losing a birthday
+        // this way can't be undone.
+        if (target && target.repeat === 'year') {
+          _rerenderAfterEventEdit();   // put the chip back while the dialog is open
+          showConfirm(
+            `Delete "${escHtml(target.text)}"? It repeats every year, so this removes it from every year — not just this date.`,
+            () => {
+              datedEvents = datedEvents.filter(e => e.id !== eventId);
+              saveDatedEvents();
+              _rerenderAfterEventEdit();
+            });
+          return;
+        }
         datedEvents = datedEvents.filter(e => e.id !== eventId);
         saveDatedEvents();
       } else if (target) {
@@ -4666,12 +4692,7 @@ function editCalEvent(eventId) {
         }
       }
     }
-    renderCalendar();
-    if (isActive('dates')) {
-      renderPlan();
-      const today = new Date(); today.setHours(0,0,0,0);
-      _renderTodayBanner(today);
-    }
+    _rerenderAfterEventEdit();
   };
   input.onblur = () => finish(true);
   input.onkeydown = e => {
@@ -5675,6 +5696,19 @@ function editEvent(eventId) {
       // the datedEvents array, leaving `original` orphaned.
       const target = datedEvents.find(e => e.id === eventId);
       if (!raw) {
+        // Same series-vs-occurrence confirm as the calendar grid — see editCalEvent.
+        if (target && target.repeat === 'year') {
+          if (key) renderDayEvents(key);   // put the chip back while the dialog is open
+          showConfirm(
+            `Delete "${escHtml(target.text)}"? It repeats every year, so this removes it from every year — not just this date.`,
+            () => {
+              datedEvents = datedEvents.filter(e => e.id !== eventId);
+              saveDatedEvents();
+              if (key) renderDayEvents(key);
+              if (isActive('dates')) _rerenderAfterEventEdit();
+            });
+          return;
+        }
         datedEvents = datedEvents.filter(e => e.id !== eventId);
         saveDatedEvents();
       } else if (target) {

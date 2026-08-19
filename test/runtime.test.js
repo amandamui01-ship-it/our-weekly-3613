@@ -509,6 +509,64 @@ run('restore trips/events after the form tests', `(() => {
   datedEvents.length = 0; JSON.parse(window.__snapEvents).forEach(e => datedEvents.push(e));
 })()`);
 
+// ── Deleting a yearly event asks first; deleting a one-off does not ─────────
+// A yearly event is stored once and expanded onto every anniversary, so clearing its text from a
+// cell years out would silently remove it from every year.
+const clearEventText = id => ev(`(() => {
+  editCalEvent('${id}');
+  const i = document.querySelector('.cal-event[data-id="${id}"] input');
+  if (!i) return 'no-input';
+  i.value = '';
+  i.onblur();
+  return 'ok';
+})()`);
+
+run('seed a yearly + a one-off event and show their month', `(() => {
+  datedEvents = [
+    {id:'del-y', date:'2026-03-14', text:"Mom's birthday", time:null, endTime:null, repeat:'year'},
+    {id:'del-1', date:'2026-03-15', text:'Dentist', time:null, endTime:null},
+  ];
+  _calMonth = '2029-03'; renderCalendar();
+})()`);
+
+// Delete the yearly one from a cell three years past its anchor.
+ok(clearEventText('del-y') === 'ok', 'the yearly event is editable in a future year');
+ok(ev("document.getElementById('confirm-overlay').style.display") === 'flex',
+  'clearing a yearly event asks before deleting',
+  String(ev("document.getElementById('confirm-overlay').style.display")));
+ok(/every year/.test(String(ev("document.getElementById('confirm-msg').textContent"))),
+  'and the message says it affects every year, not just this date',
+  String(ev("document.getElementById('confirm-msg').textContent")));
+ok(ev("datedEvents.some(e=>e.id==='del-y')") === true,
+  'nothing is deleted while the dialog is still open');
+run('confirm the delete', '_confirmOk()');
+ok(ev("datedEvents.some(e=>e.id==='del-y')") === false,
+  'confirming deletes the whole series');
+
+// Cancelling must keep it. Re-seed and back out.
+run('re-seed the yearly event', `(() => {
+  datedEvents.push({id:'del-y2', date:'2026-03-14', text:'Anniversary', time:null, endTime:null, repeat:'year'});
+  renderCalendar();
+})()`);
+clearEventText('del-y2');
+run('cancel the delete', '_confirmCancel()');
+ok(ev("datedEvents.some(e=>e.id==='del-y2')") === true,
+  'cancelling keeps the yearly event');
+
+// A one-off event must NOT gain a confirmation step — that would be friction on the common case.
+// Back to the one-off's own month — unlike a yearly event it only exists on its literal date, so
+// it does not render in the 2029 grid at all.
+run('reset the dialog and show March 2026', `(() => {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  _calMonth = '2026-03'; renderCalendar();
+})()`);
+ok(clearEventText('del-1') === 'ok', 'the one-off event is editable');
+ok(ev("document.getElementById('confirm-overlay').style.display") !== 'flex',
+  'clearing a ONE-OFF event still deletes immediately, with no dialog',
+  String(ev("document.getElementById('confirm-overlay').style.display")));
+ok(ev("datedEvents.some(e=>e.id==='del-1')") === false,
+  'and it is gone');
+
 // ═══ Recurring to-dos ════════════════════════════════════════════════════════
 // Month arithmetic is where this kind of feature rots. Every one of these is a date that naive
 // Date math gets wrong.
