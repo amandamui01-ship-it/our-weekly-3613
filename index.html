@@ -635,6 +635,16 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 #page-budget .card{padding:20px 22px}
 #page-budget .card+.card{margin-top:14px}
 #page-budget .card-title{margin-bottom:12px}
+/* Collapsible section headers on the Budget tab. The whole header is the hit target (not just the
+   chevron) so it's usable on a phone; interactive controls that live in a header get their own
+   stopPropagation so tapping a filter doesn't collapse the section under it. */
+.bsec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;min-height:24px}
+.bsec-head:hover .bsec-chev{color:var(--amber)}
+.bsec-chev{font-size:11px;color:var(--text-3);flex-shrink:0;transition:color .15s}
+/* Collapsed cards keep their header padding but drop the body gap, so a run of collapsed
+   sections reads as a compact list of headers rather than a column of tall empty cards. */
+#page-budget .card.bsec-collapsed{padding-top:16px;padding-bottom:16px}
+#page-budget .card.bsec-collapsed .card-title{margin-bottom:0}
 .budget-period-row select{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;font-weight:600}
 .budget-period-row select:focus{border-color:var(--amber)}
 .budget-month-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -970,6 +980,11 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .gc-actions{display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap}
 .gc-use-input{width:78px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none}
 .gc-use-input:focus{border-color:var(--amber)}
+/* Expiry picker sits with the action buttons. Deliberately quiet (dashed, muted) so it reads as
+   optional metadata rather than a required field — most reward cards never expire. */
+.gc-exp-input{padding:4px 7px;border:1px dashed var(--border);border-radius:7px;font-size:11px;font-family:inherit;background:transparent;color:var(--text-3);outline:none;max-width:132px}
+.gc-exp-input:focus{border-style:solid;border-color:var(--amber);color:var(--text)}
+.gc-exp-input:hover{border-color:var(--amber)}
 .gc-btn{padding:5px 11px;border:1px solid #f0d4a8;border-radius:7px;background:var(--amber-bg);color:var(--amber-dark);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
 .gc-btn:hover{background:var(--amber);color:#fff;border-color:var(--amber)}
 .gc-btn-ghost{background:none;border-color:var(--border);color:var(--text-3)}
@@ -982,6 +997,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
      at a checkout counter. Apple's guidance is 44pt; 36 is the practical floor for a chip button. */
   .gc-use-input{width:72px;padding:8px 9px;font-size:15px}
   .gc-btn{padding:9px 14px;font-size:13px;min-height:36px}
+  .gc-exp-input{font-size:13px;padding:7px 8px;min-height:36px}
   .gc-actions{gap:8px}
 }
 
@@ -1542,24 +1558,39 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   <div class="budget-snapshot" id="budget-snapshot"></div>
 
   <!-- Monthly trend -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title" style="margin-bottom:2px">Monthly Spending</div>
-    <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Total spent each month — click a bar to switch months</div>
-    <div class="budget-trend" id="budget-trend"></div>
+  <div class="card" id="bsec-card-trend" style="margin-bottom:16px">
+    <div class="bsec-head" onclick="toggleBudgetSection('trend')" role="button" tabindex="0" aria-controls="bsec-body-trend"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBudgetSection('trend')}">
+      <div class="card-title" style="margin-bottom:0">Monthly Spending</div>
+      <span class="bsec-chev" id="bsec-chev-trend">▼</span>
+    </div>
+    <div id="bsec-body-trend">
+      <div style="font-size:11px;color:var(--text-3);margin:6px 0 12px">Total spent each month — click a bar to switch months</div>
+      <div class="budget-trend" id="budget-trend"></div>
+    </div>
   </div>
 
   <!-- Over-budget banner -->
   <div id="budget-overbudget-banner" style="margin-bottom:12px"></div>
 
   <!-- Spending by category -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title">Spending by Category</div>
-    <div id="budget-cats"></div>
+  <div class="card" id="bsec-card-cats" style="margin-bottom:16px">
+    <div class="bsec-head" onclick="toggleBudgetSection('cats')" role="button" tabindex="0" aria-controls="bsec-body-cats"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBudgetSection('cats')}">
+      <div class="card-title" style="margin-bottom:0">Spending by Category</div>
+      <span class="bsec-chev" id="bsec-chev-cats">▼</span>
+    </div>
+    <div id="bsec-body-cats" style="margin-top:12px"><div id="budget-cats"></div></div>
   </div>
 
   <!-- Bulk paste -->
-  <div class="card" style="margin-bottom:16px">
-    <div class="card-title" style="margin-bottom:18px">📋 Bulk Paste</div>
+  <div class="card" id="bsec-card-bulk" style="margin-bottom:16px">
+    <div class="bsec-head" onclick="toggleBudgetSection('bulk')" role="button" tabindex="0" aria-controls="bsec-body-bulk"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBudgetSection('bulk')}">
+      <div class="card-title" style="margin-bottom:0">📋 Bulk Paste</div>
+      <span class="bsec-chev" id="bsec-chev-bulk">▼</span>
+    </div>
+    <div id="bsec-body-bulk" style="margin-top:18px">
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px">
       <!-- Left: chips -->
       <div id="bulk-cat-chips" style="flex:1;min-width:0"></div>
@@ -1581,16 +1612,21 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
       oninput="renderBulkPreview()"></textarea>
     <div id="bulk-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:9px;overflow:hidden"></div>
     <div id="bulk-errors" style="display:none;margin-top:10px;background:#fff5f3;border:1px solid var(--coral);border-radius:9px;padding:12px 14px;font-size:12px"></div>
+    </div>
   </div>
 
   <!-- Transaction list -->
-  <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div style="display:flex;align-items:baseline;gap:10px">
+  <div class="card" id="bsec-card-tx" style="margin-bottom:16px">
+    <div class="bsec-head" onclick="toggleBudgetSection('tx')" role="button" tabindex="0" aria-controls="bsec-body-tx"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBudgetSection('tx')}">
+      <div style="display:flex;align-items:baseline;gap:10px;min-width:0">
         <div class="card-title" style="margin-bottom:0">Transactions</div>
         <div id="tx-search-total" style="font-size:12px;font-weight:700;color:var(--amber)"></div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span class="bsec-chev" id="bsec-chev-tx">▼</span>
+    </div>
+    <div id="bsec-body-tx">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;margin:12px 0 14px">
         <input id="b-search" placeholder="🔍 Search..." oninput="_debouncedBudgetSearch()" class="bq-input" style="width:140px">
         <select id="b-filter-cat" onchange="renderBudget()" class="bq-sel">
           <option value="">All Categories</option>
@@ -1600,8 +1636,8 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
           <option value="shared">50/50 only</option>
         </select>
       </div>
+      <div id="budget-transactions"></div>
     </div>
-    <div id="budget-transactions"></div>
   </div>
 
   <!-- Add single expense (hidden by default; toggled on from Budget Settings) -->
@@ -1636,23 +1672,32 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   </div>
 
   <!-- ── Gift cards ── -->
-  <div class="card" id="giftcards-card" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+  <div class="card" id="bsec-card-gc" style="margin-bottom:16px">
+    <div class="bsec-head" onclick="toggleBudgetSection('gc')" role="button" tabindex="0" aria-controls="bsec-body-gc"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBudgetSection('gc')}">
       <div class="card-title" style="margin-bottom:0">🎁 Gift Cards</div>
-      <div id="gc-total" style="font-size:13px;font-weight:700;color:var(--sage)"></div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <div id="gc-total" style="font-size:13px;font-weight:700;color:var(--sage)"></div>
+        <span class="bsec-chev" id="bsec-chev-gc">▼</span>
+      </div>
     </div>
-    <div style="font-size:12px;color:var(--text-3);margin:6px 0 12px;line-height:1.5">
-      Cards you're holding, and what's left on each. Log a partial spend and the balance follows.
+    <div id="bsec-body-gc">
+      <div style="font-size:12px;color:var(--text-3);margin:6px 0 12px;line-height:1.5">
+        Cards and coupons you're holding, and what's left on each. Log a partial spend and the balance follows.
+      </div>
+      <div id="gc-list"></div>
+      <div class="add-list-row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+        <input type="text" id="gc-label" maxlength="80" placeholder="Where it's for (e.g. Target)"
+          style="flex:2;min-width:150px" onkeydown="if(event.key==='Enter')document.getElementById('gc-amount').focus()">
+        <input type="number" id="gc-amount" step="0.01" min="0" placeholder="$ value"
+          style="flex:1;min-width:100px" onkeydown="if(event.key==='Enter')document.getElementById('gc-expires').focus()">
+        <input type="date" id="gc-expires" title="Expiration date (optional)" aria-label="Expiration date (optional)"
+          style="flex:1;min-width:140px" onkeydown="if(event.key==='Enter')addGiftCard()">
+        <button onclick="addGiftCard()">+ Add Card</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px">Expiration is optional — leave it blank for cards that don't expire.</div>
+      <div id="gc-spent-wrap"></div>
     </div>
-    <div id="gc-list"></div>
-    <div class="add-list-row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
-      <input type="text" id="gc-label" maxlength="80" placeholder="Where it's for (e.g. Target)"
-        style="flex:2;min-width:150px" onkeydown="if(event.key==='Enter')document.getElementById('gc-amount').focus()">
-      <input type="number" id="gc-amount" step="0.01" min="0" placeholder="$ value"
-        style="flex:1;min-width:100px" onkeydown="if(event.key==='Enter')addGiftCard()">
-      <button onclick="addGiftCard()">+ Add Card</button>
-    </div>
-    <div id="gc-spent-wrap"></div>
   </div>
 </div>
 
@@ -7250,6 +7295,13 @@ function _lsSet(key, value) {
   try { localStorage.setItem(key, value); }
   catch (e) { console.warn('localStorage write failed:', key, e && e.name); }
 }
+// Reads can throw too, not just writes: Safari in private mode and some locked-down enterprise
+// profiles raise on access rather than returning null. Returns `fallback` in that case so a
+// preference read can never take the page down.
+function _lsGet(key, fallback = null) {
+  try { const v = localStorage.getItem(key); return v === null ? fallback : v; }
+  catch (e) { console.warn('localStorage read failed:', key, e && e.name); return fallback; }
+}
 
 // Debounced budget-search re-render. The old `oninput="renderBudget()"` fired a full tab
 // rebuild (snapshot strip, trend chart, category breakdown, recurring panel, tx list) on
@@ -7871,18 +7923,67 @@ const gcRemaining = c => round2((Number(c?.amount) || 0) - gcSpent(c));
 // sequence of odd partial spends can't leave a card stuck at $0.00 but technically unfinished.
 const gcIsDone    = c => gcRemaining(c) < 0.01;
 
+// ── Expiration ──
+// Optional: reward-program cards often don't expire, but coupons do. Stored as a plain 'YYYY-MM-DD'
+// string, compared as strings against _todayLocal() — no Date objects, so there's no timezone in
+// which a card expiring today reads as expired yesterday.
+const GC_SOON_DAYS = 30;
+const _gcIsDateStr = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+// Whole days from today to `iso`, negative once past. Uses UTC midnight for BOTH endpoints purely
+// as a stable day counter (never for display), so DST transitions can't make it off by one.
+function _gcDaysUntil(iso) {
+  if (!_gcIsDateStr(iso)) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  const [ty, tm, td] = _todayLocal().split('-').map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86400000);
+}
+// {state, days, label} or null when the card has no expiry. A card expiring TODAY is 'soon', not
+// 'expired' — it's still spendable today, and calling it dead would be wrong in the direction that
+// loses money.
+function gcExpiryInfo(card) {
+  const iso = card?.expires;
+  if (!_gcIsDateStr(iso)) return null;
+  const days = _gcDaysUntil(iso);
+  if (days === null) return null;
+  const state = days < 0 ? 'expired' : days <= GC_SOON_DAYS ? 'soon' : 'ok';
+  const label = days < 0
+    ? (days === -1 ? 'expired yesterday' : `expired ${Math.abs(days)} days ago`)
+    : days === 0 ? 'expires today'
+    : days === 1 ? 'expires tomorrow'
+    : `${days} days left`;
+  return { state, days, label, iso };
+}
+const gcIsExpired = c => gcExpiryInfo(c)?.state === 'expired';
+// Sort for the active list: soonest real deadline first, cards with no expiry last. Expired ones
+// float to the very top — they're the ones needing a decision.
+function _gcSortActive(cards) {
+  return [...cards].sort((a, b) => {
+    const da = _gcDaysUntil(a?.expires), dbb = _gcDaysUntil(b?.expires);
+    if (da === null && dbb === null) return 0;
+    if (da === null) return 1;
+    if (dbb === null) return -1;
+    return da - dbb;
+  });
+}
+
 function renderGiftCards() {
   const list = document.getElementById('gc-list');
   if (!list) return;
-  const active = giftCards.filter(c => !gcIsDone(c));
+  const active = _gcSortActive(giftCards.filter(c => !gcIsDone(c)));
   const done   = giftCards.filter(c => gcIsDone(c));
 
   const totalEl = document.getElementById('gc-total');
   if (totalEl) {
-    const total = round2(active.reduce((s, c) => s + gcRemaining(c), 0));
-    totalEl.textContent = active.length
-      ? `${fmtMoney(total)} left on ${active.length} card${active.length === 1 ? '' : 's'}`
-      : '';
+    // Expired cards are excluded from the headline total — counting money you can no longer spend
+    // would overstate what you actually have. They're still listed, and called out separately.
+    const live    = active.filter(c => !gcIsExpired(c));
+    const expired = active.filter(c => gcIsExpired(c));
+    const total = round2(live.reduce((s, c) => s + gcRemaining(c), 0));
+    const parts = [];
+    if (live.length) parts.push(`${fmtMoney(total)} left on ${live.length} card${live.length === 1 ? '' : 's'}`);
+    if (expired.length) parts.push(`${expired.length} expired`);
+    totalEl.textContent = parts.join(' · ');
+    totalEl.style.color = expired.length && !live.length ? 'var(--coral)' : 'var(--sage)';
   }
 
   list.innerHTML = active.length ? active.map(c => {
@@ -7892,15 +7993,19 @@ function renderGiftCards() {
     // A card can go "overdrawn" if a redemption is logged for more than the balance. Surface it
     // rather than clamping to zero, so a typo is visible instead of silently swallowed.
     const over = remaining < -0.005;
+    const exp = gcExpiryInfo(c);
+    const expColor = exp ? (exp.state === 'expired' ? 'var(--coral)' : exp.state === 'soon' ? 'var(--amber)' : 'var(--text-3)') : '';
     return `
-    <div class="gc-item" data-id="${escHtml(c.id)}">
+    <div class="gc-item" data-id="${escHtml(c.id)}"${exp?.state === 'expired' ? ' style="opacity:.72"' : ''}>
       <div class="gc-row">
         <div class="gc-name">${escHtml(c.label || 'Gift card')}</div>
-        <div class="gc-amt" style="color:${over ? 'var(--coral)' : 'var(--sage)'}">${over ? '−' : ''}${fmtMoney(remaining)}</div>
+        <div class="gc-amt" style="color:${over ? 'var(--coral)' : exp?.state === 'expired' ? 'var(--text-3)' : 'var(--sage)'}">${over ? '−' : ''}${fmtMoney(remaining)}</div>
       </div>
       <div class="gc-bar-wrap"><div class="gc-bar" style="width:${usedPct}%"></div></div>
       <div class="gc-meta">
         <span>${spent > 0.005 ? `${fmtMoney(spent)} of ${fmtMoney(face)} used` : `${fmtMoney(face)} unused`}</span>
+        ${exp ? `<span style="color:${expColor};font-weight:${exp.state === 'ok' ? '400' : '700'}">${
+          exp.state === 'expired' ? '⚠️ ' : exp.state === 'soon' ? '⏳ ' : ''}${escHtml(exp.label)} (${escHtml(_gcNiceDate(exp.iso, true))})</span>` : ''}
         ${over ? '<span style="color:var(--coral);font-weight:700">over balance — check the entries</span>' : ''}
       </div>
       <div class="gc-actions">
@@ -7911,6 +8016,11 @@ function renderGiftCards() {
         <button class="gc-btn gc-btn-ghost" onclick="useGiftCard('${escHtml(c.id)}', ${remaining})"
           title="Log the whole remaining ${fmtMoney(remaining)}">All</button>
         ${spends.length ? `<button class="gc-btn gc-btn-ghost" onclick="undoGiftCardUse('${escHtml(c.id)}')" title="Undo the most recent spend">↩ Undo</button>` : ''}
+        <span style="font-size:12px;color:var(--text-3)">Expires</span>
+        <input type="date" class="gc-exp-input" value="${escHtml(c.expires || '')}"
+          title="${exp ? 'Expires ' + escHtml(exp.iso) + ' — clear the field to remove' : 'Set an expiration date (optional)'}"
+          aria-label="Expiration date for ${escHtml(c.label || 'this card')}"
+          onchange="setGiftCardExpiry('${escHtml(c.id)}', this.value)">
         <button class="gc-btn gc-btn-ghost" style="margin-left:auto;color:var(--coral)" onclick="deleteGiftCard('${escHtml(c.id)}')" title="Remove this card">×</button>
       </div>
       ${spends.length ? `<div class="gc-log">${
@@ -7945,10 +8055,14 @@ function renderGiftCards() {
 }
 // Short date for the redemption log. Built from parts, never via toISOString, so an evening entry
 // doesn't display as the next day (the same UTC trap _todayLocal exists to avoid).
-function _gcNiceDate(iso) {
-  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+// `withYear` is used for expiry dates: "Feb 14" is ambiguous for a deadline that may be years out,
+// but noise in a spend log that's almost always recent. Year is shown only when it isn't this one.
+function _gcNiceDate(iso, withYear) {
+  if (!_gcIsDateStr(iso)) return '';
   const [y, m, d] = iso.split('-').map(Number);
-  return `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+  const base = `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+  const thisYear = Number(_todayLocal().slice(0, 4));
+  return withYear && y !== thisYear ? `${base}, ${y}` : base;
 }
 function toggleGiftCardsDone() {
   const l = document.getElementById('gc-done-list');
@@ -7962,12 +8076,18 @@ function toggleGiftCardsDone() {
 function addGiftCard() {
   const labelEl = document.getElementById('gc-label');
   const amtEl   = document.getElementById('gc-amount');
+  const expEl   = document.getElementById('gc-expires');
   const label   = (labelEl?.value || '').trim();
   const amount  = round2(parseFloat(amtEl?.value ?? ''));
+  const expires = (expEl?.value || '').trim();
   if (!label)  { showToast('⚠️ Give the card a name'); labelEl?.focus(); return; }
   if (!Number.isFinite(amount) || amount <= 0) { showToast('⚠️ Enter the card’s dollar value'); amtEl?.focus(); return; }
+  if (expires && !_gcIsDateStr(expires)) { showToast('⚠️ That expiration date isn’t valid'); expEl?.focus(); return; }
   // No embedded `redemptions` — spends go in the top-level giftCardSpends array (see gcSpendsFor).
+  // `expires` is omitted entirely rather than stored as '' when blank, so `_gcIsDateStr` is the only
+  // check anywhere and there's no second "empty" shape to handle.
   const card = { id: _uid('gc-'), label, amount, added: _todayLocal() };
+  if (expires) card.expires = expires;
   giftCards.push(card);
   // arrayUnion so two devices adding cards at once don't clobber each other.
   db.collection('state').doc('giftCards').update({
@@ -7975,8 +8095,44 @@ function addGiftCard() {
   }).catch(() => saveGiftCards());   // doc may not exist yet — fall back to a full set()
   if (labelEl) labelEl.value = '';
   if (amtEl)   amtEl.value = '';
+  if (expEl)   expEl.value = '';
   renderGiftCards();
   labelEl?.focus();
+  // Adding an already-expired coupon is almost always a typo in the date, so say so immediately
+  // rather than letting it sit in the list looking dead.
+  if (expires && gcIsExpired(card)) showToast(`⚠️ Added ${label}, but that date has already passed`);
+}
+
+// Set or clear a card's expiration. Editing one element of an array can't be done with
+// arrayUnion/arrayRemove, so this uses a transaction (same approach as saveExpenseEdit) to avoid
+// clobbering a concurrent change to a different card. Falls back to a full write if the
+// transaction can't run — offline, most commonly — since losing an expiry date is a far smaller
+// harm than the edit silently vanishing.
+function setGiftCardExpiry(id, value) {
+  const card = giftCards.find(x => x.id === id);
+  if (!card) { showToast('⚠️ That card is gone — refresh'); return; }
+  const next = (value || '').trim();
+  if (next && !_gcIsDateStr(next)) { showToast('⚠️ That expiration date isn’t valid'); renderGiftCards(); return; }
+  const prev = card.expires;
+  if ((prev || '') === next) return;   // no-op: the date picker fires change even when unchanged
+  if (next) card.expires = next; else delete card.expires;
+
+  const docRef = _gcRef();
+  db.runTransaction(t => t.get(docRef).then(snap => {
+    const items = (snap.data()?.items || []).map(x => {
+      if (!x || x.id !== id) return x;
+      const copy = {...x};
+      if (next) copy.expires = next; else delete copy.expires;
+      return copy;
+    });
+    t.set(docRef, {items}, {merge: true});
+  })).catch(() => saveGiftCards());
+
+  renderGiftCards();
+  const info = gcExpiryInfo(card);
+  showToast(next
+    ? `${card.label} expires ${_gcNiceDate(next, true)}${info?.state === 'expired' ? ' — already passed' : ''}`
+    : `Removed the expiration date on ${card.label}`);
 }
 
 // Log a spend against a card. `preset` is used by the "All" button.
@@ -8444,6 +8600,9 @@ function renderBudget() {
 
   renderGiftCards();
 
+  // Last: the render above rewrote section bodies, so re-assert which ones are folded away.
+  _applyBudgetSections();
+
   // Banner visibility depends on _budgetMonth — re-check on every filter change
   checkRecurringReminder();
 }
@@ -8499,6 +8658,37 @@ function toggleDone() {
   const open = body.style.display === 'none';
   body.style.display = open ? '' : 'none';
   if (chev) chev.textContent = open ? '▼' : '▶';
+}
+
+// ─── COLLAPSIBLE BUDGET SECTIONS ─────────────────────────────────────────────
+// The Budget page is the longest in the app, so each card can be folded away. State is per-device
+// in localStorage (not Firestore) on purpose: how you like the page laid out on your phone
+// shouldn't change what Aidan sees on his laptop.
+const BUDGET_SECTIONS = ['trend', 'cats', 'bulk', 'tx', 'gc'];
+const _bsecKey = key => 'ow-bsec-' + key;
+// Default OPEN. A section only stays shut because it was deliberately shut.
+const bsecIsOpen = key => _lsGet(_bsecKey(key)) !== '0';
+
+function _applyBudgetSection(key) {
+  const body = document.getElementById('bsec-body-' + key);
+  const chev = document.getElementById('bsec-chev-' + key);
+  const card = document.getElementById('bsec-card-' + key);
+  if (!body) return;
+  const open = bsecIsOpen(key);
+  body.style.display = open ? '' : 'none';
+  if (chev) chev.textContent = open ? '▼' : '▶';
+  if (card) card.classList.toggle('bsec-collapsed', !open);
+  const head = card?.querySelector('.bsec-head');
+  if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+// Re-applied on every renderBudget: the render rewrites section innerHTML, and a collapsed
+// section that quietly reopened itself on the next render would make the setting look broken.
+function _applyBudgetSections() { BUDGET_SECTIONS.forEach(_applyBudgetSection); }
+
+function toggleBudgetSection(key) {
+  if (!BUDGET_SECTIONS.includes(key)) return;
+  _lsSet(_bsecKey(key), bsecIsOpen(key) ? '0' : '1');
+  _applyBudgetSection(key);
 }
 
 function toggleQuickAdd() {

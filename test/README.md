@@ -51,7 +51,25 @@ Both produced confidently passing tests that were measuring nothing:
    outgoing page for 150ms before swapping `.active`, so a fixed 120ms wait consistently measured
    the *previous* page. It now waits on the actual condition.
 
+3. **An assertion that could never fail.** "A collapsed budget section stays collapsed across a
+   re-render" passed even with the re-apply function gutted to `{}` — because `renderBudget()` only
+   rewrites the *children* of a section body, so an inline `display:none` survives on its own. The
+   real thing needing coverage was a **fresh load**, where the collapsed state lives only in
+   localStorage and the body has no inline style. Found by deliberately breaking the code.
+
 If a harness reports everything green on the first run, be suspicious and check it can fail.
+
+**How to check:** break the thing on purpose and confirm the suite goes red.
+
+```sh
+cp index.html /tmp/orig.html
+sed -i 's|<the real line>|<a broken version>|' index.html
+node test/runtime.test.js      # must FAIL, and fail for the right reason
+cp /tmp/orig.html index.html
+```
+
+An assertion that survives the mutation is testing nothing. This is worth doing for any test
+guarding money or persisted state.
 
 ## Why runtime.test.js exists
 

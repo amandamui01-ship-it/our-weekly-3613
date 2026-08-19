@@ -43,6 +43,8 @@ const MUST_DETECT = [
   ['activity logged after they were settled', 'post-settlement drift'],
   ['referencing a deleted card',          'an orphaned gift-card spend'],
   ['more spent than the card held',       'an overdrawn gift card'],
+  ['unreadable expiration date',          'a malformed gift-card expiry'],
+  ['expired gift card(s) still showing a balance', 'money stranded on a lapsed card'],
   ['trip(s) with no parsed date',         'a text-only trip date'],
   ['trip id(s) used more than once',      'a duplicate trip id'],
   ['unparseable due date',                'a bad to-do due date'],
@@ -55,6 +57,15 @@ for (const [needle, what] of MUST_DETECT) {
 // The post-settlement drift figure must be computed, not just flagged.
 ok(/2026-07: \$30\.00 was paid, \$30\.00 added since/.test(out),
   'quantifies post-settlement drift correctly', out.split('\n').filter(l => l.includes('2026-07')).join(' '));
+// The expiry checks must be specific, not just "any card with a date". A future expiry is normal,
+// and an expired card with nothing left on it is a non-event — flagging either would train the eye
+// to ignore the whole section.
+ok(!/Fine Coupon/.test(out), 'a future expiration date is not flagged',
+  out.split('\n').filter(l => l.includes('Coupon')).join(' | '));
+ok(!/Lapsed But Used/.test(out), 'an expired card with a zero balance is not flagged (no money at stake)',
+  out.split('\n').filter(l => l.includes('Lapsed')).join(' | '));
+ok(/Lapsed Coupon: \$20\.00 left/.test(out), 'the stranded balance is quantified',
+  out.split('\n').filter(l => l.includes('Lapsed Coupon')).join(' | '));
 // Totals must exclude income from spending.
 ok(/2026:\s+14 rows · spent\s+\$4,551\.75 · income\s+\$400\.00/.test(out),
   'year totals separate spending from income',

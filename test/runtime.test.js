@@ -281,6 +281,108 @@ run('spend 10.00', "useGiftCard('gcx', 10)");
 ok(ev("gcIsDone(giftCards.find(c=>c.id==='gcx'))"), '3.33 + 6.67 + 10.00 exactly empties a $20 card',
   String(ev("gcRemaining(giftCards.find(c=>c.id==='gcx'))")));
 
+// ═══ Gift card expiration ════════════════════════════════════════════════════
+// Dates are built RELATIVE to the app's own _todayLocal() rather than hardcoded, so these
+// assertions don't start failing on a particular calendar day.
+const shift = d => ev(`(() => {
+  const [y,m,dd] = _todayLocal().split('-').map(Number);
+  const t = new Date(Date.UTC(y, m-1, dd + (${d})));
+  return t.toISOString().slice(0,10);
+})()`);
+const today = ev('_todayLocal()');
+
+ok(ev(`gcExpiryInfo({expires:'${shift(-3)}'}).state`) === 'expired', 'a past date reads as expired');
+ok(ev(`gcExpiryInfo({expires:'${today}'}).state`) === 'soon',
+  'a card expiring TODAY is still spendable, not expired', ev(`gcExpiryInfo({expires:'${today}'}).state`));
+ok(ev(`gcExpiryInfo({expires:'${today}'}).label`) === 'expires today', 'today is labelled plainly');
+ok(ev(`gcExpiryInfo({expires:'${shift(1)}'}).label`) === 'expires tomorrow', 'tomorrow is labelled plainly');
+ok(ev(`gcExpiryInfo({expires:'${shift(10)}'}).state`) === 'soon', '10 days out is "soon"');
+ok(ev(`gcExpiryInfo({expires:'${shift(200)}'}).state`) === 'ok', '200 days out is not urgent');
+ok(ev(`gcExpiryInfo({expires:'${shift(-1)}'}).label`) === 'expired yesterday', 'yesterday reads naturally');
+ok(ev('gcExpiryInfo({})') === null, 'a card with no expiry has no expiry info');
+ok(ev("gcExpiryInfo({expires:''})") === null, 'an empty-string expiry is treated as absent');
+ok(ev("gcExpiryInfo({expires:'not a date'})") === null, 'garbage in the expiry field is ignored, not thrown on');
+ok(ev("gcExpiryInfo({expires:'2026-2-4'})") === null, 'an unpadded date is rejected rather than misread');
+
+// Expired money must not be counted as available — the whole point of tracking expiry.
+run('reset cards for expiry', `giftCards = [
+  {id:'x1', label:'Live',    amount:40, expires:'${shift(60)}'},
+  {id:'x2', label:'Soon',    amount:25, expires:'${shift(5)}'},
+  {id:'x3', label:'Dead',    amount:99, expires:'${shift(-9)}'},
+  {id:'x4', label:'Forever', amount:10}
+]; giftCardSpends = []; renderGiftCards()`);
+ok(!txt('#gc-total').includes('174'), 'expired balance is excluded from the headline total', txt('#gc-total'));
+ok(txt('#gc-total').includes('75.00'), 'total counts only the $40 + $25 + $10 that are still usable', txt('#gc-total'));
+ok(txt('#gc-total').includes('1 expired'), 'expired cards are called out separately', txt('#gc-total'));
+ok($$('.gc-item').length === 4, 'the expired card is still listed, not hidden', String($$('.gc-item').length));
+// Order: expired first (needs a decision), then soonest, undated last.
+const gcOrder = $$('.gc-item').map(el => el.getAttribute('data-id'));
+ok(JSON.stringify(gcOrder) === JSON.stringify(['x3', 'x2', 'x1', 'x4']),
+  'cards sort expired → soonest → undated', gcOrder.join(','));
+ok(txt('#gc-list').includes('9 days ago'), 'the expired card says how long ago', txt('#gc-list').slice(0, 200));
+ok($$('.gc-exp-input').length === 4, 'every card exposes an expiry picker', String($$('.gc-exp-input').length));
+
+// Editing an expiry in place.
+run('set expiry', `setGiftCardExpiry('x4', '${shift(2)}')`);
+ok(ev("giftCards.find(c=>c.id==='x4').expires") === shift(2), 'setting an expiry stores it');
+run('clear expiry', "setGiftCardExpiry('x4', '')");
+ok(ev("giftCards.find(c=>c.id==='x4')").expires === undefined,
+  'clearing the field removes the key entirely (no empty-string second shape)',
+  JSON.stringify(ev("giftCards.find(c=>c.id==='x4')")));
+run('bad expiry', "setGiftCardExpiry('x4', 'whenever')");
+ok(ev("giftCards.find(c=>c.id==='x4')").expires === undefined, 'an invalid expiry edit is refused');
+// Adding a card with an expiry through the real form.
+$('#gc-label').value = 'Coupon'; $('#gc-amount').value = '15'; $('#gc-expires').value = shift(20);
+run('addGiftCard with expiry', 'addGiftCard()');
+ok(ev("giftCards.some(c=>c.label==='Coupon'&&c.expires==='" + shift(20) + "')"), 'the add form persists the expiry');
+ok($('#gc-expires').value === '', 'the expiry field clears after adding', $('#gc-expires').value);
+$('#gc-label').value = 'NoExp'; $('#gc-amount').value = '5'; $('#gc-expires').value = '';
+run('addGiftCard without expiry', 'addGiftCard()');
+ok(ev("giftCards.find(c=>c.label==='NoExp')").expires === undefined,
+  'leaving expiry blank stores no expiry key');
+
+// ═══ Collapsible budget sections ═════════════════════════════════════════════
+for (const key of ev('BUDGET_SECTIONS')) {
+  ok(window.document.getElementById('bsec-body-' + key) !== null, `section body exists: ${key}`);
+  ok(window.document.getElementById('bsec-chev-' + key) !== null, `section chevron exists: ${key}`);
+}
+ok(ev("BUDGET_SECTIONS.every(k => bsecIsOpen(k))"), 'every section defaults to open');
+run('collapse cats', "toggleBudgetSection('cats')");
+ok($('#bsec-body-cats').style.display === 'none', 'collapsing hides the body');
+ok(txt('#bsec-chev-cats') === '▶', 'the chevron flips when collapsed', txt('#bsec-chev-cats'));
+ok($('#bsec-card-cats').className.includes('bsec-collapsed'), 'the card gets the collapsed class');
+run('re-render budget', 'renderBudget()');
+ok($('#bsec-body-cats').style.display === 'none',
+  'a collapsed section stays collapsed across a full renderBudget', $('#bsec-body-cats').style.display);
+ok($('#bsec-body-tx').style.display !== 'none', 'sections left open stay open across a render');
+// The regression that matters, and it is NOT the one above: renderBudget only rewrites the
+// *children* of a section body, so an inline display:none survives on its own and that assertion
+// passes even with the re-apply gutted (confirmed by mutation testing). The state that genuinely
+// needs re-applying is a FRESH LOAD, where the body carries no inline style and "collapsed" exists
+// only in localStorage. Clearing the inline style simulates that first render.
+run('simulate a fresh load with bulk stored collapsed',
+  "_lsSet('ow-bsec-bulk', '0'); document.getElementById('bsec-body-bulk').style.display = ''; renderBudget()");
+ok($('#bsec-body-bulk').style.display === 'none',
+  'a section stored as collapsed is applied on first render, not just on click',
+  `display=${JSON.stringify($('#bsec-body-bulk').style.display)}`);
+ok(txt('#bsec-chev-bulk') === '▶', 'the chevron matches stored state on first render', txt('#bsec-chev-bulk'));
+run('restore bulk', "_lsSet('ow-bsec-bulk', '1'); renderBudget()");
+ok($('#bsec-body-bulk').style.display !== 'none', 'and reopens when the stored state says open');
+run('reopen cats', "toggleBudgetSection('cats')");
+ok($('#bsec-body-cats').style.display !== 'none', 'toggling again reopens it');
+ok(!$('#bsec-card-cats').className.includes('bsec-collapsed'), 'the collapsed class is removed again');
+run('unknown section', "toggleBudgetSection('nope')");
+ok(true, 'toggling an unknown section is a no-op rather than an error');
+// Collapsing must not break the data underneath it — the tx list is still rendered, just hidden.
+run('collapse tx', "toggleBudgetSection('tx'); renderBudget()");
+ok($('#budget-transactions').innerHTML.length > 0,
+  'a collapsed section still renders its content (so search totals stay correct)');
+run('reopen tx', "toggleBudgetSection('tx')");
+// The header must not swallow taps meant for the filters inside it.
+ok($('#bsec-body-tx').contains($('#b-filter-cat')),
+  'the category filter lives in the body, not the clickable header');
+ok($('#bsec-body-tx').contains($('#b-search')), 'the search box lives in the body, not the header');
+
 // ═══ To-do deadlines ═════════════════════════════════════════════════════════
 run('re-render todos', 'renderTodos()');
 ok($$('.todo-due').length >= 2, 'due badges render', String($$('.todo-due').length));

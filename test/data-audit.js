@@ -251,6 +251,31 @@ if (overdrawn.length) add('warn', `${overdrawn.length} gift card(s) show more sp
   'Probably a typo in one of the logged spends.',
   overdrawn.map(c => `${c.label}: face ${money(c.amount)}`));
 
+// Expiry is optional, so a MISSING one is fine — but a present-and-malformed one is silently
+// ignored by the app, which means a card you believe is tracked has no deadline at all.
+const badExpiry = cards.filter(c => c.expires !== undefined && c.expires !== null && c.expires !== ''
+  && !/^\d{4}-\d{2}-\d{2}$/.test(String(c.expires)));
+if (badExpiry.length) add('warn', `${badExpiry.length} gift card(s) with an unreadable expiration date`,
+  'The app ignores these, so the card shows no deadline. Re-pick the date.',
+  badExpiry.map(c => `${c.label}: expires "${c.expires}"`));
+
+// Already-past expiry with money still on it: real money about to be (or already) lost.
+const _todayIso = new Date().toISOString().slice(0, 10);
+const deadWithBalance = cards.filter(c => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(c.expires || ''))) return false;
+  if (c.expires >= _todayIso) return false;
+  const spent = (c.redemptions || []).concat(spends.filter(s => s.cardId === c.id))
+    .reduce((t, r) => t + (Number(r.amount) || 0), 0);
+  return round2((Number(c.amount) || 0) - spent) >= 0.01;
+});
+if (deadWithBalance.length) add('warn', `${deadWithBalance.length} expired gift card(s) still showing a balance`,
+  'That money is probably gone. Delete them, or check whether the issuer honors it anyway.',
+  deadWithBalance.map(c => {
+    const spent = (c.redemptions || []).concat(spends.filter(s => s.cardId === c.id))
+      .reduce((t, r) => t + (Number(r.amount) || 0), 0);
+    return `${c.label}: ${money(round2((Number(c.amount) || 0) - spent))} left, expired ${c.expires}`;
+  }));
+
 // ═══ TRIPS ═══════════════════════════════════════════════════════════════════
 const noSort = trips.filter(t => !t.sortDate);
 if (noSort.length) add('warn', `${noSort.length} trip(s) with no parsed date`,
