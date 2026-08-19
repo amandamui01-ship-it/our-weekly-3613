@@ -383,6 +383,90 @@ ok($('#bsec-body-tx').contains($('#b-filter-cat')),
   'the category filter lives in the body, not the clickable header');
 ok($('#bsec-body-tx').contains($('#b-search')), 'the search box lives in the body, not the header');
 
+// ═══ Recurring to-dos ════════════════════════════════════════════════════════
+// Month arithmetic is where this kind of feature rots. Every one of these is a date that naive
+// Date math gets wrong.
+const nd = (from, every, unit) => ev(`nextDueFrom('${from}', {every:${every}, unit:'${unit}'})`);
+ok(nd('2026-03-20', 3, 'month') === '2026-06-20', 'plain 3-month step', nd('2026-03-20', 3, 'month'));
+ok(nd('2026-01-31', 1, 'month') === '2026-02-28', 'Jan 31 + 1mo clamps to Feb 28, not Mar 3', nd('2026-01-31', 1, 'month'));
+ok(nd('2028-01-31', 1, 'month') === '2028-02-29', 'Jan 31 + 1mo lands on Feb 29 in a leap year', nd('2028-01-31', 1, 'month'));
+ok(nd('2026-05-31', 1, 'month') === '2026-06-30', 'May 31 + 1mo clamps to Jun 30', nd('2026-05-31', 1, 'month'));
+ok(nd('2026-08-31', 6, 'month') === '2027-02-28', '6 months from Aug 31 crosses the year and clamps', nd('2026-08-31', 6, 'month'));
+ok(nd('2026-11-15', 3, 'month') === '2027-02-15', 'a 3-month step crosses into the next year', nd('2026-11-15', 3, 'month'));
+ok(nd('2026-12-31', 1, 'month') === '2027-01-31', 'Dec 31 + 1mo is Jan 31 of the next year', nd('2026-12-31', 1, 'month'));
+ok(nd('2028-02-29', 1, 'year') === '2029-02-28', 'Feb 29 + 1 year clamps to Feb 28', nd('2028-02-29', 1, 'year'));
+ok(nd('2026-03-08', 1, 'week') === '2026-03-15', 'a weekly step crosses the US DST change intact', nd('2026-03-08', 1, 'week'));
+ok(nd('2026-11-01', 1, 'week') === '2026-11-08', 'a weekly step crosses the fall DST change intact', nd('2026-11-01', 1, 'week'));
+ok(nd('2026-02-26', 1, 'week') === '2026-03-05', 'a weekly step crosses a month end', nd('2026-02-26', 1, 'week'));
+ok(nd('2026-12-28', 2, 'week') === '2027-01-11', 'a 2-week step crosses the new year', nd('2026-12-28', 2, 'week'));
+ok(nd('2026-08-19', 1, 'year') === '2027-08-19', 'a yearly step', nd('2026-08-19', 1, 'year'));
+// Bad rules must yield null, never a wrong date.
+ok(ev("nextDueFrom('2026-03-20', null)") === null, 'no repeat rule yields no next date');
+ok(ev("nextDueFrom('2026-03-20', {every:0, unit:'month'})") === null, 'a zero interval is rejected');
+ok(ev("nextDueFrom('2026-03-20', {every:-3, unit:'month'})") === null, 'a negative interval is rejected');
+ok(ev("nextDueFrom('2026-03-20', {every:1.5, unit:'month'})") === null, 'a fractional interval is rejected');
+ok(ev("nextDueFrom('2026-03-20', {every:2, unit:'fortnight'})") === null, 'an unknown unit is rejected');
+ok(ev("nextDueFrom('not-a-date', {every:1, unit:'month'})") === null, 'a bad start date yields null');
+ok(ev("nextDueFrom('2026-03-20', {every:99999, unit:'day'})") === null, 'an absurd interval is rejected');
+
+// Completion advances from TODAY, not from the old due date — Amanda's choice, and the whole point.
+run('add a recurring todo', `todos.push({id:'r1', text:'Furnace filter', cat:'todo', done:false,
+  due:'2020-01-01', repeat:{every:3, unit:'month'}}); renderTodos()`);
+ok(txt('#todo-r1').includes('🔁'), 'a recurring to-do shows a repeat chip', txt('#todo-r1'));
+ok(txt('#todo-r1').includes('3mo'), 'the chip shows the interval', txt('#todo-r1'));
+const expectedNext = ev("nextDueFrom(_todayLocal(), {every:3, unit:'month'})");
+run('complete the recurring todo', "toggleTodo('r1')");
+const r1 = () => ev("todos.find(t=>t.id==='r1')");
+ok(r1().done === false, 'completing a recurring to-do does NOT file it away as done', String(r1().done));
+ok(r1().due === expectedNext,
+  'the next due date is 3 months from TODAY, not from the long-past due date',
+  `${r1().due} vs ${expectedNext}`);
+ok(r1().lastDone === today, 'completion is stamped so the chip can show when it was last done', r1().lastDone);
+ok(!ev("todos.filter(t=>t.done).some(t=>t.id==='r1')"), 'it never appears in the Completed list');
+// Doing it late must not create a backlog: the new date is always in the future.
+ok(ev("_dueInfo(todos.find(t=>t.id==='r1').due).days") > 0,
+  'after completion the task is never already overdue',
+  String(ev("_dueInfo(todos.find(t=>t.id==='r1').due).days")));
+// A second completion rolls forward again from that day, not cumulatively from the stored due date.
+run('complete again', "toggleTodo('r1')");
+ok(r1().due === expectedNext, 'completing twice in one day does not double-advance the schedule', r1().due);
+
+// A repeat set on a to-do with no deadline gets one, or it could never come due.
+run('repeat with no date', `todos.push({id:'r2', text:'Water softener salt', cat:'todo', done:false}); renderTodos()`);
+run('open picker', "pickTodoDue('r2')");
+run('choose monthly', `(() => {
+  const sel = document.querySelector('#todo-r2 .todo-repeat-sel');
+  sel.value = '1:month';
+  sel.onchange();
+})()`);
+const r2 = () => ev("todos.find(t=>t.id==='r2')");
+ok(ev("_isRepeat(todos.find(t=>t.id==='r2').repeat)"), 'the repeat rule is stored', JSON.stringify(r2().repeat));
+ok(r2().due === today, 'a repeat with no deadline is anchored to today rather than left inert', r2().due);
+// Clearing the deadline must clear the rule too — a repeat with no date is a setting that does nothing.
+run('reopen picker', "pickTodoDue('r2')");
+run('clear the date', "document.querySelector('#todo-r2 .todo-due-clear').onclick({stopPropagation(){}})");
+ok(r2().due === undefined, 'clearing removes the deadline', String(r2().due));
+ok(r2().repeat === undefined, 'clearing the deadline also clears the repeat', JSON.stringify(r2().repeat));
+// A non-repeating to-do must still behave exactly as before. NOTE: these two are deliberately NOT
+// rendered first. A normal completion animates (650ms burst + 350ms collapse) and only writes
+// `done` in the trailing callback, so with a row in the DOM there is nothing to assert
+// synchronously. With no element, toggleTodo takes its own no-animation path — same logic, testable.
+run('add a plain todo (unrendered)', `todos.push({id:'r3', text:'One off', cat:'todo', done:false})`);
+run('complete the plain todo', "toggleTodo('r3')");
+ok(ev("todos.find(t=>t.id==='r3').done") === true, 'a normal to-do still completes normally',
+  String(ev("todos.find(t=>t.id==='r3').done")));
+// A corrupt rule must not strand the task — it should fall through to an ordinary completion.
+run('add a corrupt-rule todo (unrendered)', `todos.push({id:'r4', text:'Broken rule', cat:'todo', done:false,
+  due:'2026-01-01', repeat:{every:0, unit:'month'}})`);
+run('complete corrupt', "toggleTodo('r4')");
+ok(ev("todos.find(t=>t.id==='r4').done") === true,
+  'a to-do with a corrupt repeat rule completes normally instead of getting stuck',
+  String(ev("todos.find(t=>t.id==='r4').done")));
+// The repeat chip renders for a done item too, so a recurring task reads as recurring everywhere.
+run('render with r4 done', 'renderTodos()');
+// Clean up: these fixtures would otherwise change the overdue counts asserted further down.
+run('remove repeat fixtures', "todos = todos.filter(t => !['r1','r2','r3','r4'].includes(t.id)); renderTodos()");
+
 // ═══ To-do deadlines ═════════════════════════════════════════════════════════
 run('re-render todos', 'renderTodos()');
 ok($$('.todo-due').length >= 2, 'due badges render', String($$('.todo-due').length));

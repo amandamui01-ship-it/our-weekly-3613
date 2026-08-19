@@ -956,6 +956,11 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 @media(hover:none){.todo-due-add{opacity:.4}}
 .todo-due-input{font-size:11px;font-family:inherit;padding:2px 5px;border:1px solid var(--amber);border-radius:6px;background:var(--surface);color:var(--text);outline:none}
 .todo-due-clear{font-size:13px;line-height:1;background:none;border:none;color:var(--text-3);cursor:pointer;padding:0 3px;font-family:inherit}
+/* Repeat chip. Deliberately quieter than the due badge — the deadline is what you act on; how often
+   it recurs is reference information you glance at. */
+.todo-repeat{font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;border:1px solid var(--border);background:var(--surface);color:var(--text-3);font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.todo-repeat:hover{border-color:var(--amber);color:var(--amber-dark)}
+.todo-repeat-sel{font-size:11px;font-family:inherit;padding:2px 4px;border:1px solid var(--amber);border-radius:6px;background:var(--surface);color:var(--text);outline:none;max-width:132px}
 .todo-due-clear:hover{color:var(--coral)}
 .todo-item.todo-overdue{border-left:3px solid var(--coral)}
 /* A critical/urgent item that is ALSO overdue keeps its priority stripe — don't double-border. */
@@ -2149,6 +2154,11 @@ const BUCKET_LIST = [
   "Morning walk ritual",
   "Exercise planning routine",
 ];
+
+// Canonical "is this a plain YYYY-MM-DD string" check. The app stores every user-facing date as
+// one of these and compares them as STRINGS (never as Date objects) so that no timezone can shift a
+// date by a day. Declared up here because the to-do, gift-card and trip code all need it.
+const _isDateStr = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 const DEFAULT_TODOS = [
   { id:"t1",  text:"Finish organizing basement",                     cat:"todo",      done:false },
@@ -3553,6 +3563,85 @@ function _rebuildTodoDueIndex() {
 }
 const _todosDueOn = iso => _todoDueIndex.get(iso) || [];
 
+// ─── RECURRING TO-DOS ────────────────────────────────────────────────────────
+// A to-do can carry `repeat: {every: N, unit: 'day'|'week'|'month'|'year'}`. Completing it does NOT
+// move it to the Completed list — it advances its own due date and stays put. That's deliberate:
+// "Change furnace filter" is a standing obligation, not forty identical finished tasks, and the
+// Completed list would be useless within a year.
+//
+// The next date is anchored to WHEN IT WAS FINISHED, not to the old due date (Amanda's call). Do
+// the filter three weeks late and the next one is three months from that day, so the cycle follows
+// reality instead of accumulating a backlog of angry red rows.
+const REPEAT_UNITS = new Set(['day', 'week', 'month', 'year']);
+const _isRepeat = r => !!r && typeof r === 'object'
+  && Number.isInteger(r.every) && r.every >= 1 && r.every <= 365
+  && REPEAT_UNITS.has(r.unit);
+
+// Add whole months, clamping to the end of the target month. Jan 31 + 1 month is Feb 28 (or 29 in a
+// leap year), NOT Mar 3 — which is what naive Date arithmetic gives you, and would silently walk a
+// month-end task later every single cycle.
+function _isoAddMonths(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const total = (y * 12) + (m - 1) + n;
+  const ny = Math.floor(total / 12), nm = (total % 12 + 12) % 12;
+  const lastDay = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
+  const nd = Math.min(d, lastDay);
+  return `${ny}-${String(nm + 1).padStart(2, '0')}-${String(nd).padStart(2, '0')}`;
+}
+function _isoAddDays(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d + n));
+  return t.toISOString().slice(0, 10);
+}
+// Next occurrence after `fromIso`. Returns null for a bad repeat rather than a bogus date, so a
+// corrupt rule can't quietly reschedule a task to the wrong century.
+function nextDueFrom(fromIso, repeat) {
+  if (!_isDateStr(fromIso) || !_isRepeat(repeat)) return null;
+  switch (repeat.unit) {
+    case 'day':   return _isoAddDays(fromIso, repeat.every);
+    case 'week':  return _isoAddDays(fromIso, repeat.every * 7);
+    case 'month': return _isoAddMonths(fromIso, repeat.every);
+    case 'year':  return _isoAddMonths(fromIso, repeat.every * 12);
+  }
+  return null;
+}
+// Menu of intervals. Kept short on purpose — a homeowner's real cadences, not a cron builder.
+const REPEAT_PRESETS = [
+  { label: 'Does not repeat',  value: '' },
+  { label: 'Every week',       value: '1:week'  },
+  { label: 'Every 2 weeks',    value: '2:week'  },
+  { label: 'Every month',      value: '1:month' },
+  { label: 'Every 2 months',   value: '2:month' },
+  { label: 'Every 3 months',   value: '3:month' },
+  { label: 'Every 6 months',   value: '6:month' },
+  { label: 'Every year',       value: '1:year'  },
+];
+const _repeatToValue = r => _isRepeat(r) ? `${r.every}:${r.unit}` : '';
+function _valueToRepeat(v) {
+  if (!v) return null;
+  const [n, unit] = String(v).split(':');
+  const every = Number(n);
+  return _isRepeat({every, unit}) ? {every, unit} : null;
+}
+// Short form for the row chip: "3mo", "1y", "2w". Long form for tooltips: "every 3 months".
+function _repeatShort(r) {
+  if (!_isRepeat(r)) return '';
+  const u = r.unit === 'day' ? 'd' : r.unit === 'week' ? 'w' : r.unit === 'month' ? 'mo' : 'y';
+  return `${r.every}${u}`;
+}
+function _repeatLabel(r) {
+  if (!_isRepeat(r)) return '';
+  return r.every === 1 ? `every ${r.unit}` : `every ${r.every} ${r.unit}s`;
+}
+// "Mar 20", or "Mar 20, 2025" when it isn't this year. Built from string parts, never via a Date, so
+// an evening date can't render as the following day.
+function _niceIso(iso) {
+  if (!_isDateStr(iso)) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  const base = `${_MONTH_NAMES_SHORT[m - 1]} ${d}`;
+  return y === Number(_todayLocal().slice(0, 4)) ? base : `${base}, ${y}`;
+}
+
 // A to-do can carry `due` (a plain 'YYYY-MM-DD' string). Due to-dos also appear on the Calendar
 // grid on their due date. Dates are compared as strings against _todayLocal() rather than as Date
 // objects, which keeps everything in local time and avoids the UTC off-by-one-day trap.
@@ -3576,15 +3665,20 @@ function renderTodoItem(t) {
   // Only nag about overdue items that are still open — a completed to-do isn't late.
   const due = t.done ? null : _dueInfo(t.due);
   const dueBadge = due
-    ? `<button class="todo-due ${due.cls}" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Due ${due.full} — click to change, or clear it">📅 ${due.label}</button>`
-    : `<button class="todo-due-add" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Add a deadline">📅</button>`;
+    ? `<button class="todo-due ${due.cls}" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Due ${due.full} — click to change the date or how often it repeats">📅 ${due.label}</button>`
+    : `<button class="todo-due-add" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Add a deadline or a repeat">📅</button>`;
+  // Repeat chip. Shown even on a done item so a recurring task reads as recurring everywhere.
+  const rep = _isRepeat(t.repeat)
+    ? `<button class="todo-repeat" onclick="pickTodoDue('${t.id}');event.stopPropagation()" title="Repeats ${_repeatLabel(t.repeat)}${
+        _isDateStr(t.lastDone) ? ` — last done ${escHtml(_niceIso(t.lastDone))}` : ''}">🔁 ${_repeatShort(t.repeat)}</button>`
+    : '';
   return `
     <div class="todo-item${t.done?' done':''}${pClass}${due && due.days < 0 ? ' todo-overdue' : ''}" id="todo-${t.id}" draggable="true" data-id="${t.id}" data-cat="${t.cat}" onclick="editTodo('${t.id}')" style="cursor:pointer">
       <div class="todo-cb" onclick="toggleTodo('${t.id}');event.stopPropagation()">${t.done ? '✓' : ''}</div>
       <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap">
         <span class="todo-text" style="flex:none">${escHtml(t.text)}</span>
         <button class="todo-priority-btn" onclick="cycleTodoPriority('${t.id}');event.stopPropagation()" title="Set priority (○ → urgent → critical)">${pIcon}</button>
-        ${t.done ? '' : dueBadge}
+        ${t.done ? '' : dueBadge}${rep}
       </span>
       <span class="todo-drag-handle" onclick="event.stopPropagation()">⠿</span>
       <span class="todo-del" onclick="deleteTodo('${t.id}');event.stopPropagation()">×</span>
@@ -3606,11 +3700,19 @@ function pickTodoDue(id) {
   input.className = 'todo-due-input';
   input.value = typeof t.due === 'string' ? t.due : '';
   input.onclick = e => e.stopPropagation();
+  // Repeat selector lives with the date, not as another button on the row — the row is already
+  // crowded on a phone, and "when is this due" and "how often" are one decision.
+  const rep = document.createElement('select');
+  rep.className = 'todo-repeat-sel';
+  rep.title = 'How often this comes back';
+  rep.innerHTML = REPEAT_PRESETS.map(p =>
+    `<option value="${p.value}"${_repeatToValue(t.repeat) === p.value ? ' selected' : ''}>${p.label}</option>`).join('');
+  rep.onclick = e => e.stopPropagation();
   const clear = document.createElement('button');
   clear.className = 'todo-due-clear';
   clear.textContent = '×';
   clear.title = 'Remove the deadline';
-  wrap.append(input, clear);
+  wrap.append(input, rep, clear);
   badge.replaceWith(wrap);
 
   let settled = false;
@@ -3623,8 +3725,14 @@ function pickTodoDue(id) {
     if (live) {
       const next = value || null;
       const prev = live.due ?? null;
-      if (next !== prev) {
+      const nextRep = _valueToRepeat(rep.value);
+      const repChanged = _repeatToValue(nextRep) !== _repeatToValue(live.repeat);
+      if (next !== prev || repChanged) {
         if (next) live.due = next; else delete live.due;
+        if (nextRep) live.repeat = nextRep; else delete live.repeat;
+        // A repeating task with no date can never come due, so give it one rather than letting it
+        // sit inert: today, so the first cycle starts from now.
+        if (nextRep && !live.due) live.due = _todayLocal();
         saveTodos();
       }
     }
@@ -3632,8 +3740,13 @@ function pickTodoDue(id) {
     if (isActive('dates')) renderCalendar();
     scheduleRenderHome();
   };
-  clear.onclick = e => { e.stopPropagation(); commit(''); };
+  // Clearing the deadline clears the repeat with it: a repeating task with no date can never come
+  // due, so leaving the rule behind would be a setting that does nothing.
+  clear.onclick = e => { e.stopPropagation(); rep.value = ''; commit(''); };
   input.onchange = () => commit(input.value);
+  // Picking a repeat commits immediately — waiting for a blur that may never come (the select can be
+  // the last thing touched before tapping elsewhere on the row) would drop the choice.
+  rep.onchange = () => commit(input.value || _todayLocal());
   // Blur is the mobile fallback: iOS Safari fires change on wheel-picker dismissal inconsistently.
   input.onblur = () => setTimeout(() => commit(input.value), 120);
   input.onkeydown = e => {
@@ -3645,9 +3758,39 @@ function pickTodoDue(id) {
   if (input.showPicker) { try { input.showPicker(); } catch (_) {} }
 }
 
+// Completing a repeating to-do rolls it forward instead of marking it done. Returns true if it
+// handled the completion, so toggleTodo can bail out of its normal path.
+function _advanceRepeat(id) {
+  const t = todos.find(x => x.id === id);
+  if (!t || !_isRepeat(t.repeat)) return false;
+  const today = _todayLocal();
+  const next = nextDueFrom(today, t.repeat);
+  if (!next) return false;                  // corrupt rule: fall through to a normal completion
+  t.lastDone = today;
+  t.due = next;
+  t.done = false;                           // stays on the list, just not due for a while
+  saveTodos();
+  renderTodos();
+  if (isActive('dates')) renderCalendar();
+  scheduleRenderHome();
+  showToast(`✅ Done — back on ${_niceIso(next)}`);
+  return true;
+}
+
 function toggleTodo(id) {
   const t = todos.find(x => x.id === id);
   if (!t) return;
+  if (!t.done && _isRepeat(t.repeat)) {
+    // Celebrate, then roll it forward. Same burst as a normal completion so it still feels finished.
+    if (navigator.vibrate) navigator.vibrate(50);
+    const el = document.getElementById('todo-' + id);
+    if (el) {
+      const cb = el.querySelector('.todo-cb') || el;
+      const r = cb.getBoundingClientRect();
+      burstAt(r.left + r.width / 2, r.top + r.height / 2, 28, 90);
+    }
+    if (_advanceRepeat(id)) return;
+  }
   if (!t.done) {
     if (navigator.vibrate) navigator.vibrate(50);
     const el = document.getElementById('todo-' + id);
@@ -7928,7 +8071,7 @@ const gcIsDone    = c => gcRemaining(c) < 0.01;
 // string, compared as strings against _todayLocal() — no Date objects, so there's no timezone in
 // which a card expiring today reads as expired yesterday.
 const GC_SOON_DAYS = 30;
-const _gcIsDateStr = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const _gcIsDateStr = _isDateStr;   // kept as a name so the gift-card code reads locally
 // Whole days from today to `iso`, negative once past. Uses UTC midnight for BOTH endpoints purely
 // as a stable day counter (never for display), so DST transitions can't make it off by one.
 function _gcDaysUntil(iso) {
