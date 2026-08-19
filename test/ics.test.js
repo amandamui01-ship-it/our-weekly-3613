@@ -122,6 +122,84 @@ ok(/replace\([^)]*[,;\\]/.test(SERVER_SRC),
   'feed escapes ICS-special characters in text values',
   'a trip label containing a comma or semicolon would otherwise corrupt the event');
 
+// ── Yearly events: the app calendar and the phone feed must agree ────────────
+// Yearly events (birthdays, anniversaries) exist as ONE stored row. The in-app calendar decides
+// which days it lands on via _yearlyHitsDate; the phone decides via the RRULE in the feed. Those
+// are two independent implementations of the same rule — the same trap parseICSEndDate fell into.
+//
+// The interesting case is Feb 29. RFC 5545 §3.3.10 DISCARDS invalid recurrence dates rather than
+// shifting them, so a plain FREQ=YEARLY on Feb 29 shows up only in leap years. The app folds to
+// Feb 28 instead, so the feed has to say BYMONTH=2;BYMONTHDAY=-1 (last day of February) to mean
+// the same thing. If someone "simplifies" that away, a leap-day anniversary silently vanishes
+// from the phone for three years at a stretch while still showing in the app.
+// Structural checks below run against COMMENT-STRIPPED source. Learned the hard way: the
+// BYMONTHDAY=-1 assertion originally passed against the explanatory comment above the code, so
+// deleting the actual special case went undetected. A test that a comment can satisfy is not a test.
+const SERVER_CODE = SERVER_SRC
+  .replace(/\/\*[\s\S]*?\*\//g, '')          // block comments
+  .split('\n').filter(l => !/^\s*(\/\/|\*)/.test(l)).join('\n');
+
+ok(/RRULE:FREQ=YEARLY/.test(SERVER_CODE), 'feed emits an RRULE for yearly events');
+ok(/e\.repeat === 'year'/.test(SERVER_CODE), 'the RRULE is gated on the stored repeat flag');
+ok(/BYMONTHDAY=-1/.test(SERVER_CODE),
+  'Feb 29 yearly events use BYMONTHDAY=-1 so they still appear in common years',
+  'a plain FREQ=YEARLY would skip non-leap years entirely (RFC 5545 §3.3.10)');
+ok(/0229/.test(SERVER_CODE), 'the Feb 29 special case is detected from the actual date');
+// And the reference expansion below must reflect what the source ACTUALLY emits, not what this test
+// assumes it emits — otherwise the parity check silently validates the wrong contract.
+const serverUsesLastDayOfFeb = /isFeb29\s*\?\s*'RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1'/.test(SERVER_CODE);
+ok(serverUsesLastDayOfFeb,
+  'the Feb 29 RRULE is emitted from the real conditional (not just mentioned in a comment)',
+  'expected the isFeb29 ternary to select BYMONTH=2;BYMONTHDAY=-1');
+
+const clientYearly = new Function(
+  `${extractFn(CLIENT_SRC, '_yearlyHitsDate', 'index.html')}
+   const _isDateStr = s => typeof s === 'string' && /^\\d{4}-\\d{2}-\\d{2}\$/.test(s);
+   return _yearlyHitsDate;`)();
+
+// Reference expansion of what the FEED tells a calendar client, per RFC 5545. Written from the
+// spec rather than copied from the app, so agreement means something.
+function feedSaysOccursOn(startIso, iso) {
+  const [sy, sm, sd] = startIso.split('-').map(Number);
+  const [ty, tm, td] = iso.split('-').map(Number);
+  if (ty < sy) return false;                       // DTSTART is the first occurrence
+  const isLeap = y => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  if (sm === 2 && sd === 29) {
+    // Which rule the feed actually sends decides what the phone shows:
+    //   BYMONTH=2;BYMONTHDAY=-1 → last day of February every year (Feb 29 or Feb 28)
+    //   plain FREQ=YEARLY       → Feb 29 only, so common years are skipped entirely
+    return serverUsesLastDayOfFeb
+      ? tm === 2 && td === (isLeap(ty) ? 29 : 28)
+      : tm === 2 && td === 29;
+  }
+  return tm === sm && td === sd;                   // plain FREQ=YEARLY repeats DTSTART's month/day
+}
+
+const YEARLY_CASES = [];
+for (const start of ['2026-03-14', '2028-02-29', '2026-12-31', '2026-01-01', '2026-06-30']) {
+  for (let y = 2025; y <= 2035; y++) {
+    for (const [m, d] of [[2,28],[2,29],[3,1],[3,14],[12,31],[1,1],[6,30],[3,13],[3,15]]) {
+      if (m === 2 && d === 29 && !((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0)) continue;
+      YEARLY_CASES.push([start, `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`]);
+    }
+  }
+}
+let yearlyMismatches = [];
+for (const [start, iso] of YEARLY_CASES) {
+  const inApp = clientYearly({ date: start, repeat: 'year' }, iso);
+  const onPhone = feedSaysOccursOn(start, iso);
+  if (inApp !== onPhone) yearlyMismatches.push(`start=${start} on ${iso}: app=${inApp} phone=${onPhone}`);
+}
+ok(yearlyMismatches.length === 0,
+  `app calendar and phone feed agree on all ${YEARLY_CASES.length} yearly-event dates`,
+  yearlyMismatches.slice(0, 6).join(' | '));
+// Guard the guard: the comparison must be capable of disagreeing.
+ok(clientYearly({date: '2028-02-29', repeat: 'year'}, '2029-02-28') === true
+   && feedSaysOccursOn('2028-02-29', '2029-02-28') === true,
+  'both sides really do place a Feb 29 event on Feb 28 in a common year');
+ok(clientYearly({date: '2026-03-14', repeat: 'year'}, '2025-03-14') === false,
+  'a yearly event does not appear before its first year');
+
 console.log('');
 console.log(`  ${pass} passed, ${fail} failed`);
 if (fail) {

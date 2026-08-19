@@ -383,6 +383,70 @@ ok($('#bsec-body-tx').contains($('#b-filter-cat')),
   'the category filter lives in the body, not the clickable header');
 ok($('#bsec-body-tx').contains($('#b-search')), 'the search box lives in the body, not the header');
 
+// ═══ Yearly events ═══════════════════════════════════════════════════════════
+// Parsing: the marker must be recognised, stripped from the label, and never triggered by prose.
+const pe = s => ev(`parseEventTextAndTime(${JSON.stringify(s)})`);
+ok(pe("Mom's birthday !yearly").yearly === true, 'the !yearly marker is recognised');
+ok(pe("Mom's birthday !yearly").text === "Mom's birthday", 'the marker is stripped from the label',
+  pe("Mom's birthday !yearly").text);
+ok(pe('Anniversary !annual').yearly === true, '!annual is accepted too');
+ok(pe('Dentist !y').yearly === true, 'the !y shorthand is accepted');
+// The critical negative: ordinary prose must NOT become a repeating event.
+ok(pe('Annual checkup').yearly === false, '"Annual checkup" is not turned into a yearly event');
+ok(pe('Yearly review with boss').yearly === false, '"Yearly review" is not turned into a yearly event');
+ok(pe('Annual checkup').text === 'Annual checkup', 'and its label is left completely alone');
+// Marker + time, in either order.
+const both1 = pe("Mom's birthday !yearly @2pm");
+ok(both1.yearly === true && both1.time === '14:00' && both1.text === "Mom's birthday",
+  'marker before the time parses all three parts', JSON.stringify(both1));
+const both2 = pe("Mom's birthday @2pm !yearly");
+ok(both2.yearly === true && both2.time === '14:00' && both2.text === "Mom's birthday",
+  'marker after the time parses all three parts', JSON.stringify(both2));
+
+// Expansion: one stored row must appear in every later year, and no earlier one.
+run('add yearly events', `datedEvents = [
+  {id:'y1', date:'2026-03-14', text:"Mom's birthday", repeat:'year'},
+  {id:'y2', date:'2028-02-29', text:'Leap anniversary', repeat:'year'},
+  {id:'y3', date:'2026-06-01', text:'One-off thing'}
+]`);
+const hits = iso => ev(`_eventsForDate('${iso}').map(e=>e.id)`);
+ok(hits('2026-03-14').includes('y1'), 'a yearly event appears on its original date');
+ok(hits('2027-03-14').includes('y1'), 'and in the following year');
+ok(hits('2035-03-14').includes('y1'), 'and years later, with no stored copies');
+ok(!hits('2025-03-14').includes('y1'), 'but NOT before the year it was created (history stays true)');
+ok(!hits('2027-03-15').includes('y1'), 'and not on a neighbouring day');
+ok(!hits('2027-06-01').includes('y3'), 'a non-repeating event does not recur');
+ok(hits('2026-06-01').includes('y3'), 'a non-repeating event still shows on its own date');
+// Feb 29: folds to Feb 28 in common years rather than vanishing for three years at a time.
+ok(hits('2028-02-29').includes('y2'), 'a Feb 29 event shows on Feb 29 in a leap year');
+ok(hits('2029-02-28').includes('y2'), 'and folds to Feb 28 in a common year');
+ok(!hits('2029-03-01').includes('y2'), 'but does not also land on Mar 1');
+ok(!hits('2032-02-28').includes('y2'), 'and does NOT double up on Feb 28 of a leap year');
+ok(hits('2032-02-29').includes('y2'), 'showing on the real Feb 29 that year instead');
+
+// Rendering: the chip is marked, and says which occurrence it is.
+// _calMonth is a 'YYYY-MM' string, not a Date. March 2029 is three years past the stored 2026 row.
+run('render calendar for the yearly month', "_calMonth = '2029-03'; renderCalendar()");
+const y1chip = () => window.document.querySelector('.cal-event[data-id="y1"]');
+ok(y1chip() !== null, 'the yearly event renders in a future year it was never stored in');
+ok(y1chip().className.includes('cal-event-yearly'), 'and is visually marked as recurring');
+ok(y1chip().getAttribute('title').includes('#3 since 2026'),
+  'the tooltip says which occurrence this is', y1chip()?.getAttribute('title'));
+
+// Round-trip: editing shows the marker back, so it can be removed the way it was added.
+run('edit the yearly event', "editCalEvent('y1')");
+const yInput = () => window.document.querySelector('.cal-event[data-id="y1"] input');
+ok(yInput() && yInput().value.includes('!yearly'),
+  'editing shows the marker back in the text so it is removable', yInput()?.value);
+run('remove the marker', `(() => {
+  const i = document.querySelector('.cal-event[data-id="y1"] input');
+  i.value = "Mom's birthday";
+  i.onblur();
+})()`);
+ok(ev("datedEvents.find(e=>e.id==='y1').repeat") === undefined,
+  'deleting the marker turns the repeat off', String(ev("datedEvents.find(e=>e.id==='y1').repeat")));
+ok(!hits('2030-03-14').includes('y1'), 'and it stops recurring immediately');
+
 // ═══ Recurring to-dos ════════════════════════════════════════════════════════
 // Month arithmetic is where this kind of feature rots. Every one of these is a date that naive
 // Date math gets wrong.

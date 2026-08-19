@@ -581,6 +581,10 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .plan-slot-event:hover .plan-slot-event-del{opacity:.7}
 .plan-slot-event-del:hover{opacity:1!important}
 .cal-event-time{font-weight:800;color:var(--amber-dark);margin-right:3px}
+/* Yearly events read as standing fixtures rather than one-offs: a dotted left edge and a small
+   repeat glyph. Deliberately subtle — a birthday shouldn't shout louder than this week's dentist. */
+.cal-event-yearly{border-left-style:dotted;border-left-width:3px}
+.cal-event-rep{font-size:8px;margin-left:3px;opacity:.65}
 .plan-slot-event.ec0{background:#92590f;color:white;border-color:#92590f}
 .plan-slot-event.ec1{background:#2e5233;color:white;border-color:#2e5233}
 .plan-slot-event.ec2{background:#1a3d6e;color:white;border-color:#1a3d6e}
@@ -2680,10 +2684,32 @@ function _migrateEventsFromWeekPlan() {
   return out;
 }
 
+// Does a yearly event fall on `iso`? Matches on month+day, and only from its first year onward —
+// a birthday added in 2026 shouldn't retroactively appear in 2019's calendar and rewrite history.
+//
+// Feb 29 folds to Feb 28 in non-leap years. Skipping it would make a Feb 29 anniversary vanish for
+// three years at a stretch, which is worse than showing it a day early.
+function _yearlyHitsDate(evt, iso) {
+  if (!evt || evt.repeat !== 'year' || !_isDateStr(evt.date) || !_isDateStr(iso)) return false;
+  if (iso < evt.date) return false;
+  const [, em, ed] = evt.date.split('-').map(Number);
+  const [ty, tm, td] = iso.split('-').map(Number);
+  if (em === tm && ed === td) return true;
+  if (em === 2 && ed === 29 && tm === 2 && td === 28) {
+    const isLeap = (ty % 4 === 0 && ty % 100 !== 0) || ty % 400 === 0;
+    return !isLeap;   // in a leap year the real Feb 29 already matched above
+  }
+  return false;
+}
+
 // Look up events by an ISO date. Sorted by time (timed first, ascending), then by id.
+// Yearly events are expanded here rather than stored as copies: one row in Firestore, and editing
+// the label fixes every future year at once. This is the single choke point every calendar surface
+// goes through, so annual events appear on the grid, This Week, the today banner and the feed
+// without any of them knowing recurrence exists.
 function _eventsForDate(iso) {
   return datedEvents
-    .filter(e => e && e.date === iso)
+    .filter(e => e && (e.date === iso || _yearlyHitsDate(e, iso)))
     .sort((a, b) => {
       if (a.time && b.time) return a.time.localeCompare(b.time);
       if (a.time) return -1;
@@ -2755,10 +2781,21 @@ function parseTimeOrRange(raw) {
 // Parse a time-bearing event/trip input string. Returns { text, time, endTime } where
 // time/endTime are 24h "HH:MM" or null. Accepts time at start, at end, with or without @,
 // and supports ranges (3-4pm, 11am-1pm, 3pm-4:30pm).
+// Marker for a yearly event: "Mom's birthday !yearly". Requires the bang, so ordinary prose like
+// "annual checkup" or "yearly review" is never silently turned into a repeating event. Round-trips:
+// editing a yearly event shows the marker back in the text, so it's visible and removable the same
+// way it was added.
+const _YEARLY_MARKER = /\s*!\s*(?:yearly|annual(?:ly)?|y)\b/i;
+const _stripYearlyMarker = s => String(s).replace(_YEARLY_MARKER, ' ').replace(/\s{2,}/g, ' ').trim();
+
 function parseEventTextAndTime(input) {
-  const empty = { text: '', time: null, endTime: null };
+  const empty = { text: '', time: null, endTime: null, yearly: false };
   if (!input) return empty;
-  const trimmed = input.trim();
+  // Pull the marker off BEFORE time parsing so "Mom's birthday !yearly @2pm" and
+  // "Mom's birthday @2pm !yearly" both work — otherwise the trailing marker would be swallowed
+  // into the time clause and the event would get a garbage label.
+  const yearly = _YEARLY_MARKER.test(input);
+  const trimmed = _stripYearlyMarker(input);
   // Re-usable time-clause sub-pattern (single time OR range). Wrapped in a capture group.
   const CLAUSE = '(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?(?:\\s*[-–—]\\s*\\d{1,2}(?::\\d{2})?\\s*(?:am|pm)?)?)';
   const patterns = [
@@ -2782,10 +2819,10 @@ function parseEventTextAndTime(input) {
     const range = parseTimeOrRange(clause);
     if (range && text) {
       text = stripDanglingPreposition(text);
-      if (text) return { text, time: range.startTime, endTime: range.endTime };
+      if (text) return { text, time: range.startTime, endTime: range.endTime, yearly };
     }
   }
-  return { text: trimmed, time: null, endTime: null };
+  return { text: trimmed, time: null, endTime: null, yearly };
 }
 
 // Parse a raw time field (no @ prefix). Accepts "7pm", "7:30pm", "19:00", "12am" and ranges
@@ -4122,7 +4159,7 @@ function quickAddEventInline(iso) {
   }
   const input = document.createElement('input');
   input.type = 'text';
-  input.placeholder = 'Add event… try @3pm';
+  input.placeholder = 'Add event… @3pm, !yearly';
   input.className = 'cal-quick-add-input';
   cell.appendChild(input);
   setTimeout(() => input.focus(), 30);
@@ -4134,13 +4171,15 @@ function quickAddEventInline(iso) {
     if (!save || !raw) return;
     const parsed = parseEventTextAndTime(raw);
     if (!parsed.text) return;
-    datedEvents.push({
+    const newEvt = {
       id: _uid('evt-'),
       date: iso,
       text: parsed.text,
       time: parsed.time,
       endTime: parsed.endTime || null,
-    });
+    };
+    if (parsed.yearly) newEvt.repeat = 'year';
+    datedEvents.push(newEvt);
     saveDatedEvents();
     renderCalendar();
     if (isActive('dates')) {
@@ -4474,7 +4513,10 @@ function editCalEvent(eventId) {
   if (!el || el.querySelector('input')) return;
   const original = datedEvents.find(e => e.id === eventId);
   if (!original) return;
-  const rawText = original.time ? `${original.text} @${formatTimeRange(original.time, original.endTime)}` : original.text;
+  // Show the yearly marker back in the editable text, so it's visible and can be deleted the same
+  // way it was typed. Without this, a yearly event would be silently un-markable.
+  const rawText = (original.time ? `${original.text} @${formatTimeRange(original.time, original.endTime)}` : original.text)
+    + (original.repeat === 'year' ? ' !yearly' : '');
   const input = document.createElement('input');
   input.type = 'text';
   input.value = rawText;
@@ -4500,10 +4542,14 @@ function editCalEvent(eventId) {
         // Time-only update path: "@5pm", "5pm", "3-4pm" with no event text → update just the
         // time and keep the existing label. Previously this overwrote target.text with the
         // literal "@5pm" string and nulled target.time, destroying the event content.
-        const timeOnly = parseTimeInput(raw.replace(/^@\s*/, ''));
+        // The yearly marker is handled on both branches: a time-only edit ("@5pm !yearly") must
+        // still be able to turn recurrence on or off without retyping the label.
+        const yearly = _YEARLY_MARKER.test(raw);
+        const timeOnly = parseTimeInput(_stripYearlyMarker(raw).replace(/^@\s*/, ''));
         if (timeOnly) {
           target.time = timeOnly.startTime;
           target.endTime = timeOnly.endTime;
+          if (yearly) target.repeat = 'year'; else delete target.repeat;
           saveDatedEvents();
         } else {
           const parsed = parseEventTextAndTime(raw);
@@ -4511,6 +4557,7 @@ function editCalEvent(eventId) {
             target.text = parsed.text;
             target.time = parsed.time;
             target.endTime = parsed.endTime || null;
+            if (parsed.yearly) target.repeat = 'year'; else delete target.repeat;
             saveDatedEvents();
           }
         }
@@ -4699,8 +4746,14 @@ function renderCalendar() {
       if (cellEvents.length) {
         eventsHtml = cellEvents.map(evt => {
           const timePrefix = evt.time ? `<span class="cal-event-time">${formatTimeRange(evt.time, evt.endTime)}</span> ` : '';
-          const fullText = (evt.time ? formatTimeRange(evt.time, evt.endTime) + ' · ' : '') + evt.text;
-          return `<div class="cal-event" data-id="${escHtml(evt.id)}" onclick="editCalEvent('${escHtml(evt.id)}');event.stopPropagation()" title="${escHtml(fullText)} (click to edit)">${timePrefix}${escHtml(evt.text)}</div>`;
+          const isYearly = evt.repeat === 'year';
+          // On a yearly event, show which anniversary/birthday number this is — the useful part of
+          // knowing something repeats. Only from the second year on, and only when it's a real count.
+          const yr = isYearly ? Number(evt.date.slice(0, 4)) : 0;
+          const nth = isYearly ? Number(cellIsoForEvents.slice(0, 4)) - yr : 0;
+          const fullText = (evt.time ? formatTimeRange(evt.time, evt.endTime) + ' · ' : '') + evt.text
+            + (isYearly ? ` — every year${nth > 0 ? `, #${nth} since ${yr}` : ''}` : '');
+          return `<div class="cal-event${isYearly ? ' cal-event-yearly' : ''}" data-id="${escHtml(evt.id)}" onclick="editCalEvent('${escHtml(evt.id)}');event.stopPropagation()" title="${escHtml(fullText)} (click to edit)">${timePrefix}${escHtml(evt.text)}${isYearly ? '<span class="cal-event-rep">🔁</span>' : ''}</div>`;
         }).join('');
       }
 
@@ -5449,13 +5502,15 @@ function commitEvent(key) {
   if (off === undefined) return;
   const monday = _planMondayDate();
   const date = new Date(monday); date.setDate(monday.getDate() + off);
-  datedEvents.push({
+  const newEvt = {
     id: _uid('evt-'),
     date: _fmtDateKey(date),
     text: parsed.text,
     time: parsed.time,
     endTime: parsed.endTime || null,
-  });
+  };
+  if (parsed.yearly) newEvt.repeat = 'year';
+  datedEvents.push(newEvt);
   saveDatedEvents();
   renderDayEvents(key);
   // Also refresh the calendar grid + today banner above — they share the same source of truth
@@ -5484,7 +5539,8 @@ function editEvent(eventId) {
   if (del) del.style.visibility = 'hidden';
   if (timeEl) timeEl.style.display = 'none';
   // Replace existing text content with the raw editable form: "text [@HH:MMam/pm]"
-  const rawText = original.time ? `${original.text} @${formatTimeRange(original.time, original.endTime)}` : original.text;
+  const rawText = (original.time ? `${original.text} @${formatTimeRange(original.time, original.endTime)}` : original.text)
+    + (original.repeat === 'year' ? ' !yearly' : '');
   [...chip.childNodes].forEach(n => { if (n.nodeType === Node.TEXT_NODE) n.remove(); });
   const textNode = document.createTextNode(rawText);
   if (del) chip.insertBefore(textNode, del);
@@ -5520,10 +5576,14 @@ function editEvent(eventId) {
         saveDatedEvents();
       } else if (target) {
         // Time-only update path — see editCalEvent for rationale.
-        const timeOnly = parseTimeInput(raw.replace(/^@\s*/, ''));
+        // The yearly marker is handled on both branches: a time-only edit ("@5pm !yearly") must
+        // still be able to turn recurrence on or off without retyping the label.
+        const yearly = _YEARLY_MARKER.test(raw);
+        const timeOnly = parseTimeInput(_stripYearlyMarker(raw).replace(/^@\s*/, ''));
         if (timeOnly) {
           target.time = timeOnly.startTime;
           target.endTime = timeOnly.endTime;
+          if (yearly) target.repeat = 'year'; else delete target.repeat;
           saveDatedEvents();
         } else {
           const parsed = parseEventTextAndTime(raw);
@@ -5531,6 +5591,7 @@ function editEvent(eventId) {
             target.text = parsed.text;
             target.time = parsed.time;
             target.endTime = parsed.endTime || null;
+            if (parsed.yearly) target.repeat = 'year'; else delete target.repeat;
             saveDatedEvents();
           }
         }

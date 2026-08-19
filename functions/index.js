@@ -318,6 +318,21 @@ exports.ics = onRequest(
           lineSet.push(`DTSTART;VALUE=DATE:${dateCompact}`, `DTEND;VALUE=DATE:${endDate}`);
         }
         lineSet.push(`SUMMARY:${escIcs(e.text)}`);
+        // Yearly events (birthdays, anniversaries) recur natively in the subscriber's calendar via
+        // RRULE rather than being expanded into one VEVENT per year. One row here means the phone
+        // shows it forever, and editing the label fixes every future year at once.
+        //
+        // Feb 29 needs BYMONTHDAY=-1 (last day of February). A plain FREQ=YEARLY on Feb 29 SKIPS
+        // common years entirely per RFC 5545 §3.3.10 — invalid dates are discarded, not shifted —
+        // so a leap-day anniversary would disappear from the phone for three years at a time. The
+        // in-app calendar folds Feb 29 to Feb 28 in common years (_yearlyHitsDate), and
+        // BYMONTH=2;BYMONTHDAY=-1 is the RRULE that means exactly that. Any other month/day
+        // repeats correctly from DTSTART alone, and restating BYMONTH/BYMONTHDAY there is what
+        // makes strict parsers emit duplicates.
+        if (e.repeat === 'year') {
+          const isFeb29 = dateCompact.slice(4) === '0229';
+          lineSet.push(isFeb29 ? 'RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1' : 'RRULE:FREQ=YEARLY');
+        }
         lineSet.push('CLASS:PRIVATE', 'CATEGORIES:Our Weekly · Events', 'END:VEVENT');
         lines.push(...lineSet);
       }
