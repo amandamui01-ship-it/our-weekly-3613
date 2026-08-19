@@ -57,6 +57,14 @@ Both produced confidently passing tests that were measuring nothing:
    real thing needing coverage was a **fresh load**, where the collapsed state lives only in
    localStorage and the body has no inline style. Found by deliberately breaking the code.
 
+4. **A fullPage screenshot silently disabled touch emulation.** `page.screenshot({fullPage:true})`
+   permanently clears Chromium's device-metric emulation — touch included — for the rest of that
+   page's life. The tap-target section ran after the screenshot loop, so `pointer:coarse` was false,
+   every touch-sizing CSS rule was absent, and it reported mouse-sized buttons on a device it
+   thought had a mouse. Found by mutation testing: removing the real iPad fix didn't fail anything.
+   Fixed by moving the check above the screenshot loop AND asserting `pointer:coarse` is live, so
+   ordering can't silently regress.
+
 If a harness reports everything green on the first run, be suspicious and check it can fail.
 
 **How to check:** break the thing on purpose and confirm the suite goes red.

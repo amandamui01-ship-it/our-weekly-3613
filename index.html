@@ -116,6 +116,20 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 /* ── Pages ── */
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .page{display:none;padding:32px 40px 60px;max-width:920px;margin:0 auto}
+/* Wider canvas for the two data-dense pages on laptop/iPad-landscape screens. The Calendar grid and
+   the Budget transaction table are tables in spirit — cramming them into 920px truncated trip names
+   to "Peninsula State P…" while ~500px of screen sat empty on either side.
+   Review, To-Dos and History deliberately DON'T widen: they're prose, and a 1400px line length is
+   genuinely worse to read than an 840px one. */
+@media(min-width:1150px){
+  #page-dates, #page-budget{max-width:1200px}
+  /* Taller day cells once there's room, so a busy day shows its events instead of clipping them. */
+  #page-dates .cal-grid{grid-auto-rows:minmax(104px,auto)}
+}
+@media(min-width:1500px){
+  #page-dates, #page-budget{max-width:1360px}
+  #page-dates .cal-grid{grid-auto-rows:minmax(118px,auto)}
+}
 .page.active{display:block;animation:fadeIn .25s cubic-bezier(.2,.8,.4,1)}
 
 /* ── Cards ── */
@@ -1000,10 +1014,20 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 .gc-btn-ghost:hover{background:var(--border-light);color:var(--text);border-color:var(--border)}
 .gc-log{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;padding-top:8px;border-top:1px dashed var(--border)}
 .gc-log-entry{font-size:10px;font-weight:600;color:var(--text-3);background:var(--surface);border:1px solid var(--border-light);border-radius:5px;padding:2px 6px}
+/* Touch sizing keyed on the POINTER, not the viewport width. These controls were enlarged only
+   under max-width:600px, so on an iPad — a finger-driven device at 820px+ — they snapped back to
+   27px, which is just as hard to hit there as on a phone. `pointer:coarse` is the actual condition:
+   it's true for iPad and phones, false for a laptop trackpad at any window size. */
+@media(pointer:coarse){
+  .gc-use-input{width:72px;padding:8px 9px;font-size:15px}
+  .gc-btn{padding:9px 14px;font-size:13px;min-height:36px}
+  .gc-exp-input{font-size:13px;padding:7px 8px;min-height:36px}
+  .gc-actions{gap:8px}
+  .todo-repeat{padding:5px 10px;min-height:32px}
+}
 @media(max-width:600px){
   .gc-name{font-size:13px}
-  /* Bigger touch targets on phones — these were 27px tall, which is a coin-flip to hit one-handed
-     at a checkout counter. Apple's guidance is 44pt; 36 is the practical floor for a chip button. */
+  /* Kept for older browsers without pointer-media support; the block above is what normally applies. */
   .gc-use-input{width:72px;padding:8px 9px;font-size:15px}
   .gc-btn{padding:9px 14px;font-size:13px;min-height:36px}
   .gc-exp-input{font-size:13px;padding:7px 8px;min-height:36px}

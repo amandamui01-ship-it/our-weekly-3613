@@ -96,6 +96,12 @@ const DATA = {
 const VIEWPORTS = [
   { name: 'iphone-se',  width: 375, height: 667 },   // smallest phone still in use
   { name: 'iphone-14',  width: 390, height: 844 },
+  // iPad and laptop are the two Amanda actually organizes from, so they get real coverage rather
+  // than being assumed to fall out of "desktop". Portrait iPad in particular sits in the awkward
+  // band above the phone breakpoints but well below a laptop.
+  { name: 'ipad-portrait',  width: 820,  height: 1180, touch: true },
+  { name: 'ipad-landscape', width: 1180, height: 820,  touch: true },
+  { name: 'laptop-13',      width: 1440, height: 900 },
   { name: 'desktop',    width: 1280, height: 900 },
 ];
 const PAGES = ['home', 'dates', 'todos', 'budget', 'history'];
@@ -112,7 +118,10 @@ function ok(cond, name, detail) {
 
   for (const vp of VIEWPORTS) {
     const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height },
-      deviceScaleFactor: 1, isMobile: vp.width < 500, hasTouch: vp.width < 500 });
+      deviceScaleFactor: 1, isMobile: vp.width < 500,
+      // iPad is a touch device at a tablet width — tap-target checks must apply there too, which
+      // they wouldn't under a width-only rule.
+      hasTouch: vp.width < 500 || !!vp.touch });
     const page = await context.newPage();
     page.on('pageerror', e => pageErrors.push(`[${vp.name}] ${e.message}`));
     page.on('console', m => {
@@ -155,6 +164,49 @@ function ok(cond, name, detail) {
     });
     ok(hasContent, `${vp.name}: real app content rendered (snapshot tiles present)`,
       'the page rendered but the Budget tiles are empty — measurements would be meaningless');
+
+    // ── Tap targets (any touch device) ────────────────────────────────────
+    // Apple's guidance is 44x44pt. Anything much smaller is a coin-flip to hit with a finger.
+    // Gated on TOUCH, not on width: an iPad is finger-driven at 820px, so a control too small to
+    // hit is just as wrong there as on a phone. A width-only rule missed that entirely.
+    //
+    // MUST run before the screenshot loop. page.screenshot({fullPage:true}) permanently clears
+    // Chromium's device-metric emulation — touch included — for the rest of that page's life, so
+    // measuring afterwards saw pointer:coarse=false, dropped every touch-sizing rule, and reported
+    // mouse-sized buttons on a device it thought had a mouse. Third time this harness has silently
+    // measured the wrong thing, hence the assertion rather than a comment asking for the ordering
+    // to be preserved.
+    if (vp.width < 500 || vp.touch) {
+      const touchLive = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+      ok(touchLive, `${vp.name}: touch emulation is still active (else tap-target checks are vacuous)`,
+        'pointer:coarse is false — something reset device emulation before this check');
+      await page.evaluate(() => showPage('budget'));
+      await page.waitForFunction(
+        () => { const a = document.querySelector('.page.active'); return a && a.id === 'page-budget'; },
+        { timeout: 5000 });
+      await page.waitForTimeout(120);
+      // Two bars, deliberately. Controls added recently are held to 36px (a comfortable
+      // one-handed tap). Long-standing controls — the Settings button and the month pills in the
+      // sticky period picker — sit at 31-34px; they're reported but not failed, because silently
+      // restyling a layout Amanda already tuned is not this test's call to make.
+      const measure = sel => page.evaluate(s2 => [...document.querySelectorAll(s2)]
+        .filter(el => { const r = el.getBoundingClientRect();
+                        return r.width > 0 && r.height > 0 && (r.height < 36 || r.width < 28); })
+        .slice(0, 10)
+        .map(el => `${el.className.split(/\s+/).filter(Boolean).slice(0, 2).join('.') || el.id} ` +
+                   `"${(el.textContent || '').trim().slice(0, 16)}" ` +
+                   `${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`), sel);
+
+      const newControls = await measure('.gc-btn, .gc-use-input, .todo-due, .overlap-dismiss, .overlap-okd');
+      ok(newControls.length === 0,
+        `${vp.name}: recently-added controls are tappable (>=36px tall)`, newControls.join('; '));
+
+      const legacyControls = await measure('.bmonth-pill, .bq-btn, .budget-settings-btn');
+      if (legacyControls.length) {
+        console.log(`  ℹ ${vp.name}: pre-existing controls below 36px (not failed, for your call):`);
+        for (const c of legacyControls) console.log(`      ${c}`);
+      }
+    }
 
     for (const pageName of PAGES) {
       await page.evaluate(p => showPage(p), pageName);
@@ -224,37 +276,6 @@ function ok(cond, name, detail) {
       // Also capture the whole scroll height, so sections below the fold (gift cards, the
       // transaction list) are reviewable instead of invisible to this test.
       await page.screenshot({ path: path.join(SHOTS, `${vp.name}-${pageName}-full.png`), fullPage: true });
-    }
-
-    // ── 3. Tap targets (mobile only) ──────────────────────────────────────
-    // Apple's guidance is 44x44pt. Anything much smaller is a coin-flip to hit one-handed.
-    if (vp.width < 500) {
-      await page.evaluate(() => showPage('budget'));
-      await page.waitForFunction(
-        () => { const a = document.querySelector('.page.active'); return a && a.id === 'page-budget'; },
-        { timeout: 5000 });
-      await page.waitForTimeout(120);
-      // Two bars, deliberately. Controls added recently are held to 36px (a comfortable
-      // one-handed tap). Long-standing controls — the Settings button and the month pills in the
-      // sticky period picker — sit at 31-34px; they're reported but not failed, because silently
-      // restyling a layout Amanda already tuned is not this test's call to make.
-      const measure = sel => page.evaluate(s2 => [...document.querySelectorAll(s2)]
-        .filter(el => { const r = el.getBoundingClientRect();
-                        return r.width > 0 && r.height > 0 && (r.height < 36 || r.width < 28); })
-        .slice(0, 10)
-        .map(el => `${el.className.split(/\s+/).filter(Boolean).slice(0, 2).join('.') || el.id} ` +
-                   `"${(el.textContent || '').trim().slice(0, 16)}" ` +
-                   `${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`), sel);
-
-      const newControls = await measure('.gc-btn, .gc-use-input, .todo-due, .overlap-dismiss, .overlap-okd');
-      ok(newControls.length === 0,
-        `${vp.name}: recently-added controls are tappable (>=36px tall)`, newControls.join('; '));
-
-      const legacyControls = await measure('.bmonth-pill, .bq-btn, .budget-settings-btn');
-      if (legacyControls.length) {
-        console.log(`  ℹ ${vp.name}: pre-existing controls below 36px (not failed, for your call):`);
-        for (const c of legacyControls) console.log(`      ${c}`);
-      }
     }
 
     // ── 4. Dark mode must not break layout or wash out text ───────────────
