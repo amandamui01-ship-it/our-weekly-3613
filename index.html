@@ -2441,6 +2441,14 @@ function initFirestore() {
           const seed = TRIPS_2026.find(s => s.label === t.label);
           let updated = {...t};
           if (!t.sortDate && seed?.sortDate) { updated.sortDate = seed.sortDate; changed = true; }
+          // sortDate is denormalised at creation time and never revalidated, so a trip added while
+          // the date parser was weaker keeps sortDate:null forever — no countdown, and invisible on
+          // the calendar grid — even once the parser can read it. ("Feb 14, 2027" was one.) Re-parse
+          // the text we still have rather than waiting for the user to notice and retype it.
+          if (!updated.sortDate && updated.dates) {
+            const reparsed = parseSortDate(updated.dates);
+            if (reparsed) { updated.sortDate = reparsed; changed = true; }
+          }
           const ptoFields = ['aidanVacation','aidanWfh','aidanPersonal','amandaVacation','amandaWfh','amandaPersonal','aidanDays','amandaDays'];
           for (const f of ptoFields) {
             if (f in updated) { delete updated[f]; changed = true; }
@@ -2651,18 +2659,38 @@ function _removeFromDoc(docName, item) {
 // the same moment. You cannot race in real time while offline — offline edits reconcile on
 // reconnect either way. So this takes atomicity exactly where it's available and where it matters,
 // and keeps today's offline behaviour untouched.
+// Codes that mean "the server was reachable but another writer got there first". These are the
+// ONE case where the whole-array fallback would be actively harmful: it would overwrite the very
+// concurrent edit the transaction exists to preserve. Retry instead, and if it still won't land,
+// tell the user rather than silently destroying the other person's change.
+const _TX_CONTENTION = new Set(['aborted', 'failed-precondition']);
+const _TX_RETRIES = 2;
+
 function _txUpdateItems(docName, mutate, localArray) {
   const ref = db.collection('state').doc(docName);
-  return db.runTransaction(t => t.get(ref).then(snap => {
+  // Set when OUR mutate callback throws. That's a bug in this code, not a network condition, and
+  // it must never fall through to a whole-array write — that would turn a code error into data loss.
+  let mutateThrew = false;
+  const attempt = tries => db.runTransaction(t => t.get(ref).then(snap => {
     const server = snap.exists ? (snap.data().items || []) : null;
     // Doc missing entirely, or no items field: nothing to merge against. Write our copy.
     if (!server) { t.set(ref, {items: localArray()}, {merge: true}); return; }
-    const next = mutate(server.slice());
+    let next;
+    try { next = mutate(server.slice()); }
+    catch (e) { mutateThrew = true; throw e; }
     if (next) t.set(ref, {items: next}, {merge: true});
-  })).catch(() => {
+  })).catch(err => {
+    if (mutateThrew) { _onSaveErr(err); return; }
+    if (_TX_CONTENTION.has(err && err.code)) {
+      // Fresh read on each retry — attempt() re-runs the whole transaction, not just the write.
+      if (tries > 0) return attempt(tries - 1);
+      _onSaveErr(err);
+      return;
+    }
     // Offline, or transactions unavailable. Same whole-array write the app has always done.
     ref.set({items: localArray()}).catch(_onSaveErr);
   });
+  return attempt(_TX_RETRIES);
 }
 
 // Persist a single item by id, leaving every other element of the array as the server has it.
@@ -6220,27 +6248,36 @@ function addTrip() {
     isSingleDay = Math.round((end - start) / 86400000) === 1;
   }
 
-  if (parsedName.time && isSingleDay && sortDate) {
-    // Quick timed event path
-    datedEvents.push({
+  // A "!yearly" marker is an explicit statement that this is a recurring annual thing — a birthday,
+  // an anniversary — which is never a trip. So on a single day it routes to the event path even
+  // without an @time, the same way an @time does. Trips carry no recurrence field, so leaving a
+  // marked single-day entry on the trip path silently dropped the recurrence.
+  if ((parsedName.time || parsedName.yearly) && isSingleDay && sortDate) {
+    // Quick timed / yearly event path
+    const newEvt = {
       id: _uid('evt-'),
       date: sortDate,
       text: parsedName.text,
       time: parsedName.time,
       endTime: parsedName.endTime || null,
-    });
+    };
+    if (parsedName.yearly) newEvt.repeat = 'year';
+    datedEvents.push(newEvt);
     saveDatedEvents();
     document.getElementById('new-trip-dates').value = '';
     document.getElementById('new-trip-name').value = '';
     burst();
     renderDates();
-    showToast(`📌 Event added — ${formatTimeRange(parsedName.time, parsedName.endTime)} on ${dates}`);
+    const when = parsedName.time ? `${formatTimeRange(parsedName.time, parsedName.endTime)} on ${dates}` : dates;
+    showToast(`📌 Event added — ${when}${parsedName.yearly ? ' · repeats every year' : ''}`);
     return;
   }
 
   // Trip path. If the user typed @time on a multi-day trip, strip it — trips are all-day events
   // and a single start time wouldn't carry meaning across the range.
-  const cleanLabel = parsedName.time ? parsedName.text : label;
+  // Strip the yearly marker too. Trips have no recurrence, and leaving "!yearly" in the label meant
+  // it stuck there permanently — in the trip bar, the trip detail page, and the phone calendar feed.
+  const cleanLabel = parsedName.time ? parsedName.text : _stripYearlyMarker(label);
   const labelWithEmoji = _hasEmoji(cleanLabel) ? cleanLabel : `${cleanLabel} ${tripEmoji(cleanLabel)}`;
   const trip = { id:'trip-'+Date.now()+'-'+Math.random().toString(36).slice(2,7), dates, label:labelWithEmoji, sortDate };
   trips.push(trip);
@@ -6250,7 +6287,9 @@ function addTrip() {
   document.getElementById('new-trip-name').value = '';
   burst();
   renderDates();
-  if (parsedName.time && !isSingleDay) {
+  if (parsedName.yearly) {
+    showToast('⚠️ Trips don\'t repeat — "!yearly" was removed. Use a single date to make a yearly event.', null, {duration: 6000});
+  } else if (parsedName.time && !isSingleDay) {
     showToast('⚠️ Multi-day trips are all-day — time was dropped. Use a single date for a timed event.');
   }
 }

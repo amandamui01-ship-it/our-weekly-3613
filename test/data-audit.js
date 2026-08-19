@@ -279,8 +279,9 @@ if (deadWithBalance.length) add('warn', `${deadWithBalance.length} expired gift 
 // ═══ TRIPS ═══════════════════════════════════════════════════════════════════
 const noSort = trips.filter(t => !t.sortDate);
 if (noSort.length) add('warn', `${noSort.length} trip(s) with no parsed date`,
-  'These get no countdown and never appear on the calendar grid. Re-enter the dates field to fix ' +
-  '(the year is now read from the text, so they at least file under the right year).',
+  'These get no countdown and never appear on the calendar grid. The app now re-parses the date ' +
+  'text on load, so if the text is readable this fixes itself the next time you open the app — ' +
+  're-export afterwards and it should be gone. If it persists, the dates field needs retyping.',
   noSort.map(t => `"${t.label}" (dates: "${t.dates || ''}")`));
 
 const tripDupIds = Object.entries(trips.reduce((m, t) => (m[t.id] = (m[t.id] || 0) + 1, m), {})).filter(([, n]) => n > 1);
@@ -298,6 +299,56 @@ const orphanTodos = todos.filter(t => Array.isArray(data.todoCategories) && data
 if (orphanTodos.length) add('warn', `${orphanTodos.length} to-do(s) in a section that no longer exists`,
   'These are invisible in the app but still in your data.',
   orphanTodos.map(t => `"${t.text}" (section ${JSON.stringify(t.cat)})`));
+
+// A repeat rule the app can't read is the worst kind of silent failure: the to-do looks like a
+// recurring chore, but on completion _advanceRepeat() bails and it just gets ticked off forever.
+// Mirrors _isRepeat() in index.html — keep the two in step.
+const REPEAT_UNITS = new Set(['day', 'week', 'month', 'year']);
+const validRepeat = r => !!r && typeof r === 'object' && Number.isInteger(r.every)
+  && r.every >= 1 && r.every <= 365 && REPEAT_UNITS.has(r.unit);
+
+const badRepeat = todos.filter(t => t.repeat !== undefined && t.repeat !== null && !validRepeat(t.repeat));
+if (badRepeat.length) add('problem', `${badRepeat.length} to-do(s) with an unreadable repeat rule`,
+  'These look recurring in the app but will NOT come back after you check them off. Re-pick the repeat from the deadline popup.',
+  badRepeat.map(t => `"${t.text}" (repeat = ${JSON.stringify(t.repeat)})`));
+
+// Recurrence is anchored to the due date; without one there is nothing to advance from.
+const repeatNoDue = todos.filter(t => validRepeat(t.repeat) && !/^\d{4}-\d{2}-\d{2}$/.test(String(t.due || '')));
+if (repeatNoDue.length) add('warn', `${repeatNoDue.length} recurring to-do(s) with no deadline`,
+  'A repeat needs a due date to count forward from. Set a deadline or clear the repeat.',
+  repeatNoDue.map(t => `"${t.text}" (repeat = ${JSON.stringify(t.repeat)}, due = ${JSON.stringify(t.due)})`));
+
+const badLastDone = todos.filter(t => t.lastDone !== undefined && t.lastDone !== null
+  && !/^\d{4}-\d{2}-\d{2}$/.test(String(t.lastDone)));
+if (badLastDone.length) add('warn', `${badLastDone.length} to-do(s) with an unreadable "last done" date`,
+  'Cosmetic — the "last done" line just will not show.',
+  badLastDone.map(t => `"${t.text}" (lastDone = ${JSON.stringify(t.lastDone)})`));
+
+// ═══ YEARLY EVENTS ═══════════════════════════════════════════════════════════
+// A yearly event is stored once and expanded from its own date, so a bad date means it renders on
+// no day at all — in any year.
+const events = Array.isArray(data.datedEvents) ? data.datedEvents : [];
+const badYearly = events.filter(e => e && e.repeat === 'year'
+  && !/^\d{4}-\d{2}-\d{2}$/.test(String(e.date || '')));
+if (badYearly.length) add('problem', `${badYearly.length} yearly event(s) with an unusable date`,
+  'A yearly event repeats from its own date. With a bad date it never appears on the calendar at all.',
+  badYearly.map(e => `"${e.text}" (date = ${JSON.stringify(e.date)})`));
+
+// 'year' is the only recurrence events support; anything else is ignored by _yearlyHitsDate().
+const oddEventRepeat = events.filter(e => e && e.repeat !== undefined && e.repeat !== null && e.repeat !== 'year');
+if (oddEventRepeat.length) add('warn', `${oddEventRepeat.length} event(s) with a repeat the app ignores`,
+  'Only "year" is supported for calendar events. These behave as one-off events.',
+  oddEventRepeat.map(e => `"${e.text}" (repeat = ${JSON.stringify(e.repeat)})`));
+
+// The marker should have been stripped on save. Leftovers mean a creation path missed it — and the
+// literal text also ends up in the phone calendar feed.
+const leakedMarker = [
+  ...events.filter(e => e && /!\s*(?:yearly|annual(?:ly)?|y)\b/i.test(String(e.text || ''))).map(e => `event "${e.text}"`),
+  ...trips.filter(t => /!\s*(?:yearly|annual(?:ly)?|y)\b/i.test(String(t.label || ''))).map(t => `trip "${t.label}"`),
+];
+if (leakedMarker.length) add('warn', `${leakedMarker.length} item(s) still contain a literal "!yearly" marker`,
+  'The marker should be stripped when saved. It also shows up like this in the phone calendar feed. Re-save the item to clean it.',
+  leakedMarker);
 
 // ═══ SUMMARY TOTALS, for a sanity eyeball ════════════════════════════════════
 const byYear = {};

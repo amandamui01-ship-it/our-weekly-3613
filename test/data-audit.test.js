@@ -90,6 +90,28 @@ ok(/NOT money owed/.test(legacy.stdout), 'the note says plainly that nothing is 
 ok(/activity logged after they were settled/.test(out),
   'genuine post-settlement activity is still reported as a problem (signed records are exact)');
 
+// ── Recurrence and yearly-event schema (added with those features) ──────────
+ok(/unreadable repeat rule/.test(out) && /Change furnace filter/.test(out),
+  'a corrupt to-do repeat rule is caught — it looks recurring but silently never returns');
+ok(/recurring to-do\(s\) with no deadline/.test(out) && /Rotate tires/.test(out),
+  'a repeat with no due date to count from is caught');
+ok(/unreadable "last done" date/.test(out) && /Water plants/.test(out),
+  'a malformed lastDone is caught');
+ok(/yearly event\(s\) with an unusable date/.test(out) && /Broken yearly/.test(out),
+  'a yearly event with a bad anchor date is caught — it renders on no day in any year');
+ok(/repeat the app ignores/.test(out) && /Weekly standup/.test(out),
+  'an event repeat other than "year" is caught');
+ok(/literal "!yearly" marker/.test(out) && /Cabin !yearly/.test(out),
+  'a marker left un-stripped in a trip label is caught (it reaches the phone feed too)');
+
+// Negative controls: the valid records in the same fixture must NOT be flagged.
+ok(!/Valid recurring/.test(out),
+  'a well-formed recurring to-do is not flagged', out.match(/.*Valid recurring.*/)?.[0]);
+ok(!/"Anniversary"/.test(out),
+  'a well-formed yearly event is not flagged', out.match(/.*Anniversary.*/)?.[0]);
+ok(!/Plain event/.test(out),
+  'a plain one-off event is not flagged', out.match(/.*Plain event.*/)?.[0]);
+
 // ── Clean fixture: must NOT invent problems ─────────────────────────────────
 const clean = run('clean-export.json');
 ok(clean.status === 0, 'auditor exits cleanly on the clean fixture', clean.stderr);

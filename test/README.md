@@ -32,7 +32,8 @@ node test/data-audit.js ~/Downloads/our-weekly-backup-YYYY-MM-DD.json
 
 Reports duplicates, double-charged recurring months, rows attributable to neither person, dates
 that disagree with their own month label, settled months with activity added afterwards, overdrawn
-gift cards, and trips with unparseable dates.
+and expired gift cards, trips with unparseable dates, corrupt to-do repeat rules, yearly events
+with unusable anchor dates, and `!yearly` markers left un-stripped in a label.
 
 `runtime.test.js` needs jsdom:
 

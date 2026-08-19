@@ -187,6 +187,17 @@ push('okdOverlaps', { pairs: [] });
 push('weekplan', { mon: {}, tue: {}, wed: {}, thu: {}, fri: {}, sat: {}, sun: {} });
 push('datedEvents', { items: [{ id: 'ev1', date: `${YEAR}-08-20`, text: 'Dentist' }] });
 
+// ── Stale sortDate self-heals ───────────────────────────────────────────────
+// trip-c above is Amanda's real "Feb 14, 2027" trip: created when the date parser couldn't read
+// that format, so sortDate was cached as null and stayed null — no countdown, absent from the
+// calendar grid — even after the parser learned the format. The backfill now re-parses `dates`.
+ok(ev("String(trips.find(t=>t.id==='trip-c').sortDate)") === '2027-02-14',
+  'a trip with a stale null sortDate is re-parsed from its own date text on load',
+  String(ev("String(trips.find(t=>t.id==='trip-c').sortDate)")));
+ok(ev("String(trips.find(t=>t.id==='trip-a').sortDate)") === `${YEAR}-08-21`,
+  'and a trip that already had a good sortDate is left alone',
+  String(ev("String(trips.find(t=>t.id==='trip-a').sortDate)")));
+
 // ── Render every page the changes touch ─────────────────────────────────────
 run('renderBudget()',           'renderBudget()');
 run('renderGiftCards()',        'renderGiftCards()');
@@ -446,6 +457,57 @@ run('remove the marker', `(() => {
 ok(ev("datedEvents.find(e=>e.id==='y1').repeat") === undefined,
   'deleting the marker turns the repeat off', String(ev("datedEvents.find(e=>e.id==='y1').repeat")));
 ok(!hits('2030-03-14').includes('y1'), 'and it stops recurring immediately');
+
+// ── The Add-a-Date form (addTrip) is a THIRD creation path ──────────────────
+// It routes between "trip" and "timed event", and originally ignored parsedName.yearly on both
+// branches: a single-day "!yearly" entry became a one-off event, and a trip kept the literal
+// "!yearly" text in its label forever (including in the phone calendar feed). Found by sweep.
+// addTrip() mutates the real trips/datedEvents arrays, and later assertions in this file depend on
+// the trips seeded earlier. Snapshot both and put them back when the form tests are done.
+run('snapshot trips/events before the form tests', `(() => {
+  window.__snapTrips = JSON.stringify(trips);
+  window.__snapEvents = JSON.stringify(datedEvents);
+})()`);
+
+const addViaForm = (dates, name) => ev(`(() => {
+  datedEvents.length = 0; trips.length = 0;
+  document.getElementById('new-trip-dates').value = ${JSON.stringify(dates)};
+  document.getElementById('new-trip-name').value  = ${JSON.stringify(name)};
+  addTrip();
+  return JSON.stringify({
+    evts: datedEvents.map(e => ({text: e.text, time: e.time, repeat: e.repeat})),
+    trips: trips.map(t => t.label),
+  });
+})()`);
+
+const formA = JSON.parse(addViaForm('Sep 4', "Mom's birthday !yearly @2pm"));
+ok(formA.evts.length === 1 && formA.trips.length === 0,
+  'form: single day + time + !yearly makes an event, not a trip', JSON.stringify(formA));
+ok(formA.evts[0] && formA.evts[0].repeat === 'year',
+  'form: and it actually repeats yearly', JSON.stringify(formA.evts[0]));
+ok(formA.evts[0] && formA.evts[0].text === "Mom's birthday",
+  'form: with the marker stripped from the label', formA.evts[0] && formA.evts[0].text);
+
+const formB = JSON.parse(addViaForm('Sep 5', 'Anniversary !yearly'));
+ok(formB.evts.length === 1 && formB.trips.length === 0,
+  'form: !yearly with no time still routes to an event, not a trip', JSON.stringify(formB));
+ok(formB.evts[0] && formB.evts[0].repeat === 'year',
+  'form: an untimed yearly event repeats', JSON.stringify(formB.evts[0]));
+
+const formC = JSON.parse(addViaForm('Sep 10-14', 'Cabin !yearly'));
+ok(formC.trips.length === 1, 'form: a multi-day range is still a trip', JSON.stringify(formC));
+ok(formC.trips[0] && !/!\s*yearly/i.test(formC.trips[0]),
+  'form: and the marker is stripped from the trip label, not left in it', formC.trips[0]);
+
+// Untouched by all of the above: a plain trip is still a plain trip.
+const formD = JSON.parse(addViaForm('Sep 20-24', 'Chicago'));
+ok(formD.trips.length === 1 && formD.evts.length === 0,
+  'form: a normal trip is unaffected', JSON.stringify(formD));
+
+run('restore trips/events after the form tests', `(() => {
+  trips.length = 0; JSON.parse(window.__snapTrips).forEach(t => trips.push(t));
+  datedEvents.length = 0; JSON.parse(window.__snapEvents).forEach(e => datedEvents.push(e));
+})()`);
 
 // ═══ Recurring to-dos ════════════════════════════════════════════════════════
 // Month arithmetic is where this kind of feature rots. Every one of these is a date that naive

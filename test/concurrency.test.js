@@ -452,6 +452,51 @@ ok(evB.time === '18:30', "Aidan's simultaneous edit to a different event also su
 eqn(evs.length, 2, 'no event was duplicated or lost');
 
 // ═════════════════════════════════════════════════════════════════════════════
+// 5f. The transaction itself fails. _txUpdateItems falls back to a whole-array write, which is
+// correct when you're OFFLINE but catastrophic under CONTENTION: 'aborted' means the server was
+// reached and another writer won, so overwriting with our whole local array destroys exactly the
+// edit the transaction existed to protect. Two different failure codes, two different behaviours.
+// ═════════════════════════════════════════════════════════════════════════════
+// The fake transaction rejects SYNCHRONOUSLY (a thenable whose .catch runs its callback right
+// away), so the whole retry chain resolves inside the call and needs no microtask draining —
+// this file is CommonJS and has no top-level await.
+const txProbe = (code) => {
+  amanda.call(`(function(){
+    todos = [{id:'tx1', text:'mine', done:false}, {id:'tx2', text:'partner-owns-this', done:false}];
+    window.__txTries = 0; window.__wholeWrites = 0;
+    window.__realTx = db.runTransaction;
+    window.__realCollection = db.collection;
+    db.runTransaction = function(){
+      window.__txTries++;
+      return { catch: function(cb){ return cb({code: ${JSON.stringify(code)}}); } };
+    };
+    db.collection = function(){ return { doc: function(){ return {
+      set: function(){ window.__wholeWrites++; return Promise.resolve(); },
+      get: function(){ return Promise.resolve({exists:true, data:function(){ return {items: todos}; }}); }
+    }; } }; };
+    saveTodoItem('tx1');
+    db.runTransaction = window.__realTx; db.collection = window.__realCollection;
+    return window.__txTries + ':' + window.__wholeWrites;
+  })()`);
+  return {
+    tries:  amanda.ev('window.__txTries'),
+    writes: amanda.ev('window.__wholeWrites'),
+  };
+};
+
+const contention = txProbe('aborted');
+ok(contention.tries > 1, 'a contended transaction is retried rather than abandoned', `tries=${contention.tries}`);
+ok(contention.writes === 0,
+  "and never falls back to a whole-array write, which would erase the partner's edit",
+  `whole-array writes=${contention.writes}`);
+
+const offline = txProbe('unavailable');
+ok(offline.tries === 1, 'an offline failure is not retried (pointless while disconnected)', `tries=${offline.tries}`);
+ok(offline.writes === 1,
+  'but it DOES fall back to the whole-array write the app has always done',
+  `whole-array writes=${offline.writes}`);
+
+// ═════════════════════════════════════════════════════════════════════════════
 // 6. Settled months — both settle a DIFFERENT month at the same time
 // ═════════════════════════════════════════════════════════════════════════════
 amanda.holdSnapshots(); aidan.holdSnapshots();
