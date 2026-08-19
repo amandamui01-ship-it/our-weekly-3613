@@ -2613,6 +2613,57 @@ function _removeFromDoc(docName, item) {
     items: firebase.firestore.FieldValue.arrayRemove(item)
   }).catch(_onSaveErr);
 }
+// ─── SINGLE-ITEM WRITES (merge-safe edits) ───────────────────────────────────
+// Editing ONE element of an array is the case Firestore has no atomic primitive for: arrayUnion and
+// arrayRemove can't target "the object with this id", and a dotted path can't index into an array.
+// So every edit/toggle used to rewrite the whole array, and whoever wrote second erased the other's
+// change — silently, since both writes succeed.
+//
+// A transaction re-reads the CURRENT server array, applies just this item, and writes back, so a
+// partner's edit to a DIFFERENT item survives. The catch is that transactions don't queue offline;
+// they fail outright. Hence the fallback to the old whole-array write.
+//
+// That fallback is not a compromise: the race this fixes only exists when both people are online at
+// the same moment. You cannot race in real time while offline — offline edits reconcile on
+// reconnect either way. So this takes atomicity exactly where it's available and where it matters,
+// and keeps today's offline behaviour untouched.
+function _txUpdateItems(docName, mutate, localArray) {
+  const ref = db.collection('state').doc(docName);
+  return db.runTransaction(t => t.get(ref).then(snap => {
+    const server = snap.exists ? (snap.data().items || []) : null;
+    // Doc missing entirely, or no items field: nothing to merge against. Write our copy.
+    if (!server) { t.set(ref, {items: localArray()}, {merge: true}); return; }
+    const next = mutate(server.slice());
+    if (next) t.set(ref, {items: next}, {merge: true});
+  })).catch(() => {
+    // Offline, or transactions unavailable. Same whole-array write the app has always done.
+    ref.set({items: localArray()}).catch(_onSaveErr);
+  });
+}
+
+// Persist a single item by id, leaving every other element of the array as the server has it.
+// `local` is looked up at call time, and a deep clone is taken so a later local mutation can't
+// change what this write commits.
+function _saveItemById(docName, list, id) {
+  const found = list.find(x => x && x.id === id);
+  if (!found) {
+    // Item is gone locally (deleted mid-edit) — fall back to a whole-array write of current state.
+    db.collection('state').doc(docName).set({items: list}).catch(_onSaveErr);
+    return;
+  }
+  const snapshot = JSON.parse(JSON.stringify(found));
+  return _txUpdateItems(docName, items => {
+    const i = items.findIndex(x => x && x.id === id);
+    if (i < 0) items.push(snapshot);   // partner deleted it while we edited; our edit re-adds it
+    else items[i] = snapshot;
+    return items;
+  }, () => list);
+}
+// One to-do / one event. Reordering still writes the whole array — order IS the array, so there's
+// nothing narrower to write.
+const saveTodoItem  = id => _saveItemById('todos', todos, id);
+const saveDatedEvent = id => _saveItemById('datedEvents', datedEvents, id);
+
 // Debounced trips writer. Field-level edits (notes/itinerary/links/etc) flush as one Firestore
 // write at the trailing edge so a flurry of blurs across the detail page collapses to a single
 // document write. The snapshot listener consults snap.metadata.hasPendingWrites to skip
@@ -3770,7 +3821,7 @@ function pickTodoDue(id) {
         // A repeating task with no date can never come due, so give it one rather than letting it
         // sit inert: today, so the first cycle starts from now.
         if (nextRep && !live.due) live.due = _todayLocal();
-        saveTodos();
+        saveTodoItem(id);
       }
     }
     renderTodos();
@@ -3806,7 +3857,7 @@ function _advanceRepeat(id) {
   t.lastDone = today;
   t.due = next;
   t.done = false;                           // stays on the list, just not due for a while
-  saveTodos();
+  saveTodoItem(id);
   renderTodos();
   if (isActive('dates')) renderCalendar();
   scheduleRenderHome();
@@ -3843,15 +3894,15 @@ function toggleTodo(id) {
           // becomes orphaned if a partner snapshot replaced the `todos` array during the
           // 1s animation. Without this, the done-flag mutation is silently lost.
           const live = todos.find(x => x.id === id);
-          if (live) { live.done = true; saveTodos(); }
+          if (live) { live.done = true; saveTodoItem(id); }
           renderTodos();
         }, 350);
       }, 650);
     } else {
-      t.done = true; saveTodos(); renderTodos();
+      t.done = true; saveTodoItem(id); renderTodos();
     }
   } else {
-    t.done = false; saveTodos(); renderTodos();
+    t.done = false; saveTodoItem(id); renderTodos();
   }
 }
 
@@ -3865,7 +3916,7 @@ function editTodo(id) {
   input.value = t.text;
   el.replaceWith(input);
   input.focus(); input.select();
-  const save = () => { const v = input.value.trim(); if (v && v !== t.text) { t.text = v; saveTodos(); } renderTodos(); };
+  const save = () => { const v = input.value.trim(); if (v && v !== t.text) { t.text = v; saveTodoItem(id); } renderTodos(); };
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderTodos(); });
 }
@@ -3987,7 +4038,7 @@ function cycleTodoPriority(id) {
   if (!t) return;
   const cycle = {undefined:'urgent', none:'urgent', urgent:'critical', critical:'none'};
   t.priority = cycle[t.priority ?? 'none'];
-  saveTodos(); renderTodos();
+  saveTodoItem(id); renderTodos();
 }
 
 let _todoDragId = null;
@@ -4550,7 +4601,7 @@ function editCalEvent(eventId) {
           target.time = timeOnly.startTime;
           target.endTime = timeOnly.endTime;
           if (yearly) target.repeat = 'year'; else delete target.repeat;
-          saveDatedEvents();
+          saveDatedEvent(eventId);
         } else {
           const parsed = parseEventTextAndTime(raw);
           if (parsed.text) {
@@ -4558,7 +4609,7 @@ function editCalEvent(eventId) {
             target.time = parsed.time;
             target.endTime = parsed.endTime || null;
             if (parsed.yearly) target.repeat = 'year'; else delete target.repeat;
-            saveDatedEvents();
+            saveDatedEvent(eventId);
           }
         }
       }
@@ -5584,7 +5635,7 @@ function editEvent(eventId) {
           target.time = timeOnly.startTime;
           target.endTime = timeOnly.endTime;
           if (yearly) target.repeat = 'year'; else delete target.repeat;
-          saveDatedEvents();
+          saveDatedEvent(eventId);
         } else {
           const parsed = parseEventTextAndTime(raw);
           if (parsed.text) {
@@ -5592,7 +5643,7 @@ function editEvent(eventId) {
             target.time = parsed.time;
             target.endTime = parsed.endTime || null;
             if (parsed.yearly) target.repeat = 'year'; else delete target.repeat;
-            saveDatedEvents();
+            saveDatedEvent(eventId);
           }
         }
       }

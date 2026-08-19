@@ -358,6 +358,99 @@ ok(todos2.some(t => t.text === 'Aidan later'),
 ok((todos2.find(t => t.text === 'Amanda task') || {}).done === true,
   "Amanda's completion is not erased by Aidan's add");
 
+// 5c. EDIT vs EDIT on two different to-dos — the case the two tests above do NOT cover.
+// Both of those pass with whole-array writes, because an ADD uses arrayUnion and merges on the
+// server. Two *edits* have no such protection: each client rewrites the whole array from its own
+// stale copy, and the second write wins outright. This is the gap saveTodoItem closes.
+for (const c of [amanda, aidan]) c.call('renderTodos()');
+const tid = (c, text) => c.ev(`(todos.find(t=>t.text===${JSON.stringify(text)})||{}).id`);
+const aTaskId = tid(amanda, 'Amanda task');
+const bTaskId = tid(amanda, 'Aidan task');
+ok(!!aTaskId && !!bTaskId, 'both to-dos have ids to target', `${aTaskId} / ${bTaskId}`);
+amanda.holdSnapshots(); aidan.holdSnapshots();
+// Amanda renames hers; Aidan sets a priority on his. Neither sees the other's change.
+amanda.call(`(function(){
+  const t = todos.find(x => x.id === '${aTaskId}');
+  t.text = 'Amanda RENAMED';
+  saveTodoItem('${aTaskId}');
+})()`);
+aidan.call(`cycleTodoPriority('${bTaskId}')`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const todos3 = (server.get('todos') || {}).items || [];
+const aAfter = todos3.find(t => t.id === aTaskId) || {};
+const bAfter = todos3.find(t => t.id === bTaskId) || {};
+ok(aAfter.text === 'Amanda RENAMED',
+  "Amanda's rename survives Aidan's simultaneous priority change",
+  JSON.stringify(todos3.map(t => ({t: t.text, p: t.priority}))));
+ok(!!bAfter.priority && bAfter.priority !== 'none',
+  "Aidan's priority change survives Amanda's simultaneous rename",
+  JSON.stringify(bAfter));
+// And nothing else in the list was collateral damage.
+ok(todos3.some(t => t.text === 'Aidan later'), 'an untouched to-do is still there after both edits');
+ok((todos3.find(t => t.id === aTaskId) || {}).done === true,
+  "Amanda's earlier completion is still set after the rename");
+
+// 5d. Completing a RECURRING to-do while the partner edits another one. The recurring path writes
+// three fields at once (done/due/lastDone), so a clobber here would silently un-schedule a chore.
+for (const c of [amanda, aidan]) c.call('renderTodos()');
+amanda.call(`(function(){
+  todos.push({id:'rec-1', text:'Furnace filter', cat:'todo', done:false,
+              due:'2020-01-01', repeat:{every:3, unit:'month'}});
+  saveTodos();
+})()`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+for (const c of [amanda, aidan]) c.call('renderTodos()');
+amanda.holdSnapshots(); aidan.holdSnapshots();
+amanda.call("toggleTodo('rec-1')");
+aidan.call(`(function(){
+  const t = todos.find(x => x.id === '${bTaskId}');
+  t.text = 'Aidan RENAMED';
+  saveTodoItem('${bTaskId}');
+})()`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const todos4 = (server.get('todos') || {}).items || [];
+const rec = todos4.find(t => t.id === 'rec-1') || {};
+ok(rec.due && rec.due > '2026-01-01' && rec.done === false,
+  'a recurring completion survives a simultaneous edit to another to-do',
+  JSON.stringify(rec));
+ok(!!rec.lastDone, 'and its lastDone stamp survives too', JSON.stringify(rec));
+ok((todos4.find(t => t.id === bTaskId) || {}).text === 'Aidan RENAMED',
+  "and the partner's rename is not clobbered by the recurring write",
+  JSON.stringify(todos4.map(t => t.text)));
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 5e. Calendar events — both edit a DIFFERENT event at the same time
+// ═════════════════════════════════════════════════════════════════════════════
+for (const c of [amanda, aidan]) {
+  c.call(`(function(){
+    datedEvents = [
+      {id:'ev-a', date:'2026-09-10', text:'Vet appointment', time:null, endTime:null},
+      {id:'ev-b', date:'2026-09-11', text:'Dinner with folks', time:null, endTime:null}
+    ];
+    saveDatedEvents();
+  })()`);
+}
+amanda.holdSnapshots(); aidan.holdSnapshots();
+amanda.call(`(function(){
+  const e = datedEvents.find(x => x.id === 'ev-a');
+  e.text = 'Vet — both cats';
+  e.repeat = 'year';
+  saveDatedEvent('ev-a');
+})()`);
+aidan.call(`(function(){
+  const e = datedEvents.find(x => x.id === 'ev-b');
+  e.time = '18:30';
+  saveDatedEvent('ev-b');
+})()`);
+amanda.resumeSnapshots(); aidan.resumeSnapshots();
+const evs = (server.get('datedEvents') || {}).items || [];
+const evA = evs.find(e => e.id === 'ev-a') || {};
+const evB = evs.find(e => e.id === 'ev-b') || {};
+ok(evA.text === 'Vet — both cats', "Amanda's event edit survives", JSON.stringify(evs));
+ok(evA.repeat === 'year', 'including the yearly flag she set', JSON.stringify(evA));
+ok(evB.time === '18:30', "Aidan's simultaneous edit to a different event also survives", JSON.stringify(evB));
+eqn(evs.length, 2, 'no event was duplicated or lost');
+
 // ═════════════════════════════════════════════════════════════════════════════
 // 6. Settled months — both settle a DIFFERENT month at the same time
 // ═════════════════════════════════════════════════════════════════════════════
