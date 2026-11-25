@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8')
+const HTML = fs.readFileSync(process.env.OW_HTML || path.join(__dirname, '..', 'index.html'), 'utf8')
   .replace(/<script[^>]*\bsrc=["'][^"']*["'][^>]*>\s*<\/script>/gi, '');
 
 const clone = v => JSON.parse(JSON.stringify(v));
@@ -51,35 +51,32 @@ const server = {
   update(docId, data, client) {
     const cur = this.docs.has(docId) ? clone(this.docs.get(docId)) : {};
     for (const [k, v] of Object.entries(data)) {
+      // Every key is a field PATH. 'months.2026-01' or 'plan._pinnedTodos' touch ONLY that leaf and
+      // leave siblings alone, and array transforms work on nested paths too — exactly what real
+      // Firestore does. Concurrent writes to different keys of one map are only safe because of
+      // this, so the stub has to model it faithfully.
+      const segs = k.split('.');
+      let node = cur;
+      for (const seg of segs.slice(0, -1)) {
+        if (typeof node[seg] !== 'object' || node[seg] === null) node[seg] = {};
+        node = node[seg];
+      }
+      const leaf = segs[segs.length - 1];
       if (v && v.__arrayUnion) {
-        const arr = Array.isArray(cur[k]) ? cur[k] : [];
+        const arr = Array.isArray(node[leaf]) ? node[leaf] : [];
         for (const item of v.__arrayUnion) if (!arr.some(x => deepEq(x, item))) arr.push(clone(item));
-        cur[k] = arr;
-        this.writeLog.push({ docId, op: 'arrayUnion', n: v.__arrayUnion.length, client: client.name });
+        node[leaf] = arr;
+        this.writeLog.push({ docId, op: 'arrayUnion', path: k, n: v.__arrayUnion.length, client: client.name });
       } else if (v && v.__arrayRemove) {
-        const arr = Array.isArray(cur[k]) ? cur[k] : [];
-        cur[k] = arr.filter(x => !v.__arrayRemove.some(item => deepEq(x, item)));
-        this.writeLog.push({ docId, op: 'arrayRemove', client: client.name });
-      } else if (k.includes('.')) {
-        // Dotted field path, e.g. update({'months.2026-01': ...}) — touches ONLY that key and
-        // leaves its siblings alone. This is what makes concurrent writes to different keys of the
-        // same map safe, so the stub has to model it faithfully.
-        const segs = k.split('.');
-        let node = cur;
-        for (const seg of segs.slice(0, -1)) {
-          if (typeof node[seg] !== 'object' || node[seg] === null) node[seg] = {};
-          node = node[seg];
-        }
-        const leaf = segs[segs.length - 1];
-        if (v && v.__delete) delete node[leaf];
-        else node[leaf] = clone(v);
-        this.writeLog.push({ docId, op: v && v.__delete ? 'deleteField' : 'updateField', path: k, client: client.name });
+        const arr = Array.isArray(node[leaf]) ? node[leaf] : [];
+        node[leaf] = arr.filter(x => !v.__arrayRemove.some(item => deepEq(x, item)));
+        this.writeLog.push({ docId, op: 'arrayRemove', path: k, client: client.name });
       } else if (v && v.__delete) {
-        delete cur[k];
+        delete node[leaf];
         this.writeLog.push({ docId, op: 'deleteField', path: k, client: client.name });
       } else {
-        cur[k] = clone(v);
-        this.writeLog.push({ docId, op: 'update', client: client.name });
+        node[leaf] = clone(v);
+        this.writeLog.push({ docId, op: segs.length > 1 ? 'updateField' : 'update', path: k, client: client.name });
       }
     }
     this.docs.set(docId, cur);
@@ -104,7 +101,11 @@ function makeClient(name) {
       return () => {};
     },
     set(data) { server.set(docId, data, client); return Promise.resolve(); },
-    update(data) { server.update(docId, data, client); return Promise.resolve(); },
+    // Real update() rejects on a missing document; code must handle that by creating it.
+    update(data) {
+      if (!server.docs.has(docId)) return Promise.reject(Object.assign(new Error('No document to update'), { code: 'not-found' }));
+      server.update(docId, data, client); return Promise.resolve();
+    },
     get() { return Promise.resolve({ exists: server.docs.has(docId), id: docId,
                                      data: () => server.get(docId) }); },
   });
@@ -751,6 +752,183 @@ const survived = (server.get('okdOverlaps') || {}).pairs || [];
 ok(survived.includes('tripA|tripB'),
   'a render with trips not yet loaded does NOT erase accepted conflicts',
   JSON.stringify(survived));
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 10. Races found by the Nov 2026 health check — each on a FRESH server + two fresh clients
+// ═════════════════════════════════════════════════════════════════════════════
+// Every race runs in BOTH orderings: a stale whole-array write only destroys what is already on
+// the server, so one ordering passes even when the code is broken. Each drives the real entry
+// point (editTodo, setEditHeart, addTodoSection...), not the save helper underneath.
+const _raceClients = [];
+function fresh(seed) {
+  server.docs.clear(); server.subs.length = 0; server.writeLog.length = 0;
+  for (const [k, v] of Object.entries(seed)) server.docs.set(k, clone(v));
+  const a = makeClient('amanda'), b = makeClient('aidan');
+  for (const c of [a, b]) { patchTxnRefs(c); c.call('initFirestore()'); }
+  _raceClients.push(a, b);
+  return [a, b];
+}
+const raceSeed = {
+  todos: { items: [{ id: 't1', text: 'Old text', cat: 'todo', done: false },
+                   { id: 't2', text: 'Second', cat: 'todo', done: false }] },
+  todoCategories: { items: [{ id: 'todo', label: 'To-Do' }] },
+  logistics: { items: [{ id: 'log-1', text: 'Old logistics' }] },
+  bucket: { items: [{ id: 'bkt-1', text: 'Old bucket' }] },
+  trips: { items: [
+    { id: 'rtA', dates: 'Dec 1',  sortDate: `${Number(YEAR) + 1}-12-01`, label: 'A 🏕' },
+    { id: 'rtB', dates: 'Dec 9',  sortDate: `${Number(YEAR) + 1}-12-09`, label: 'B 🏕' },
+    { id: 'rtC', dates: 'Dec 20', sortDate: `${Number(YEAR) + 1}-12-20`, label: 'C 🏕' } ] },
+  entries: { items: [{ id: 'e1', week: 'w', date: `${YEAR}-01-05`, hearts: 0 }] },
+  weekplan: { plan: { _weekKey: '2099-01-05', _pinnedTodos: ['t1'] } },
+  budgetTargets: { targets: { Fun: 50 } },
+  datedEvents: { items: [] }, expenses: { items: [] }, recurring: { items: [] },
+  giftCards: { items: [], spends: [] }, mood: {}, countdowns: { items: [] },
+  settledMonths: { months: {} }, okdOverlaps: { pairs: [] }, splitPct: { aidan: 56 },
+};
+const S = d => server.get(d);
+
+// Edit inputs hold the object captured when they opened; a partner snapshot swaps the array.
+{
+  const [a, b] = fresh(raceSeed);
+  b.call("showPage('todos'); renderTodos()");
+  a.call("showPage('todos'); renderTodos(); editTodo('t1')");
+  b.call("document.getElementById('add-todo').value = 'Aidan new'; addTodo('todo')");
+  a.call("(function(){ const i = document.querySelector('.todo-edit-input'); i.value = 'Amanda edited'; i.dispatchEvent(new Event('blur')); })()");
+  const items = S('todos').items;
+  ok(items.find(x => x.id === 't1').text === 'Amanda edited' && items.some(x => x.text === 'Aidan new'),
+    'editing a to-do while the partner adds one keeps both', JSON.stringify(items.map(x => x.text)));
+}
+{
+  const [a, b] = fresh(raceSeed);
+  b.call("showPage('dates'); renderDates()");
+  a.call("showPage('dates'); renderDates(); editListItem('log-1')");
+  b.call("document.getElementById('new-logistics').value = 'Aidan item'; addListItem('logistics')");
+  a.call("(function(){ const i = document.querySelector('#list-item-log-1 input'); i.value = 'Amanda edited'; i.dispatchEvent(new Event('blur')); })()");
+  const items = S('logistics').items;
+  ok(items.find(x => x.id === 'log-1').text === 'Amanda edited' && items.some(x => x.text === 'Aidan item'),
+    'editing a logistics item while the partner adds one keeps both', JSON.stringify(items.map(x => x.text)));
+}
+for (const order of ['aidanFirst', 'amandaFirst']) {
+  // Week plan: Amanda is typing (her snapshot is held back) while Aidan saves.
+  const [a, b] = fresh(raceSeed);
+  for (const c of [a, b]) c.call("showPage('dates'); renderPlan()");
+  const focusA = "document.querySelector('#plan-meals input[oninput*=\"mon\"]').focus()";
+  const amandaSave = () => a.call(`(function(){ ${focusA}; updateMeal('mon','dinner','Tacos'); clearTimeout(_planDebounce); savePlan(); })()`);
+  const aidanSave  = () => b.call("updateMeal('sat','lunch','Pho'); clearTimeout(_planDebounce); savePlan()");
+  if (order === 'aidanFirst') { a.call(focusA); aidanSave(); amandaSave(); } else { amandaSave(); aidanSave(); }
+  const p = S('weekplan').plan;
+  ok(p.mon?.meals?.dinner === 'Tacos' && p.sat?.meals?.lunch === 'Pho' && p._pinnedTodos?.includes('t1'),
+    `week plan: both partners' meals survive (${order})`, JSON.stringify(p));
+}
+for (const order of ['amandaFirst', 'aidanFirst']) {
+  // Pins are a set: two people pinning different to-dos at once both stick.
+  const [a, b] = fresh(raceSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const pa = () => a.call("weekPlan._pinnedTodos = [...(weekPlan._pinnedTodos||[]), 't2']; savePlan()");
+  const pb = () => b.call("weekPlan._pinnedTodos = []; savePlan()");   // Aidan unpins t1
+  if (order === 'amandaFirst') { pa(); pb(); } else { pb(); pa(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const pins = S('weekplan').plan._pinnedTodos;
+  ok(JSON.stringify(pins) === '["t2"]', `week plan: a pin and an unpin at once both apply (${order})`, JSON.stringify(pins));
+}
+{
+  // Clearing the week still clears it — the diff has to send deletes, not just sets.
+  const [a] = fresh({ ...raceSeed, weekplan: { plan: { _weekKey: '2099-01-05', _pinnedTodos: ['t1'], mon: { meals: { dinner: 'Tacos' } }, notes: 'hi' } } });
+  a.call("weekPlan = { _pinnedTodos: weekPlan._pinnedTodos || [], _weekKey: '2099-01-12' }; savePlan()");
+  const p = S('weekplan').plan;
+  ok(!p.mon && !p.notes && p._weekKey === '2099-01-12' && p._pinnedTodos.includes('t1'),
+    'week plan: clearing the week removes meals and notes but keeps pins', JSON.stringify(p));
+}
+{
+  // Pins must survive a render that happens before the to-dos snapshot arrives.
+  const [a] = fresh(raceSeed);
+  a.call("todos = []; _todosLoaded = false; showPage('dates'); renderPlan()");
+  const p = S('weekplan').plan._pinnedTodos;
+  ok(Array.isArray(p) && p.includes('t1'), 'pinned to-dos survive a render before to-dos load', JSON.stringify(p));
+  a.call("_todosLoaded = true; todos = todos.filter(t => t.id !== 't1'); renderPlan()");
+  ok(!(S('weekplan').plan._pinnedTodos || []).includes('t1'), '…but a pin whose to-do really was deleted is still cleaned up',
+    JSON.stringify(S('weekplan').plan._pinnedTodos));
+}
+for (const order of ['amandaFirst', 'aidanFirst']) {
+  const [a, b] = fresh(raceSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const ea = () => a.call("_currentTripId = 'rtA'; saveTripField('notes', 'Amanda notes'); saveTrips({immediate:true})");
+  const eb = () => b.call("_currentTripId = 'rtB'; saveTripField('notes', 'Aidan notes'); saveTrips({immediate:true})");
+  if (order === 'amandaFirst') { ea(); eb(); } else { eb(); ea(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const it = S('trips').items;
+  ok(it.find(t => t.id === 'rtA').notes === 'Amanda notes' && it.find(t => t.id === 'rtB').notes === 'Aidan notes',
+    `trips: edits to two different trips both survive (${order})`, JSON.stringify(it.map(t => [t.id, t.notes])));
+}
+for (const order of ['addFirst', 'deleteFirst']) {
+  const [a, b] = fresh(raceSeed);
+  b.call("showPage('dates'); renderDates()");
+  a.holdSnapshots(); b.holdSnapshots();
+  const add = () => b.call("document.getElementById('new-trip-dates').value = 'Jan 5, 2099'; document.getElementById('new-trip-name').value = 'Ski'; addTrip()");
+  const del = () => a.call("deleteTrip('rtC')");
+  if (order === 'addFirst') { add(); del(); } else { del(); add(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const it = S('trips').items;
+  ok(it.some(t => /Ski/.test(t.label)) && !it.some(t => t.id === 'rtC'),
+    `trips: the partner's new trip survives a delete (${order})`, JSON.stringify(it.map(t => t.label)));
+}
+{
+  // Undo of a delete puts the trip back without erasing anything else.
+  const [a, b] = fresh(raceSeed);
+  a.call("showPage('dates'); renderDates(); deleteTrip('rtC')");
+  ok(!S('trips').items.some(t => t.id === 'rtC'), 'deleting a trip removes it');
+  b.call("_currentTripId = 'rtA'; saveTripField('notes', 'Aidan during undo'); saveTrips({immediate:true})");
+  a.call("_doUndo()");   // the toast button is an inline onclick, which jsdom outside-only never compiles
+  const it = S('trips').items;
+  ok(it.some(t => t.id === 'rtC') && it.find(t => t.id === 'rtA').notes === 'Aidan during undo',
+    "undoing a trip delete restores it and keeps the partner's edit", JSON.stringify(it.map(t => [t.id, t.notes])));
+}
+for (const order of ['amandaFirst', 'aidanFirst']) {
+  const [a, b] = fresh(raceSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const ra = () => a.call("setEditHeart('e1', 4, 'amanda')");
+  const rb = () => b.call("setEditHeart('e1', 5, 'aidan')");
+  if (order === 'amandaFirst') { ra(); rb(); } else { rb(); ra(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const e = S('entries').items[0];
+  ok(e.heartsAmanda === 4 && e.heartsAidan === 5 && e.hearts === a.ev('_avgHearts(4, 5)'),
+    `history: both partners' hearts survive and the average uses both (${order})`, JSON.stringify(e));
+}
+for (const order of ['amandaFirst', 'aidanFirst']) {
+  const [a, b] = fresh(raceSeed);
+  for (const c of [a, b]) c.call("showPage('todos'); renderTodos()");
+  a.holdSnapshots(); b.holdSnapshots();
+  const sa = () => a.call("document.getElementById('new-section-name').value = 'Amanda sec'; addTodoSection()");
+  const sb = () => b.call("document.getElementById('new-section-name').value = 'Aidan sec'; addTodoSection()");
+  if (order === 'amandaFirst') { sa(); sb(); } else { sb(); sa(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const l = S('todoCategories').items.map(c => c.label);
+  ok(l.includes('Amanda sec') && l.includes('Aidan sec'), `to-do sections: two new sections both survive (${order})`, JSON.stringify(l));
+}
+for (const order of ['amandaFirst', 'aidanFirst']) {
+  const [a, b] = fresh(raceSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const sa = () => a.call("setBudgetTarget('Dining', '300')");
+  const sb = () => b.call("setBudgetTarget('Groceries', '600')");
+  if (order === 'amandaFirst') { sa(); sb(); } else { sb(); sa(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const t = S('budgetTargets').targets;
+  ok(t.Dining === 300 && t.Groceries === 600 && t.Fun === 50, `budget targets: both categories survive (${order})`, JSON.stringify(t));
+}
+{
+  const [a] = fresh(raceSeed);
+  a.call("setBudgetTarget('Fun', '')");
+  ok(!('Fun' in S('budgetTargets').targets), 'budget targets: clearing a target really deletes it', JSON.stringify(S('budgetTargets').targets));
+}
+{
+  // A doc that doesn't exist yet: update() fails with not-found and the code must create it.
+  const seed = { ...raceSeed }; delete seed.todoCategories;
+  const [a] = fresh(seed);
+  a.call("showPage('todos'); renderTodos(); document.getElementById('new-section-name').value = 'Brand new'; addTodoSection()");
+  const cats = (S('todoCategories') || {}).items || [];
+  ok(cats.some(c => c.label === 'Brand new'), 'adding a section when the sections doc is missing creates it', JSON.stringify(cats));
+}
+for (const c of _raceClients) c.dom.window.close();
 
 // ═════════════════════════════════════════════════════════════════════════════
 ok(errors.length === 0, 'no runtime errors during concurrency exercise', errors.join('; '));

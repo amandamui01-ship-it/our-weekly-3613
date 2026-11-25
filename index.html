@@ -1918,7 +1918,7 @@ function _flushPendingWrites() {
   if (typeof _planDebounce !== 'undefined' && _planDebounce) {
     clearTimeout(_planDebounce);
     _planDebounce = null;
-    try { db.collection('state').doc('weekplan').set({plan: weekPlan}); } catch(e) {}
+    try { savePlan(); } catch(e) {}   // field-level update(): queued locally, merge-safe
   }
 }
 // Three flush triggers because iOS Safari, especially as a standalone PWA, doesn't fire
@@ -1943,6 +1943,7 @@ function _applyPendingWeekplanIfReady() {
   if (!_pendingWeekplanData) return;
   if (_hasTypingFocus('#page-dates')) return;
   weekPlan = _pendingWeekplanData;
+  _planBase = JSON.parse(JSON.stringify(weekPlan));
   _pendingWeekplanData = null;
   if (isActive('dates')) {
     renderPlan();
@@ -2215,6 +2216,7 @@ const _pendingTripIds = new Set();
 // edits queued in the 600ms _planDebounce window. We stash the incoming data and apply it
 // after focus leaves the page.
 let _pendingWeekplanData = null;
+let _todosLoaded = false; // pin GC must not judge pins against a to-do list that hasn't arrived
 // Same shape for trips/datedEvents/etc — only weekPlan needs this today because it's the
 // only doc where the listener replaces a single mutable object that's mutated by typing.
 
@@ -2257,6 +2259,8 @@ function teardownFirestore() {
   _lostSyncWarned = false; // re-arm so the next account's listener errors can still warn
   _pendingTripIds.clear();
   _pendingWeekplanData = null;
+  _planBase = {};
+  _todosLoaded = false;
   todos = []; todoCategories = []; newEntries = []; trips = [];
   logisticsList = []; bucketList = []; weekPlan = {}; datedEvents = [];
   expenses = []; recurringItems = []; customCountdowns = [];
@@ -2321,6 +2325,7 @@ function initFirestore() {
   _listen('todos', snap => {
     if (!snap.exists) { ref('todos').set({items: DEFAULT_TODOS.map(x=>({...x}))}); return; }
     todos = snap.data().items || [];
+    _todosLoaded = true;
     if (isActive('todos') && !_hasTypingFocus('#page-todos')) renderTodos();
     // Deadlines render on the calendar grid too, so a due date the partner sets has to repaint it.
     if (isActive('dates')) renderCalendar();
@@ -2485,6 +2490,7 @@ function initFirestore() {
       return;
     }
     weekPlan = incoming;
+    _planBase = JSON.parse(JSON.stringify(incoming));
     _pendingWeekplanData = null;
     // Skip re-render while the user is mid-typing in any meal input, notes textarea,
     // add-event input, or contenteditable chip — otherwise partner's update wipes their input.
@@ -2594,8 +2600,12 @@ function saveEntries() {
 // than runTransaction because transactions fail offline — and offline edits are more common
 // than the partner-edits-the-same-entry-then-user-edits race. The narrow race window is
 // accepted in exchange for working offline.
-function _updateEntryById(id) {
-  saveEntries();
+// Field-level, via a transaction (offline falls back to the whole-array write inside
+// _txUpdateItems, which is what this used to do every time). `fields` = what this edit changed.
+function _updateEntryById(id, fields, post) {
+  if (JSON.stringify(newEntries).length > 850000) showToast('⚠️ History data is getting large — consider removing some photos');
+  if (!fields) return _saveItemById('entries', newEntries, id);
+  return _saveItemFields('entries', newEntries, id, fields, post);
 }
 // Delete an item using arrayRemove so the SDK queues the operation offline (transactions
 // would fail outright when offline and the snapshot listener would zombie the row back).
@@ -2633,7 +2643,8 @@ const _TX_RETRIES = 2;
 // merge, or null to write nothing. `fallbackDoc()` is what gets written if transactions aren't
 // available at all (offline) — it MUST include every field the doc owns, because that write is not
 // a merge. The giftCards doc holds two arrays (items + spends), which is why this exists.
-function _txUpdateDoc(docName, mutate, fallbackDoc) {
+function _txUpdateDoc(docName, mutate, fallbackDoc, opts) {
+  const replace = !!(opts && opts.replace);
   const ref = db.collection('state').doc(docName);
   // Set when OUR mutate callback throws. That's a bug in this code, not a network condition, and it
   // must never fall through to a whole-doc write — that would turn a code error into data loss.
@@ -2645,7 +2656,7 @@ function _txUpdateDoc(docName, mutate, fallbackDoc) {
     let patch;
     try { patch = mutate(data); }
     catch (e) { mutateThrew = true; throw e; }
-    if (patch) t.set(ref, patch, {merge: true});
+    if (patch) { if (replace) t.set(ref, patch); else t.set(ref, patch, {merge: true}); }
   })).catch(err => {
     if (mutateThrew) { _onSaveErr(err); return; }
     if (_TX_CONTENTION.has(err && err.code)) {
@@ -2689,6 +2700,35 @@ function _saveItemById(docName, list, id) {
     return items;
   }, () => list);
 }
+// Persist only some FIELDS of one item, leaving the rest of that item as the server has it. Needed
+// where two people edit different fields of the SAME item at once — both rating the same week in
+// History. `post(serverItem)` may recompute derived fields from the merged result.
+function _saveItemFields(docName, list, id, fields, post) {
+  const found = list.find(x => x && x.id === id);
+  if (!found) return;
+  const vals = {};
+  for (const f of fields) vals[f] = found[f] === undefined ? undefined : JSON.parse(JSON.stringify(found[f]));
+  const whole = JSON.parse(JSON.stringify(found));
+  return _txUpdateItems(docName, items => {
+    const i = items.findIndex(x => x && x.id === id);
+    if (i < 0) { items.push(whole); return items; }
+    const merged = { ...items[i] };
+    for (const f of fields) { if (vals[f] === undefined) delete merged[f]; else merged[f] = vals[f]; }
+    if (post) post(merged);
+    items[i] = merged;
+    return items;
+  }, () => list);
+}
+// update() is merge-safe and queues offline, but fails when the document doesn't exist yet. Only
+// THAT error may fall back to a whole-doc set — on any other error the server was reached and a
+// whole-doc write would overwrite whatever the partner just wrote.
+function _updateOrCreate(docName, payload, createDoc) {
+  const ref = db.collection('state').doc(docName);
+  return ref.update(payload).catch(err => {
+    if (err && err.code === 'not-found') return ref.set(createDoc()).catch(_onSaveErr);
+    _onSaveErr(err);
+  });
+}
 // One to-do / one event. Reordering still writes the whole array — order IS the array, so there's
 // nothing narrower to write.
 const saveTodoItem  = id => _saveItemById('todos', todos, id);
@@ -2715,9 +2755,26 @@ function saveTrips(opts) {
     // get its pending flag wiped (which would have caused the next partner snapshot to clobber
     // that edit).
     const flushedIds = new Set(_pendingTripIds);
-    return db.collection('state').doc('trips').set({items: trips})
-      .then(() => { flushedIds.forEach(id => _pendingTripIds.delete(id)); })
-      .catch(_onSaveErr);
+    // Merge ONLY the trips we touched into the server's array. A whole-array set() here erased a
+    // partner's edit to a different trip (or a trip they had just added) whenever both of us had
+    // the page open. A trip we deleted locally is removed; one the partner deleted while we edited
+    // it comes back with our edit, same rule as _saveItemById.
+    const local = new Map([...flushedIds].map(id => {
+      const t = trips.find(x => x.id === id);
+      return [id, t ? JSON.parse(JSON.stringify(t)) : null];
+    }));
+    const write = local.size
+      ? _txUpdateItems('trips', items => {
+          for (const [id, t] of local) {
+            const i = items.findIndex(x => x && x.id === id);
+            if (t && i >= 0) items[i] = t;
+            else if (t) items.push(t);
+            else if (i >= 0) items.splice(i, 1);
+          }
+          return items;
+        }, () => trips)
+      : db.collection('state').doc('trips').set({items: trips}).catch(_onSaveErr);
+    return Promise.resolve(write).then(() => { flushedIds.forEach(id => _pendingTripIds.delete(id)); });
   };
   if (opts && opts.immediate) {
     if (_saveTripsTimer) { clearTimeout(_saveTripsTimer); _saveTripsTimer = null; }
@@ -3008,11 +3065,45 @@ function _planMondayDate() {
   mon.setDate(t.getDate() - daysBack);
   return mon;
 }
+// Last server copy of the plan we applied locally. savePlan diffs against it and sends ONLY what
+// we changed, as dotted-path updates — a whole-doc set({plan}) erased the partner's meals/notes
+// whenever their snapshot was being held back while we typed. update() also queues offline.
+let _planBase = {};
+const _isPlainObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+function _planDiff(base, local, path, out) {
+  const keys = new Set([...Object.keys(base || {}), ...Object.keys(local || {})]);
+  for (const k of keys) {
+    const b = base ? base[k] : undefined, l = local ? local[k] : undefined, p = path.concat(k);
+    if (_isPlainObj(b) && _isPlainObj(l)) _planDiff(b, l, p, out);
+    else if (JSON.stringify(b) !== JSON.stringify(l)) out.push({ p, b, l });
+  }
+  return out;
+}
 function savePlan() {
   // Do NOT advance _weekKey here — only renderPlan should do that after clearing prior slots.
   // Previously this ran on every meal-input debounce, so a save firing after midnight Sun→Mon
   // would relabel the stale plan as the new week's, defeating the auto-reset.
-  db.collection('state').doc('weekplan').set({plan: weekPlan}).catch(_onSaveErr);
+  const FV = firebase.firestore.FieldValue;
+  const changes = _planDiff(_planBase, weekPlan, [], []);
+  _planBase = JSON.parse(JSON.stringify(weekPlan));
+  if (!changes.length) return;
+  const payload = {}, pinAdds = [], pinRemoves = [];
+  for (const { p, b, l } of changes) {
+    if (p.length === 1 && p[0] === '_pinnedTodos' && Array.isArray(l)) {
+      // A set, not a value: merge pins so two people pinning at once both stick.
+      const before = new Set(Array.isArray(b) ? b : []), after = new Set(l);
+      l.forEach(id => { if (!before.has(id)) pinAdds.push(id); });
+      before.forEach(id => { if (!after.has(id)) pinRemoves.push(id); });
+      continue;
+    }
+    payload['plan.' + p.join('.')] = l === undefined ? FV.delete() : l;
+  }
+  if (pinAdds.length) payload['plan._pinnedTodos'] = FV.arrayUnion(...pinAdds);
+  const create = () => ({plan: weekPlan});
+  if (Object.keys(payload).length) _updateOrCreate('weekplan', payload, create);
+  // arrayUnion and arrayRemove can't target the same field in one update, so removals go second.
+  // No need to wait for the first: the SDK applies a client's writes in the order they were issued.
+  if (pinRemoves.length) _updateOrCreate('weekplan', {'plan._pinnedTodos': FV.arrayRemove(...pinRemoves)}, create);
 }
 function saveExpenses()   { db.collection('state').doc('expenses').set({items: expenses}).catch(_onSaveErr);       }
 function saveRecurring()  { db.collection('state').doc('recurring').set({items: recurringItems}).catch(_onSaveErr); }
@@ -3483,7 +3574,7 @@ function addEditPhoto(id, file) {
     if (!fresh) { showToast('Entry was deleted before photo finished uploading'); return; }
     fresh.photoUrls = [...getEntryPhotoUrls(fresh), url];
     delete fresh.photoUrl;
-    _updateEntryById(id);
+    _updateEntryById(id, ['photoUrls', 'photoUrl']);
     renderEditPhotos(id);
   }).catch(err => {
     _editPhotoUploading.set(id, Math.max(0, (_editPhotoUploading.get(id) || 1) - 1));
@@ -3503,7 +3594,7 @@ function removeEditPhoto(event, id, idx) {
   if (!fresh) return;
   fresh.photoUrls = urls;
   delete fresh.photoUrl;
-  _updateEntryById(id);
+  _updateEntryById(id, ['photoUrls', 'photoUrl']);
   renderEditPhotos(id);
 }
 
@@ -3958,7 +4049,12 @@ function editTodo(id) {
   input.value = t.text;
   el.replaceWith(input);
   input.focus(); input.select();
-  const save = () => { const v = input.value.trim(); if (v && v !== t.text) { t.text = v; saveTodoItem(id); } renderTodos(); };
+  const save = () => {
+    const v = input.value.trim();
+    const cur = todos.find(x => x.id === id);   // re-find: `t` may be orphaned by a partner snapshot
+    if (cur && v && v !== cur.text) { cur.text = v; saveTodoItem(id); }
+    renderTodos();
+  };
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderTodos(); });
 }
@@ -4003,7 +4099,14 @@ function clearCompletedTodos() {
     for (const { item, idx } of clearedWithIdx) {
       todos.splice(Math.min(idx, todos.length), 0, item);
     }
-    saveTodos();
+    // Re-insert at the same positions in the SERVER array, so anything the partner added or
+    // edited during the undo window survives.
+    _txUpdateItems('todos', items => {
+      for (const { item, idx } of clearedWithIdx) {
+        if (!items.some(x => x && x.id === item.id)) items.splice(Math.min(idx, items.length), 0, item);
+      }
+      return items;
+    }, () => todos);
     renderTodos();
   });
 }
@@ -4014,7 +4117,7 @@ function addTodoSection() {
   if (!label) return;
   const newCat = { id: 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), label };
   todoCategories.push(newCat);
-  saveTodoCategories();
+  _updateOrCreate('todoCategories', {items: firebase.firestore.FieldValue.arrayUnion(newCat)}, () => ({items: todoCategories}));
   renderTodos();
   // After re-render, scroll the new section into view and focus its add-todo input so
   // mobile users can immediately start adding items rather than hunting for the new section.
@@ -4039,7 +4142,8 @@ function editTodoSection(id) {
   input.focus(); input.select();
   const save = () => {
     const v = input.value.trim();
-    if (v && v !== cat.label) { cat.label = v; saveTodoCategories(); }
+    const cur = todoCategories.find(c => c.id === id);   // re-find, see editTodo
+    if (cur && v && v !== cur.label) { cur.label = v; _saveItemById('todoCategories', todoCategories, id); }
     renderTodos();
   };
   input.addEventListener('blur', save);
@@ -5138,7 +5242,7 @@ function cycleListPriority(type, id) {
   if (!item) return;
   const cycle = {undefined:'urgent', none:'urgent', urgent:'critical', critical:'none'};
   item.priority = cycle[item.priority ?? 'none'];
-  if (type === 'logistics') saveLogistics(); else saveBucket();
+  _saveItemById(type === 'logistics' ? 'logistics' : 'bucket', arr, id);
   renderDates();
 }
 
@@ -5523,7 +5627,8 @@ function renderWeekTodos() {
   // GC orphan pin ids whose todo was deleted by the partner. Without this the array grows
   // forever and a future randomly-collided id could rebind a stale pin to an unrelated todo.
   const pinned = weekPlan._pinnedTodos || [];
-  const live = pinned.filter(id => todos.some(t => t.id === id));
+  // Before the to-dos snapshot arrives every pin looks orphaned — pruning then erased them all.
+  const live = _todosLoaded ? pinned.filter(id => todos.some(t => t.id === id)) : pinned;
   if (live.length !== pinned.length) {
     weekPlan._pinnedTodos = live;
     savePlan();
@@ -6465,12 +6570,11 @@ function deleteTrip(id) {
   const item = trips.find(t => t.id === id);
   trips = trips.filter(t => t.id !== id);
   renderDates();
-  if (!item) { saveTrips(); return; }
-  // arrayRemove matches by deep equality. If the partner edited any field on this trip after
-  // our last snapshot, the in-memory `item` won't match the stored version and the remove
-  // becomes a no-op (trip reappears on next snapshot). Write the full array instead — slightly
-  // racier on shared writes but correct for deletion of trips identified by id.
-  saveTrips({ immediate: true });
+  if (!item) return;
+  // Remove by id against the server's current array. arrayRemove would no-op if the partner had
+  // edited the trip (deep-equality miss), and a whole-array write erased any trip they had just added.
+  _pendingTripIds.delete(id);
+  _txUpdateItems('trips', items => items.filter(x => x && x.id !== id), () => trips);
   showToast('Trip deleted', () => {
     // Undo: merge the captured snapshot copy of `item` with whatever version of this trip is
     // currently in `trips` (a partner may have edited the trip between delete and undo). If
@@ -6482,7 +6586,7 @@ function deleteTrip(id) {
       return;
     }
     trips.push(item);
-    saveTrips({ immediate: true });
+    _saveItemById('trips', trips, id);
     renderDates();
   });
 }
@@ -6948,7 +7052,12 @@ function editListItem(id) {
   input.style.cssText = 'flex:1;min-width:0;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
   textSpan.replaceWith(input);
   input.focus(); input.select();
-  const save = () => { const v = input.value.trim(); if (v && v !== item.text) { item.text = v; saveLogistics(); } renderDates(); };
+  const save = () => {
+    const v = input.value.trim();
+    const cur = logisticsList.find(x => x.id === id);   // re-find, see editTodo
+    if (cur && v && v !== cur.text) { cur.text = v; _saveItemById('logistics', logisticsList, id); }
+    renderDates();
+  };
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderDates(); });
   input.addEventListener('click', e => e.stopPropagation());
@@ -6966,7 +7075,12 @@ function editBucketItem(id) {
   input.style.cssText = 'flex:1;min-width:0;border:none;border-bottom:1px solid var(--amber);background:transparent;font:inherit;color:inherit;outline:none;padding:0';
   textSpan.replaceWith(input);
   input.focus(); input.select();
-  const save = () => { const v = input.value.trim(); if (v && v !== item.text) { item.text = v; saveBucket(); } renderDates(); };
+  const save = () => {
+    const v = input.value.trim();
+    const cur = bucketList.find(x => x.id === id);   // re-find, see editTodo
+    if (cur && v && v !== cur.text) { cur.text = v; _saveItemById('bucket', bucketList, id); }
+    renderDates();
+  };
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') renderDates(); });
   input.addEventListener('click', e => e.stopPropagation());
@@ -7196,7 +7310,7 @@ function saveHistoryField(id, field, val) {
   const entry = newEntries.find(e => e.id === id);
   if (!entry) return;
   entry[field] = val.trim();
-  _updateEntryById(id);
+  _updateEntryById(id, [field]);
 }
 
 function setEditHeartClick(e, el, id, n, person) {
@@ -7253,7 +7367,14 @@ function setEditHeart(id, val, person) {
   // Recompute the legacy `hearts` field so any code path still reading it (or any other
   // calendar/seed consumer) sees the new average.
   entry.hearts = _avgHearts(entry.heartsAmanda, entry.heartsAidan);
-  _updateEntryById(id);
+  // Write only THIS partner's rating; recompute the average from the server's merged entry so the
+  // other partner's simultaneous rating is neither erased nor left out of the average.
+  const myKey = target === 'amanda' ? 'heartsAmanda' : 'heartsAidan';
+  const legacy = entry[otherKey];
+  _updateEntryById(id, [myKey], srv => {
+    if (typeof srv[otherKey] !== 'number' && typeof legacy === 'number') srv[otherKey] = legacy;
+    srv.hearts = _avgHearts(srv.heartsAmanda, srv.heartsAidan);
+  });
   // Surgical update of the collapsed-header hearts row so a user editing on a legacy entry
   // sees the new average immediately (without this they had to close edit to see anything
   // change). Mirrors the logic doneEditingHistory uses to refresh the header.
@@ -8210,7 +8331,17 @@ const CAT_EMOJIS = {Dining:'🍽️',Groceries:'🛒',Shopping:'🛍️',Enterta
 
 let _datesYear = new Date().getFullYear();
 let budgetTargets = {};
-function saveBudgetTargets() { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}).catch(_onSaveErr); }
+function saveBudgetTargets(cat) {
+  if (cat === undefined) { db.collection('state').doc('budgetTargets').set({targets: budgetTargets}).catch(_onSaveErr); return; }
+  // One category only, merged into the server's map — setting Dining while the partner sets
+  // Groceries used to keep just one. Replace (not merge) so a cleared target is really deleted.
+  const v = budgetTargets[cat];
+  _txUpdateDoc('budgetTargets', data => {
+    const t = { ...(data.targets || {}) };
+    if (v === undefined) delete t[cat]; else t[cat] = v;
+    return { ...data, targets: t };
+  }, () => ({targets: budgetTargets}), {replace: true});
+}
 
 // Months checked off as "settled" (squared up). Shared across partners via Firestore. Keyed by
 // YYYY-MM → the amount that was owed when it was marked paid (so the tile can show "$X paid").
@@ -8224,10 +8355,7 @@ function saveSettledMonth(ym) {
   const payload = val === undefined
     ? { [`months.${ym}`]: firebase.firestore.FieldValue.delete() }
     : { [`months.${ym}`]: val };
-  db.collection('state').doc('settledMonths').update(payload).catch(err => {
-    // The document may not exist yet, in which case update() fails — fall back to creating it.
-    db.collection('state').doc('settledMonths').set({months: settledMonths}).catch(_onSaveErr);
-  });
+  _updateOrCreate('settledMonths', payload, () => ({months: settledMonths}));
 }
 // Stored value is either a bare number (legacy: just the magnitude paid) or {paid, net} where
 // `net` is the SIGNED calcOwes().Aidan at the moment of settling. The sign matters: without it we
@@ -9032,7 +9160,7 @@ function promptTarget(cat) {
     const n = parseFloat(val);
     if (!isNaN(n) && n > 0) budgetTargets[cat] = n;
     else delete budgetTargets[cat];
-    saveBudgetTargets();
+    saveBudgetTargets(cat);
     renderBudget();
   });
 }
@@ -9429,7 +9557,7 @@ function setBudgetTarget(cat, val) {
   const n = parseFloat(val);
   if (!isNaN(n) && n > 0) budgetTargets[cat] = n;
   else delete budgetTargets[cat];
-  saveBudgetTargets();
+  saveBudgetTargets(cat);
   if (isActive('budget')) renderBudget();
 }
 
