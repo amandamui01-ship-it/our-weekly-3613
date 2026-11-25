@@ -9,61 +9,13 @@
  *
  * Run:  node test/year-boundary.test.js        (OW_HTML=<path> to point it at another copy)
  */
-const fs = require('fs');
-const path = require('path');
-const { JSDOM, VirtualConsole } = require('jsdom');
-
-const HTML_PATH = process.env.OW_HTML || path.join(__dirname, '..', 'index.html');
-const RAW = fs.readFileSync(HTML_PATH, 'utf8');
-const HTML = RAW.replace(/<script[^>]*\bsrc=["'][^"']*["'][^>]*>\s*<\/script>/gi, '');
+const { boot, RAW } = require('./_boot');
 
 let pass = 0, fail = 0;
 const ok = (cond, name, detail) => {
   if (cond) pass++;
   else { fail++; console.log(`  ✗ ${name}${detail !== undefined ? `\n      ${detail}` : ''}`); }
 };
-
-function boot(fakeNow, { localStorage: ls = {} } = {}) {
-  const errors = [];
-  const vc = new VirtualConsole();
-  vc.on('jsdomError', e => errors.push(e.message));
-  const listeners = new Map();
-  const snap = (id, data) => ({ exists: data !== undefined, id, data: () => data, metadata: { hasPendingWrites: false } });
-  const docStub = id => ({
-    onSnapshot(n) { listeners.set(id, typeof n === 'function' ? n : n && n.next); return () => {}; },
-    set() { return Promise.resolve(); }, update() { return Promise.resolve(); },
-    get() { return Promise.resolve(snap(id, undefined)); },
-  });
-  const fb = {
-    initializeApp: () => ({}), apps: [],
-    auth: () => ({ onAuthStateChanged: () => {}, signOut: () => Promise.resolve(), currentUser: null }),
-    firestore: () => ({ collection: () => ({ doc: docStub }),
-      runTransaction: fn => Promise.resolve(fn({ get: () => Promise.resolve(snap('tx', { items: [] })), set: () => {}, update: () => {} })),
-      enablePersistence: () => Promise.resolve(), settings: () => {} }),
-  };
-  fb.firestore.FieldValue = { arrayUnion: (...v) => ({ v }), arrayRemove: (...v) => ({ v }), delete: () => ({ __delete: true }) };
-
-  const dom = new JSDOM(HTML, { runScripts: 'outside-only', pretendToBeVisual: true,
-    url: 'https://amandamui01-ship-it.github.io/our-weekly-3613/', virtualConsole: vc });
-  const w = dom.window;
-  for (const [k, v] of Object.entries(ls)) w.localStorage.setItem(k, v);
-  const T = new Date(fakeNow).getTime();
-  const R = w.Date;
-  w.Date = class extends R { constructor(...a) { if (a.length) super(...a); else super(T); } static now() { return T; } };
-  w.firebase = fb;
-  w.HTMLElement.prototype.scrollIntoView = function () {};
-  w.HTMLInputElement.prototype.showPicker = function () {};
-  if (!w.crypto) w.crypto = {};
-  let n = 0; w.crypto.randomUUID = () => `00000000-0000-4000-8000-${String(++n).padStart(12, '0')}`;
-  w.navigator.vibrate = () => {};
-  const bodies = []; const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi; let m;
-  while ((m = re.exec(HTML)) !== null) bodies.push(m[1]);
-  w.eval(bodies.join('\n;\n') + '\n;window.__ev = function (__s) { return eval(__s); };');
-  const ev = s => w.__ev(s);
-  ev('initFirestore()');
-  const push = (doc, data) => { const cb = listeners.get(doc); if (cb) cb(snap(doc, data)); };
-  return { ev, push, errors, close: () => w.close() };
-}
 
 const psd = (app, text, anchor) =>
   app.ev(`parseSortDate(${JSON.stringify(text)}${anchor ? `, ${JSON.stringify(anchor)}` : ''})`);
@@ -157,7 +109,7 @@ const psd = (app, text, anchor) =>
   ok(app.ev('INCOME_LOADED_MIN') === 0, 'an income threshold of 0 survives a reload', String(app.ev('INCOME_LOADED_MIN')));
   // Not a year-boundary bug, but this is the suite that boots a clean page: every shared Firestore
   // doc must be in the backup. datedEvents (every calendar event) was silently missing.
-  const docs = [...new Set([...RAW.matchAll(/collection\('state'\)\.doc\('([A-Za-z]+)'\)/g)].map(m => m[1]))];
+  const docs = [...new Set([...RAW.matchAll(/(?:collection\('state'\)\.doc|_listen)\('([A-Za-z]+)'/g)].map(m => m[1]))];
   const EXPORT_KEY = { bucket: 'bucketList', logistics: 'logisticsList', countdowns: 'customCountdowns', entries: 'entries', weekplan: 'weekPlan', recurring: 'recurringItems' };
   const _ex = RAW.indexOf('function exportData');
   const exportSrc = RAW.slice(_ex, RAW.indexOf('JSON.stringify(payload', _ex));

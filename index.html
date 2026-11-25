@@ -221,6 +221,71 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 
 /* ── To-Dos ── */
 .todo-category{margin-bottom:16px}
+/* ── Chores ── */
+.rec-head{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.rec-head .card-title{margin-bottom:0;flex:1}
+.rec-due-pill{font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;background:var(--amber);color:#fff}
+.ch-tabs{display:flex;gap:6px;margin:14px 0 4px;flex-wrap:wrap;align-items:center}
+.ch-pill{font:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;transition:all .15s}
+.ch-pill:hover{border-color:var(--amber);color:var(--amber-dark)}
+.ch-pill.on{background:var(--amber);border-color:var(--amber);color:#fff}
+.ch-sep{flex:1}
+.ch-seg{display:inline-flex;gap:4px;flex-wrap:nowrap;margin-left:auto}
+.ch-week{margin-top:10px;border:1px solid var(--border-light);border-radius:10px;overflow:hidden}
+.ch-row{display:grid;grid-template-columns:54px repeat(var(--ch-cols),minmax(0,1fr));border-top:1px solid var(--border-light)}
+.ch-row:first-child{border-top:none}
+.ch-row.today{background:var(--amber-bg)}
+.ch-hdr{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3)}
+.ch-hdr>div{padding:7px 8px}
+.ch-day{padding:8px;font-size:12px;font-weight:700;color:var(--text-2);line-height:1.25}
+.ch-day span{display:block;font-size:10px;font-weight:500;color:var(--text-3)}
+.ch-row.today .ch-day{color:var(--amber-dark)}
+.ch-cell{padding:5px 6px;display:flex;flex-direction:column;gap:2px;min-width:0;border-left:1px solid var(--border-light)}
+.ch-together{grid-column:2/-1;padding:0 6px 5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:12px}
+.ch-item,.ch-mini{display:flex;align-items:flex-start;gap:6px;font:inherit;font-size:13px;line-height:1.3;color:var(--text);background:none;border:none;padding:3px 2px;margin:0;text-align:left;cursor:pointer;border-radius:6px;min-width:0}
+.ch-item:hover,.ch-mini:hover{background:rgba(191,124,54,.08)}
+.ch-txt{min-width:0;overflow-wrap:anywhere}
+.ch-cb{flex:none;width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-top:1px;background:var(--surface)}
+.ch-item.done .ch-cb,.ch-mini.done .ch-cb{background:var(--sage);border-color:var(--sage)}
+.ch-item.done .ch-txt{text-decoration:line-through;color:var(--text-3)}
+.ch-item.missed .ch-txt{color:var(--coral)}
+.ch-item.missed .ch-cb{border-color:var(--coral)}
+.ch-note{font-size:12px;font-style:italic;color:var(--text-3);padding:3px 2px}
+.ch-tag{font-size:10px;color:var(--text-3);white-space:nowrap;text-decoration:none}
+.ch-sec{margin-top:16px}
+.ch-sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:4px}
+.ch-any{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ch-srow{display:grid;grid-template-columns:118px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--border-light);align-items:start}
+.ch-when{font-size:12px;font-weight:700;color:var(--text-2);padding-top:2px}
+.ch-list{display:flex;flex-direction:column;gap:5px;font-size:13px;min-width:0}
+.ch-list>div{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px}
+.ch-who{font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;white-space:nowrap}
+.ch-who.amanda{background:var(--coral-bg);color:var(--coral)}
+.ch-who.aidan{background:var(--blue-bg);color:var(--blue)}
+.ch-who.together{background:var(--amber-bg);color:var(--amber-dark)}
+.ch-edit{background:none;border:none;padding:0;font:inherit;color:var(--text);cursor:pointer;text-align:left}
+.ch-edit:hover{color:var(--amber-dark);text-decoration:underline}
+.ch-mini{font-size:11px;padding:2px 4px}
+.ch-next{font-size:11px;color:var(--text-3);white-space:nowrap}
+.ch-next.late{color:var(--coral);font-weight:700}
+.ch-empty{font-size:13px;color:var(--text-3);line-height:1.5;margin-top:10px}
+.ch-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.ce-box{background:var(--surface);border-radius:16px;padding:22px;max-width:460px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.22);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.ce-title{font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:800;color:var(--amber)}
+.ce-lbl{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3)}
+.ce-lbl input,.ce-lbl select,.ce-row select,.ce-row input[type=number]{font:inherit;font-size:14px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text);padding:7px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.ce-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--text-2)}
+.ce-days{display:flex;gap:5px;flex-wrap:wrap}
+.ce-chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2)}
+.ce-btns{display:flex;gap:8px;align-items:center;margin-top:4px}
+.ce-del{color:var(--coral);border-color:var(--coral-bg)}
+@media(pointer:coarse){
+  .ch-item,.ch-mini{min-height:36px;align-items:center;padding:4px}
+  .ch-pill{min-height:36px}
+  .ch-cb{width:20px;height:20px}
+  .ch-edit{min-height:32px}
+}
+@media(max-width:420px){ .ch-srow{grid-template-columns:88px minmax(0,1fr)} .ch-row{grid-template-columns:44px repeat(var(--ch-cols),minmax(0,1fr))} }
 .todo-cat-title{font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .todo-items{display:flex;flex-direction:column;gap:6px}
 .todo-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border-light);border-radius:9px;transition:border-color .15s;max-height:200px;overflow:hidden}
@@ -2217,6 +2282,475 @@ const _pendingTripIds = new Set();
 // after focus leaves the page.
 let _pendingWeekplanData = null;
 let _todosLoaded = false; // pin GC must not judge pins against a to-do list that hasn't arrived
+
+// ─── CHORES ──────────────────────────────────────────────────────────────────
+// Calendar-anchored, person-assigned recurring chores: "Mon · Aidan · wipe counters", "1st Saturday ·
+// Amanda · order cat food", "every 3 months (Jan/Apr/Jul/Oct), 1st weekend · replace furnace filter".
+// Different from a repeating to-do (which re-schedules from the day you finish it): a chore's dates
+// come from the calendar, and you tick off each OCCURRENCE.
+//
+// Firestore: state/chores = { items: [chore], done: { '<id>_<YYYYMMDD>': 1 } }.
+//   chore = { id, text, who: 'amanda'|'aidan'|'together', rule, note? }
+//   rule  = { freq: 'weekly',  days: ['mon','wed'] }
+//         | { freq: 'monthly', on: { nth: 1..4|-1, weekday: 'sat'|'weekend' } | { day: 25, approx? }, months?: [1,4,7,10] }
+//         | { freq: 'whenever', label?: 'When the box reveal drops' }
+//   note: true = a reminder with no checkbox ("Volleyball!").
+// Ticking writes ONE dotted key in `done`, so two people ticking at once never collide, and edits to
+// `items` merge by id. Both fallbacks write the WHOLE doc (items + done) — never just one of them.
+let chores = [];
+let choreDone = {};
+const _CH_WD = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const _CH_WEEK = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const _CH_WD_LABEL = { sun: 'Sun', mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat' };
+const _CH_WD_FULL = { sun: 'Sunday', mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', weekend: 'weekend' };
+const _CH_WHO = { amanda: 'Amanda', aidan: 'Aidan', together: 'Together' };
+const _CH_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const _chPad = n => String(n).padStart(2, '0');
+const _chIso = d => `${d.getFullYear()}-${_chPad(d.getMonth() + 1)}-${_chPad(d.getDate())}`;
+const _chDate = iso => new Date(iso + 'T00:00:00');
+const _chAdd = (iso, n) => { const d = _chDate(iso); d.setDate(d.getDate() + n); return _chIso(d); };
+const _chKey = (id, iso) => `${id}_${iso.replace(/-/g, '')}`;
+const _chIsDone = (id, iso) => !!choreDone[_chKey(id, iso)];
+const _chOrdinal = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+const _chNice = iso => { const d = _chDate(iso); return `${_CH_WD_LABEL[_CH_WD[d.getDay()]]} ${_CH_MON[d.getMonth()]} ${d.getDate()}`; };
+const _chDocFallback = () => ({ items: chores, done: choreDone });
+
+// The date in month m0 of year y that a monthly rule lands on, or null ("5th Friday" in a short month).
+// "Nth weekend" = the weekend whose SATURDAY is the Nth Saturday; the occurrence is that Saturday.
+function _chMonthOcc(y, m0, on) {
+  if (!on) return null;
+  if (on.day) {
+    const last = new Date(y, m0 + 1, 0).getDate();
+    return _chIso(new Date(y, m0, Math.min(on.day, last)));
+  }
+  const wd = on.weekday === 'weekend' ? 6 : _CH_WD.indexOf(on.weekday);
+  if (wd < 0) return null;
+  if (on.nth === -1) {
+    const d = new Date(y, m0 + 1, 0);
+    while (d.getDay() !== wd) d.setDate(d.getDate() - 1);
+    return _chIso(d);
+  }
+  const d = new Date(y, m0, 1);
+  while (d.getDay() !== wd) d.setDate(d.getDate() + 1);
+  d.setDate(d.getDate() + 7 * ((on.nth || 1) - 1));
+  return d.getMonth() === m0 ? _chIso(d) : null;
+}
+// Every date in [fromIso, toIso] the rule falls on.
+function choreOccurrences(rule, fromIso, toIso) {
+  const out = [];
+  if (!rule || !_isDateStr(fromIso) || !_isDateStr(toIso) || fromIso > toIso) return out;
+  if (rule.freq === 'weekly') {
+    const days = new Set(rule.days || []);
+    if (!days.size) return out;
+    for (let iso = fromIso; iso <= toIso; iso = _chAdd(iso, 1)) {
+      if (days.has(_CH_WD[_chDate(iso).getDay()])) out.push(iso);
+    }
+  } else if (rule.freq === 'monthly') {
+    const f = _chDate(fromIso), t = _chDate(toIso);
+    let y = f.getFullYear(), m = f.getMonth();
+    while (y < t.getFullYear() || (y === t.getFullYear() && m <= t.getMonth())) {
+      if (!(Array.isArray(rule.months) && rule.months.length && !rule.months.includes(m + 1))) {
+        const o = _chMonthOcc(y, m, rule.on);
+        if (o && o >= fromIso && o <= toIso) out.push(o);
+      }
+      if (m === 11) { y++; m = 0; } else m++;
+    }
+  }
+  return out;
+}
+// Last day an occurrence still counts as on time: a weekend runs through Sunday, "~25th" gets a few days.
+function _chOccEnd(rule, iso) {
+  if (rule && rule.freq === 'monthly' && rule.on) {
+    if (rule.on.weekday === 'weekend') return _chAdd(iso, 1);
+    if (rule.on.approx) return _chAdd(iso, 5);
+  }
+  return iso;
+}
+function choreWhenLabel(rule) {
+  if (!rule) return '';
+  if (rule.freq === 'whenever') return rule.label || 'As it comes up';
+  if (rule.freq === 'weekly') return _CH_WEEK.filter(d => (rule.days || []).includes(d)).map(d => _CH_WD_LABEL[d]).join(', ');
+  const on = rule.on || {};
+  if (on.day) return (on.approx ? '~' : '') + _chOrdinal(on.day);
+  const nth = on.nth === -1 ? 'Last' : _chOrdinal(on.nth || 1);
+  return `${nth} ${_CH_WD_FULL[on.weekday] || ''}`.trim();
+}
+// Group title for a monthly rule's months: "Monthly", "Every 3 months (Jan, Apr, Jul, Oct)", "Yearly (Mar)".
+function choreMonthsLabel(months) {
+  if (!Array.isArray(months) || !months.length || months.length === 12) return 'Monthly';
+  const ms = [...months].sort((a, b) => a - b);
+  const names = ms.map(m => _CH_MON[m - 1]).join(', ');
+  if (ms.length === 1) return `Yearly (${names})`;
+  const k = 12 / ms.length;
+  const even = Number.isInteger(k) && ms.every((m, i) => i === 0 || m - ms[i - 1] === k);
+  return even ? `Every ${k} months (${names})` : `In ${names}`;
+}
+// For list views: the occurrence to show a checkbox for. An open one from the last ~6 weeks wins
+// (possibly late); otherwise the next one coming up.
+function choreCurrent(c, today) {
+  if (!c || !c.rule || c.rule.freq === 'whenever') return null;
+  const back = choreOccurrences(c.rule, _chAdd(today, -45), today);
+  const prev = back[back.length - 1];
+  if (prev && !_chIsDone(c.id, prev)) return { iso: prev, late: _chOccEnd(c.rule, prev) < today };
+  const next = choreOccurrences(c.rule, _chAdd(today, 1), _chAdd(today, 400))[0] || null;
+  return { iso: next, late: false, lastDone: prev || null };
+}
+function _chLastDone(id) {
+  let best = null; const p = id + '_';
+  for (const k in choreDone) {
+    if (!k.startsWith(p)) continue;
+    const s = k.slice(p.length);
+    const iso = `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+    if (!best || iso > best) best = iso;
+  }
+  return best;
+}
+const _chWhoFilter = () => { const w = localStorage.getItem('ow-chores-who'); return w === 'amanda' || w === 'aidan' ? w : 'all'; };
+const _chVisible = c => { const f = _chWhoFilter(); return f === 'all' || c.who === f || c.who === 'together'; };
+const _chWhoBadge = who => `<span class="ch-who ${who}">${_CH_WHO[who] || ''}</span>`;
+const _chMonthSortKey = r => { const on = (r && r.on) || {}; return on.day ? on.day : ((on.nth === -1 ? 5 : (on.nth || 1)) - 1) * 7 + (on.weekday === 'weekend' ? 6 : _CH_WD.indexOf(on.weekday)) + 1; };
+
+// One tickable occurrence. The whole row is the button: a 16px box is too small to hit reliably.
+function _chItemHtml(c, iso, today, tag) {
+  if (c.note) return `<span class="ch-note">${escHtml(c.text)}</span>`;
+  const done = _chIsDone(c.id, iso);
+  const missed = !done && _chOccEnd(c.rule, iso) < today;
+  return `<button class="ch-item${done ? ' done' : ''}${missed ? ' missed' : ''}" onclick="toggleChore('${c.id}','${iso}')" title="${done ? 'Done — tap to undo' : 'Tap when done'}">
+      <span class="ch-cb">${done ? '✓' : ''}</span><span class="ch-txt">${escHtml(c.text)}${tag ? ` <span class="ch-tag">${tag}</span>` : ''}</span></button>`;
+}
+
+function _chWeekHtml(today) {
+  const dow = _chDate(today).getDay();
+  const mon = _chAdd(today, -((dow + 6) % 7));
+  const f = _chWhoFilter();
+  const people = f === 'all' ? ['amanda', 'aidan'] : [f];
+  const vis = chores.filter(c => c.rule && c.rule.freq !== 'whenever' && _chVisible(c));
+  const rows = _CH_WEEK.map((wd, i) => {
+    const iso = _chAdd(mon, i);
+    const d = _chDate(iso);
+    const on = vis.filter(c => choreOccurrences(c.rule, iso, iso).length);
+    const tag = c => c.rule.freq === 'monthly' ? escHtml(c.rule.on && c.rule.on.weekday === 'weekend' ? 'this weekend' : choreWhenLabel(c.rule)) : '';
+    const cell = who => on.filter(c => c.who === who).map(c => _chItemHtml(c, iso, today, tag(c))).join('');
+    const together = on.filter(c => c.who === 'together');
+    return `<div class="ch-row${iso === today ? ' today' : ''}${iso < today ? ' past' : ''}">
+        <div class="ch-day">${_CH_WD_LABEL[wd]}<span>${_CH_MON[d.getMonth()]} ${d.getDate()}</span></div>
+        ${people.map(p => `<div class="ch-cell">${cell(p)}</div>`).join('')}
+        ${together.length ? `<div class="ch-together">👫 ${together.map(c => _chItemHtml(c, iso, today, tag(c))).join('')}</div>` : ''}
+      </div>`;
+  }).join('');
+  const anytime = chores.filter(c => c.rule && c.rule.freq === 'whenever' && _chVisible(c));
+  const anyHtml = anytime.length ? `<div class="ch-sec"><div class="ch-sec-title">As it comes up</div>${anytime.map(c => {
+      const last = _chLastDone(c.id);
+      return `<div class="ch-any">${_chItemHtml(c, today, today, '')}<span class="ch-next">${escHtml(choreWhenLabel(c.rule))}${last ? ` · last done ${_chNice(last)}` : ''}</span></div>`;
+    }).join('')}</div>` : '';
+  return `<div class="ch-week" style="--ch-cols:${people.length}">
+      <div class="ch-row ch-hdr"><div></div>${people.map(p => `<div>${_CH_WHO[p]}</div>`).join('')}</div>
+      ${rows}
+    </div>${anyHtml}`;
+}
+
+// "As it comes up": tick = done today; shows when it was last done.
+function _chAnyTick(c, today, last) {
+  const done = _chIsDone(c.id, today);
+  return `<button class="ch-mini${done ? ' done' : ''}" onclick="toggleChore('${c.id}','${today}')" title="${done ? 'Done today — tap to undo' : 'Tap when done'}"><span class="ch-cb">${done ? '✓' : ''}</span><span class="ch-next">${done ? 'done today' : last ? `last done ${_chNice(last)}` : 'not done yet'}</span></button>`;
+}
+function _chScheduleHtml(today) {
+  const vis = chores.filter(_chVisible);
+  const edit = c => `<button class="ch-edit" onclick="openChoreEditor('${c.id}')" title="Edit">${escHtml(c.text)}</button>`;
+  // Weekly: by day.
+  const weekly = vis.filter(c => c.rule && c.rule.freq === 'weekly');
+  const weeklyHtml = weekly.length ? `<div class="ch-sec"><div class="ch-sec-title">Weekly</div>${_CH_WEEK.map(wd => {
+      const on = weekly.filter(c => (c.rule.days || []).includes(wd));
+      if (!on.length) return '';
+      return `<div class="ch-srow"><div class="ch-when">${_CH_WD_FULL[wd]}</div><div class="ch-list">${on.map(c => `<div>${_chWhoBadge(c.who)}${edit(c)}</div>`).join('')}</div></div>`;
+    }).join('')}</div>` : '';
+  // Monthly and every-few-months: one section per months-set, rows by "when", in calendar order.
+  const monthly = vis.filter(c => c.rule && c.rule.freq === 'monthly');
+  const groups = new Map();
+  for (const c of monthly) {
+    const k = choreMonthsLabel(c.rule.months);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(c);
+  }
+  const groupOrder = [...groups.keys()].sort((a, b) => (a === 'Monthly' ? -1 : b === 'Monthly' ? 1 : a.localeCompare(b)));
+  const status = c => {
+    const cur = choreCurrent(c, today);
+    if (!cur || !cur.iso) return '';
+    const done = _chIsDone(c.id, cur.iso);
+    return `<button class="ch-mini${done ? ' done' : ''}" onclick="toggleChore('${c.id}','${cur.iso}')" title="${done ? 'Done — tap to undo' : 'Tap when done'}"><span class="ch-cb">${done ? '✓' : ''}</span><span class="ch-next${cur.late ? ' late' : ''}">${cur.late ? 'late · ' : ''}${_chNice(cur.iso)}</span></button>`;
+  };
+  const monthlyHtml = groupOrder.map(g => {
+    const items = groups.get(g).sort((a, b) => _chMonthSortKey(a.rule) - _chMonthSortKey(b.rule));
+    const byWhen = new Map();
+    for (const c of items) { const w = choreWhenLabel(c.rule); if (!byWhen.has(w)) byWhen.set(w, []); byWhen.get(w).push(c); }
+    const anytimeHere = g === 'Monthly' ? vis.filter(c => c.rule && c.rule.freq === 'whenever') : [];
+    return `<div class="ch-sec"><div class="ch-sec-title">${escHtml(g)}</div>
+      ${[...byWhen].map(([w, cs]) => `<div class="ch-srow"><div class="ch-when">${escHtml(w)}</div><div class="ch-list">${cs.map(c => `<div>${_chWhoBadge(c.who)}${edit(c)} ${c.note ? '' : status(c)}</div>`).join('')}</div></div>`).join('')}
+      ${anytimeHere.map(c => { const last = _chLastDone(c.id); return `<div class="ch-srow"><div class="ch-when">${escHtml(choreWhenLabel(c.rule))}</div><div class="ch-list"><div>${_chWhoBadge(c.who)}${edit(c)} ${_chAnyTick(c, today, last)}</div></div></div>`; }).join('')}
+    </div>`;
+  }).join('');
+  const strayAnytime = !groups.has('Monthly') ? vis.filter(c => c.rule && c.rule.freq === 'whenever') : [];
+  const anyHtml = strayAnytime.length ? `<div class="ch-sec"><div class="ch-sec-title">As it comes up</div>${strayAnytime.map(c => `<div class="ch-srow"><div class="ch-when">${escHtml(choreWhenLabel(c.rule))}</div><div class="ch-list"><div>${_chWhoBadge(c.who)}${edit(c)} ${_chAnyTick(c, today, _chLastDone(c.id))}</div></div></div>`).join('')}</div>` : '';
+  return weeklyHtml + monthlyHtml + anyHtml +
+    `<div class="ch-actions"><button class="btn btn-primary" style="font-size:13px;padding:7px 14px" onclick="openChoreEditor()">+ Add chore</button></div>`;
+}
+
+function _choresHtml() {
+  const today = _todayLocal();
+  const open = localStorage.getItem('ow-chores-open') !== '0';
+  const tab = localStorage.getItem('ow-chores-tab') === 'schedule' ? 'schedule' : 'week';
+  const f = _chWhoFilter();
+  // Today's open count for the header, so a collapsed card still says if something's due.
+  const todayLeft = chores.filter(c => !c.note && c.rule && c.rule.freq !== 'whenever' && _chVisible(c)
+    && choreOccurrences(c.rule, today, today).length && !_chIsDone(c.id, today)).length;
+  const pill = todayLeft ? `<span class="rec-due-pill">${todayLeft} today</span>` : '';
+  const body = !chores.length
+    ? `<div class="ch-empty">
+        <div>Weekly and monthly chores, split between the two of you. Tick each one off on the day.</div>
+        <div class="ch-actions">
+          <button class="btn btn-primary" style="font-size:13px;padding:7px 14px" onclick="loadChoreTemplate()">Start with our plan</button>
+          <button class="ch-pill" onclick="openChoreEditor()">+ Add your own</button>
+        </div>
+      </div>`
+    : `<div class="ch-tabs">
+        <button class="ch-pill${tab === 'week' ? ' on' : ''}" onclick="setChoresTab('week')">This week</button>
+        <button class="ch-pill${tab === 'schedule' ? ' on' : ''}" onclick="setChoresTab('schedule')">Schedule</button>
+        <span class="ch-sep"></span>
+        <span class="ch-seg">${['all', 'amanda', 'aidan'].map(w => `<button class="ch-pill ch-pill-who${f === w ? ' on' : ''}" onclick="setChoresWho('${w}')">${w === 'all' ? 'Both' : _CH_WHO[w]}</button>`).join('')}</span>
+      </div>
+      ${tab === 'week' ? _chWeekHtml(today) : _chScheduleHtml(today)}`;
+  return `<div class="card todo-category" id="chores-card">
+      <div class="rec-head" onclick="toggleChoresCard()">
+        <div class="card-title">🧹 Chores</div>${pill}
+        <span style="font-size:11px;color:var(--text-3)">${open ? '▼' : '▶'}</span>
+      </div>
+      <div id="chores-body" style="display:${open ? '' : 'none'}">${body}</div>
+    </div>`;
+}
+function renderChores() {
+  const el = document.getElementById('chores-card');
+  if (el) el.outerHTML = _choresHtml();
+}
+function toggleChoresCard() { _lsSet('ow-chores-open', localStorage.getItem('ow-chores-open') === '0' ? '1' : '0'); renderChores(); }
+function setChoresTab(t) { _lsSet('ow-chores-tab', t); renderChores(); }
+function setChoresWho(w) { _lsSet('ow-chores-who', w); renderChores(); }
+
+function toggleChore(id, iso) {
+  if (!_isDateStr(iso) || !chores.some(c => c.id === id)) return;
+  const key = _chKey(id, iso);
+  const on = !choreDone[key];
+  if (on) choreDone[key] = 1; else delete choreDone[key];
+  if (on && navigator.vibrate) navigator.vibrate(30);
+  _updateOrCreate('chores', { ['done.' + key]: on ? 1 : firebase.firestore.FieldValue.delete() }, _chDocFallback);
+  renderChores();
+}
+// Edits merge one chore by id into the server's list; `done` is untouched (merge write).
+function _saveChore(id) {
+  const found = chores.find(c => c.id === id);
+  if (!found) return;
+  const snap = JSON.parse(JSON.stringify(found));
+  return _txUpdateDoc('chores', data => {
+    const items = (data.items || []).slice();
+    const i = items.findIndex(x => x && x.id === id);
+    if (i < 0) items.push(snap); else items[i] = snap;
+    return { items };
+  }, _chDocFallback);
+}
+function _addChores(list) {
+  chores.push(...list);
+  _updateOrCreate('chores', { items: firebase.firestore.FieldValue.arrayUnion(...list) }, _chDocFallback);
+  renderChores();
+}
+const _chNewId = () => 'ch-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+
+// The plan Amanda wrote out (Nov 2026). Only offered while there are no chores yet.
+const CHORE_TEMPLATE = [
+  ['Verizon/T-Mobile check-in', 'amanda', { freq: 'weekly', days: ['mon'] }],
+  ['Wipe counters', 'aidan', { freq: 'weekly', days: ['mon'] }],
+  ['🏐 Volleyball!', 'amanda', { freq: 'weekly', days: ['tue'] }, true],
+  ['Vacuum', 'aidan', { freq: 'weekly', days: ['tue'] }],
+  ['Cat litter', 'amanda', { freq: 'weekly', days: ['wed', 'fri'] }],
+  ['Clean bathroom', 'aidan', { freq: 'weekly', days: ['wed'] }],
+  ['Laundry + change bedding', 'amanda', { freq: 'weekly', days: ['thu'] }],
+  ['Grocery shopping', 'aidan', { freq: 'weekly', days: ['sat'] }],
+  ['Quick check-in together', 'together', { freq: 'weekly', days: ['sun'] }],
+  ['Cat litter', 'aidan', { freq: 'weekly', days: ['sun'] }],
+  ['Order cat food + litter', 'amanda', { freq: 'monthly', on: { nth: 1, weekday: 'sat' } }],
+  ['Go through fridge (before groceries)', 'aidan', { freq: 'monthly', on: { nth: 1, weekday: 'sat' } }],
+  ['Wipe out microwave', 'amanda', { freq: 'monthly', on: { nth: 2, weekday: 'weekend' } }],
+  ['Clean shower', 'aidan', { freq: 'monthly', on: { nth: 2, weekday: 'weekend' } }],
+  ['Trim cat nails', 'together', { freq: 'monthly', on: { nth: 3, weekday: 'weekend' } }],
+  ['Spend DoorDash credit, use Uber credit', 'amanda', { freq: 'monthly', on: { day: 25, approx: true } }],
+  ['Spend DoorDash credit', 'aidan', { freq: 'monthly', on: { day: 25, approx: true } }],
+  ['Allure box: worth it?', 'amanda', { freq: 'whenever', label: 'When the box reveal drops' }],
+  ['Replace HVAC/furnace filter', 'aidan', { freq: 'monthly', months: [1, 4, 7, 10], on: { nth: 1, weekday: 'weekend' } }],
+  ['Deep clean fridge', 'aidan', { freq: 'monthly', months: [1, 4, 7, 10], on: { nth: 1, weekday: 'weekend' } }],
+];
+function loadChoreTemplate() {
+  if (chores.length) return;   // never double-load on top of real chores
+  _addChores(CHORE_TEMPLATE.map(([text, who, rule, note], i) => {
+    const c = { id: _chNewId() + i, text, who, rule: JSON.parse(JSON.stringify(rule)) };
+    if (note) c.note = true;
+    return c;
+  }));
+}
+
+// ── Editor ──────────────────────────────────────────────────────────────────
+let _ceId = null, _ceDays = new Set();
+function _ceEnsure() {
+  let o = document.getElementById('chore-editor-overlay');
+  if (o) return o;
+  o = document.createElement('div');
+  o.id = 'chore-editor-overlay';
+  o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true');
+  o.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;align-items:center;justify-content:center;padding:16px';
+  o.addEventListener('click', e => { if (e.target === o) closeChoreEditor(); });
+  const nthOpts = [[1, '1st'], [2, '2nd'], [3, '3rd'], [4, '4th'], [-1, 'Last'], ['day', 'Day of month']]
+    .map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+  const wdOpts = [..._CH_WEEK, 'weekend'].map(d => `<option value="${d}">${_CH_WD_FULL[d]}</option>`).join('');
+  const monOpts = _CH_MON.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+  o.innerHTML = `<div class="ce-box">
+      <div class="ce-title" id="ce-title">Add chore</div>
+      <label class="ce-lbl">Chore<input type="text" id="ce-text" maxlength="120" placeholder="e.g. Cat litter"></label>
+      <label class="ce-lbl">Who<select id="ce-who"><option value="amanda">Amanda</option><option value="aidan">Aidan</option><option value="together">Together</option></select></label>
+      <label class="ce-lbl">How often<select id="ce-freq">
+        <option value="weekly">Weekly</option><option value="monthly">Monthly</option>
+        <option value="months">Every few months</option><option value="whenever">As it comes up</option></select></label>
+      <div id="ce-weekly" class="ce-grp"><div class="ce-days">${_CH_WEEK.map(d => `<button type="button" class="ch-pill ce-day" data-day="${d}">${_CH_WD_LABEL[d]}</button>`).join('')}</div></div>
+      <div id="ce-every-grp" class="ce-grp ce-row">Every <select id="ce-every"><option>2</option><option selected>3</option><option>4</option><option>6</option><option>12</option></select> months, starting <select id="ce-start">${monOpts}</select></div>
+      <div id="ce-on-grp" class="ce-grp ce-row">On the <select id="ce-nth">${nthOpts}</select>
+        <select id="ce-wd">${wdOpts}</select>
+        <input type="number" id="ce-day" min="1" max="31" value="1" style="width:64px">
+        <label class="ce-chk" id="ce-approx-lbl"><input type="checkbox" id="ce-approx"> about (a few days either way)</label></div>
+      <label class="ce-lbl ce-grp" id="ce-label-grp">When<input type="text" id="ce-label" maxlength="80" placeholder="e.g. When the box reveal drops"></label>
+      <label class="ce-chk"><input type="checkbox" id="ce-note"> Reminder only (no checkbox)</label>
+      <div class="ce-btns">
+        <button class="ch-pill ce-del" id="ce-del">Delete</button><span class="ch-sep"></span>
+        <button class="ch-pill" id="ce-cancel">Cancel</button>
+        <button class="btn btn-primary" id="ce-save" style="font-size:13px;padding:7px 16px">Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(o);
+  o.querySelector('.ce-box').addEventListener('click', e => e.stopPropagation());
+  o.querySelectorAll('.ce-day').forEach(b => b.addEventListener('click', () => {
+    const d = b.dataset.day; if (_ceDays.has(d)) _ceDays.delete(d); else _ceDays.add(d); _ceSync();
+  }));
+  ['ce-freq', 'ce-nth'].forEach(id => o.querySelector('#' + id).addEventListener('change', _ceSync));
+  o.querySelector('#ce-cancel').addEventListener('click', closeChoreEditor);
+  o.querySelector('#ce-save').addEventListener('click', saveChoreEditor);
+  o.querySelector('#ce-del').addEventListener('click', () => { if (_ceId) deleteChore(_ceId); });
+  return o;
+}
+function _ceSync() {
+  const $c = id => document.getElementById(id);
+  const freq = $c('ce-freq').value, isDay = $c('ce-nth').value === 'day';
+  $c('ce-weekly').style.display = freq === 'weekly' ? '' : 'none';
+  $c('ce-every-grp').style.display = freq === 'months' ? '' : 'none';
+  $c('ce-on-grp').style.display = (freq === 'monthly' || freq === 'months') ? '' : 'none';
+  $c('ce-label-grp').style.display = freq === 'whenever' ? '' : 'none';
+  $c('ce-wd').style.display = isDay ? 'none' : '';
+  $c('ce-day').style.display = isDay ? '' : 'none';
+  $c('ce-approx-lbl').style.display = isDay ? '' : 'none';
+  document.querySelectorAll('#chore-editor-overlay .ce-day').forEach(b => b.classList.toggle('on', _ceDays.has(b.dataset.day)));
+}
+function openChoreEditor(id) {
+  const o = _ceEnsure();
+  const $c = x => document.getElementById(x);
+  const c = id ? chores.find(x => x.id === id) : null;
+  _ceId = c ? c.id : null;
+  const r = (c && c.rule) || { freq: 'weekly', days: [] };
+  $c('ce-title').textContent = c ? 'Edit chore' : 'Add chore';
+  $c('ce-text').value = c ? c.text : '';
+  $c('ce-who').value = c ? c.who : (_chWhoFilter() === 'all' ? 'amanda' : _chWhoFilter());
+  $c('ce-note').checked = !!(c && c.note);
+  _ceDays = new Set(r.freq === 'weekly' ? (r.days || []) : []);
+  const hasMonths = r.freq === 'monthly' && Array.isArray(r.months) && r.months.length && r.months.length < 12;
+  $c('ce-freq').value = r.freq === 'monthly' ? (hasMonths ? 'months' : 'monthly') : r.freq;
+  const on = r.on || { nth: 1, weekday: 'sat' };
+  $c('ce-nth').value = on.day ? 'day' : String(on.nth || 1);
+  $c('ce-wd').value = on.weekday || 'sat';
+  $c('ce-day').value = on.day || 1;
+  $c('ce-approx').checked = !!on.approx;
+  if (hasMonths) {
+    const ms = [...r.months].sort((a, b) => a - b);
+    const k = 12 / ms.length;
+    $c('ce-every').value = String(Number.isInteger(k) && [2, 3, 4, 6, 12].includes(k) ? k : 3);
+    $c('ce-start').value = String(ms[0]);
+  } else { $c('ce-every').value = '3'; $c('ce-start').value = '1'; }
+  $c('ce-label').value = r.freq === 'whenever' ? (r.label || '') : '';
+  $c('ce-del').style.display = c ? '' : 'none';
+  _ceSync();
+  o.style.display = 'flex';
+  setTimeout(() => $c('ce-text').focus(), 30);
+}
+function closeChoreEditor() {
+  const o = document.getElementById('chore-editor-overlay');
+  if (o) o.style.display = 'none';
+  _ceId = null;
+}
+// Reads the editor into a rule; returns null (and says why) if it isn't complete.
+function _ceReadRule() {
+  const $c = id => document.getElementById(id);
+  const freq = $c('ce-freq').value;
+  if (freq === 'weekly') {
+    const days = _CH_WEEK.filter(d => _ceDays.has(d));
+    if (!days.length) { showToast('Pick at least one day'); return null; }
+    return { freq: 'weekly', days };
+  }
+  if (freq === 'whenever') {
+    const label = $c('ce-label').value.trim();
+    return label ? { freq: 'whenever', label } : { freq: 'whenever' };
+  }
+  let on;
+  if ($c('ce-nth').value === 'day') {
+    const day = Math.min(31, Math.max(1, parseInt($c('ce-day').value, 10) || 1));
+    on = $c('ce-approx').checked ? { day, approx: true } : { day };
+  } else {
+    on = { nth: Number($c('ce-nth').value), weekday: $c('ce-wd').value };
+  }
+  const rule = { freq: 'monthly', on };
+  if (freq === 'months') {
+    const k = Number($c('ce-every').value), s = Number($c('ce-start').value);
+    const months = [];
+    for (let i = 0; i < 12 / k; i++) months.push(((s - 1 + i * k) % 12) + 1);
+    rule.months = months.sort((a, b) => a - b);
+  }
+  return rule;
+}
+function saveChoreEditor() {
+  const text = document.getElementById('ce-text').value.trim();
+  if (!text) { document.getElementById('ce-text').focus(); return; }
+  const rule = _ceReadRule();
+  if (!rule) return;
+  const who = document.getElementById('ce-who').value;
+  const note = document.getElementById('ce-note').checked;
+  if (_ceId) {
+    const c = chores.find(x => x.id === _ceId);
+    if (c) {
+      c.text = text; c.who = who; c.rule = rule;
+      if (note) c.note = true; else delete c.note;
+      _saveChore(c.id);
+    }
+    closeChoreEditor();
+    renderChores();
+  } else {
+    const c = { id: _chNewId(), text, who, rule };
+    if (note) c.note = true;
+    closeChoreEditor();
+    _addChores([c]);
+  }
+}
+function deleteChore(id) {
+  const c = chores.find(x => x.id === id);
+  if (!c) return;
+  showConfirm(`Delete "${escHtml(c.text)}"? It comes off every week, not just this one.`, () => {
+    chores = chores.filter(x => x.id !== id);
+    _txUpdateDoc('chores', data => ({ items: (data.items || []).filter(x => x && x.id !== id) }), _chDocFallback);
+    closeChoreEditor();
+    renderChores();
+  }, 'Delete');
+}
+
 // Same shape for trips/datedEvents/etc — only weekPlan needs this today because it's the
 // only doc where the listener replaces a single mutable object that's mutated by typing.
 
@@ -2264,6 +2798,7 @@ function teardownFirestore() {
   todos = []; todoCategories = []; newEntries = []; trips = [];
   logisticsList = []; bucketList = []; weekPlan = {}; datedEvents = [];
   expenses = []; recurringItems = []; customCountdowns = [];
+  chores = []; choreDone = {};
   mood = { amanda: '', aidan: '', week: '' };
   // UI/transient state that references account-specific data — leaving these set would let
   // the next sign-in render against dead handles or partially-populate forms with prior
@@ -2503,6 +3038,13 @@ function initFirestore() {
       const todayLocal = new Date(); todayLocal.setHours(0,0,0,0);
       _renderTodayBanner(todayLocal);
     }
+  });
+
+  _listen('chores', snap => {
+    const d = snap.exists ? (snap.data() || {}) : {};
+    chores = Array.isArray(d.items) ? d.items : [];
+    choreDone = (d.done && typeof d.done === 'object') ? d.done : {};
+    if (isActive('todos')) renderChores();
   });
 
   _listen('countdowns', snap => {
@@ -3765,7 +4307,7 @@ function renderTodos() {
       </div>
     </div>`;
 
-  document.getElementById('todos-container').innerHTML = celebHtml + activeHtml + doneHtml + addSectionHtml;
+  document.getElementById('todos-container').innerHTML = _choresHtml() + celebHtml + activeHtml + doneHtml + addSectionHtml;
   setTimeout(addSwipeToDelete, 50);
   setTimeout(addTodoDragListeners, 50);
   setTimeout(addCategoryDragListeners, 50);
@@ -7783,6 +8325,7 @@ function exportData() {
     bucketList,
     mood,
     customCountdowns,
+    chores: { items: chores, done: choreDone },
   };
   const json = JSON.stringify(payload, null, 2);
   const blob = new Blob([json], { type: 'application/json' });

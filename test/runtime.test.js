@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const HTML = fs.readFileSync(process.env.OW_HTML || path.join(__dirname, '..', 'index.html'), 'utf8');
 
 // ── Collect every error the page produces ────────────────────────────────────
 const errors = [];

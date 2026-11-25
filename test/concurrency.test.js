@@ -148,6 +148,7 @@ function makeClient(name) {
   const w = dom.window;
   w.firebase = firebase;
   w.HTMLElement.prototype.scrollIntoView = function () {};
+  w.scrollTo = function () {};
   w.HTMLInputElement.prototype.showPicker = function () {};
   if (!w.crypto) w.crypto = {};
   let n = 0;
@@ -928,6 +929,56 @@ for (const order of ['amandaFirst', 'aidanFirst']) {
   const cats = (S('todoCategories') || {}).items || [];
   ok(cats.some(c => c.label === 'Brand new'), 'adding a section when the sections doc is missing creates it', JSON.stringify(cats));
 }
+// Chores: ticks are single dotted keys, edits merge by id, and the doc is created on first use.
+const choreSeed = { ...raceSeed, chores: { items: [
+  { id: 'chA', text: 'Cat litter', who: 'amanda', rule: { freq: 'weekly', days: ['wed'] } },
+  { id: 'chB', text: 'Vacuum',     who: 'aidan',  rule: { freq: 'weekly', days: ['tue'] } } ], done: {} } };
+for (const order of ['amandaFirst', 'aidanFirst']) {
+  const [a, b] = fresh(choreSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const ta = () => a.call("toggleChore('chA', '2026-11-25')");
+  const tb = () => b.call("toggleChore('chB', '2026-11-24')");
+  if (order === 'amandaFirst') { ta(); tb(); } else { tb(); ta(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const d = S('chores').done || {};
+  ok(d.chA_20261125 && d.chB_20261124, `chores: both partners' ticks survive (${order})`, JSON.stringify(d));
+}
+for (const order of ['tickFirst', 'editFirst']) {
+  const [a, b] = fresh(choreSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const tick = () => b.call("toggleChore('chA', '2026-11-25')");
+  const edit = () => a.call("chores.find(c => c.id === 'chB').text = 'Vacuum + mop'; _saveChore('chB')");
+  if (order === 'tickFirst') { tick(); edit(); } else { edit(); tick(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const doc = S('chores');
+  ok(doc.done && doc.done.chA_20261125 && doc.items.find(c => c.id === 'chB').text === 'Vacuum + mop' && doc.items.length === 2,
+    `chores: a tick and an edit at once both survive (${order})`, JSON.stringify(doc));
+}
+for (const order of ['addFirst', 'deleteFirst']) {
+  const [a, b] = fresh(choreSeed);
+  a.holdSnapshots(); b.holdSnapshots();
+  const add = () => b.call("_addChores([{ id: 'chC', text: 'Water plants', who: 'aidan', rule: { freq: 'weekly', days: ['thu'] } }])");
+  const del = () => a.call("chores = chores.filter(c => c.id !== 'chA'); _txUpdateDoc('chores', data => ({ items: (data.items || []).filter(x => x && x.id !== 'chA') }), _chDocFallback)");
+  if (order === 'addFirst') { add(); del(); } else { del(); add(); }
+  a.resumeSnapshots(); b.resumeSnapshots();
+  const ids = S('chores').items.map(c => c.id);
+  ok(ids.includes('chC') && !ids.includes('chA') && ids.includes('chB'), `chores: a new chore survives a delete (${order})`, JSON.stringify(ids));
+}
+(async () => {
+{
+  const seed = { ...raceSeed }; delete seed.chores;
+  const [a, b] = fresh(seed);
+  a.call("showPage('todos'); renderTodos(); loadChoreTemplate()");
+  // update() on a missing doc rejects; the create happens in that rejection handler, a tick later.
+  // (Unlike sections, nothing pre-creates the chores doc on attach, so this really hits not-found.)
+  ok(server.writeLog.length === 0 || !S('chores'), 'precondition: the first write did NOT find a chores doc');
+  await new Promise(r => setTimeout(r, 0));
+  ok(((S('chores') || {}).items || []).length === 20, 'loading the plan creates the chores doc on first use', JSON.stringify(S('chores')).slice(0, 120));
+  ok(b.ev('chores.length') === 20, "the partner's app receives the plan");
+  b.call("toggleChore(chores[0].id, '2026-11-23')");
+  await new Promise(r => setTimeout(r, 0));
+  ok(a.ev('Object.keys(choreDone).length') === 1, "a tick on one phone shows up on the other");
+}
 for (const c of _raceClients) c.dom.window.close();
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -945,3 +996,4 @@ if (fail) {
 console.log('  Two-client concurrency behaves.\n');
 amanda.dom.window.close(); aidan.dom.window.close();
 process.exit(0);
+})();

@@ -79,10 +79,29 @@ const DATA = {
     { id: 's1', cardId: 'gc1', date: `${YEAR}-${MONTH}-01`, amount: 12.34 },
     { id: 's2', cardId: 'gc3', date: `${YEAR}-${MONTH}-03`, amount: 10 },
   ] },
+  chores: { items: [
+    { id: 'c1', text: 'Verizon/T-Mobile check-in', who: 'amanda', rule: { freq: 'weekly', days: ['mon'] } },
+    { id: 'c2', text: 'Wipe counters', who: 'aidan', rule: { freq: 'weekly', days: ['mon'] } },
+    { id: 'c3', text: '🏐 Volleyball!', who: 'amanda', rule: { freq: 'weekly', days: ['tue'] }, note: true },
+    { id: 'c4', text: 'Vacuum', who: 'aidan', rule: { freq: 'weekly', days: ['tue'] } },
+    { id: 'c5', text: 'Cat litter', who: 'amanda', rule: { freq: 'weekly', days: ['wed', 'fri'] } },
+    { id: 'c6', text: 'Clean bathroom', who: 'aidan', rule: { freq: 'weekly', days: ['wed'] } },
+    { id: 'c7', text: 'Laundry + change bedding', who: 'amanda', rule: { freq: 'weekly', days: ['thu'] } },
+    { id: 'c8', text: 'Grocery shopping', who: 'aidan', rule: { freq: 'weekly', days: ['sat'] } },
+    { id: 'c9', text: 'Quick check-in together', who: 'together', rule: { freq: 'weekly', days: ['sun'] } },
+    { id: 'c10', text: 'Order cat food + litter', who: 'amanda', rule: { freq: 'monthly', on: { nth: 1, weekday: 'sat' } } },
+    { id: 'c11', text: 'Go through fridge (before groceries)', who: 'aidan', rule: { freq: 'monthly', on: { nth: 1, weekday: 'sat' } } },
+    { id: 'c12', text: 'Trim cat nails', who: 'together', rule: { freq: 'monthly', on: { nth: 3, weekday: 'weekend' } } },
+    { id: 'c13', text: 'Spend DoorDash credit, use Uber credit', who: 'amanda', rule: { freq: 'monthly', on: { day: 25, approx: true } } },
+    { id: 'c14', text: 'Allure box: worth it?', who: 'amanda', rule: { freq: 'whenever', label: 'When the box reveal drops' } },
+    { id: 'c15', text: 'Replace HVAC/furnace filter', who: 'aidan', rule: { freq: 'monthly', months: [1, 4, 7, 10], on: { nth: 1, weekday: 'weekend' } } },
+  ], done: {} },
   todos: { items: [
     { id: 't1', text: 'Book campsite for Peninsula State Park', cat: 'todo', done: false, due: `${YEAR}-${MONTH}-25` },
     { id: 't2', text: 'Renew passport', cat: 'todo', done: false, due: `${YEAR}-01-05`, priority: 'critical' },
     { id: 't3', text: 'No deadline', cat: 'todo', done: false },
+    { id: 't4', text: 'Change furnace filter', cat: 'todo', done: false, due: `${YEAR}-${MONTH}-28`, repeat: { every: 3, unit: 'month' }, lastDone: `${YEAR}-01-02` },
+    { id: 't5', text: 'Water the plants', cat: 'todo', done: false, due: `${YEAR}-01-03`, repeat: { every: 1, unit: 'week' } },
   ] },
   todoCategories: { items: [{ id: 'todo', label: '📋 To-Do' }] },
   trips: { items: [
@@ -204,6 +223,16 @@ function ok(cond, name, detail) {
       ok(newControls.length === 0,
         `${vp.name}: recently-added controls are tappable (>=36px tall)`, newControls.join('; '));
 
+      await page.evaluate(() => showPage('todos'));
+      await page.waitForFunction(
+        () => { const a = document.querySelector('.page.active'); return a && a.id === 'page-todos'; },
+        { timeout: 5000 });
+      await page.waitForTimeout(120);
+      const choreControls = await measure('.ch-item, .ch-pill');
+      ok(choreControls.length === 0, `${vp.name}: chore checkboxes and pills are tappable (>=36px tall)`, choreControls.join('; '));
+      await page.evaluate(() => showPage('budget'));
+      await page.waitForTimeout(200);
+
       const legacyControls = await measure('.bmonth-pill, .bq-btn, .budget-settings-btn');
       if (legacyControls.length) {
         console.log(`  ℹ ${vp.name}: pre-existing controls below 36px (not failed, for your call):`);
@@ -280,6 +309,13 @@ function ok(cond, name, detail) {
       // transaction list) are reviewable instead of invisible to this test.
       await page.screenshot({ path: path.join(SHOTS, `${vp.name}-${pageName}-full.png`), fullPage: true });
     }
+
+    // ── Chores schedule view (the default screenshot shows This week) ──────
+    await page.evaluate(() => { setChoresTab('schedule'); showPage('todos'); });
+    await page.waitForTimeout(300);
+    ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${vp.name}: chores schedule view does not overflow`);
+    await page.screenshot({ path: path.join(SHOTS, `${vp.name}-chores-schedule.png`), fullPage: true });
+    await page.evaluate(() => setChoresTab('week'));
 
     // ── 4. Dark mode must not break layout or wash out text ───────────────
     await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); showPage('budget'); });
