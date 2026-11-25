@@ -40,6 +40,8 @@ ok(ev(`_chOccEnd({freq:'monthly', on:{nth:2, weekday:'weekend'}}, '2026-11-14')`
 // ── Empty state + template ──────────────────────────────────────────────────
 ev("showPage('todos'); renderTodos()");
 ok(/Start with our plan/.test(q('#chores-card')), 'with no chores the card offers to start with our plan');
+ev('renderHome()');
+ok(ev("document.getElementById('home-chores-widget').style.display") === 'none', 'Home shows no chores card before there are any chores');
 ev('loadChoreTemplate()');
 const count = ev('chores.length');
 ok(count === 20, 'the plan loads all 20 chores', String(count));
@@ -47,38 +49,72 @@ ev('loadChoreTemplate()');
 ok(ev('chores.length') === 20, 'loading the plan twice does not duplicate it');
 const id = (text, who) => ev(`(chores.find(c => c.text === ${j(text)} && c.who === ${j(who)}) || {}).id`);
 
-// ── This week ───────────────────────────────────────────────────────────────
-ev("setChoresWho('all'); setChoresTab('week')");
-const row = i => `#chores-card .ch-week .ch-row:nth-child(${i + 2})`;   // +1 header, nth-child is 1-based
-ok(/Mon/.test(q(row(0))) && /Nov 23/.test(q(row(0))), 'the week starts Monday Nov 23', q(row(0)));
-ok(ev(`document.querySelector(${j(row(2))}).classList.contains('today')`), 'Wednesday is highlighted as today');
-ok(/Cat litter/.test(q(row(2))) && /Clean bathroom/.test(q(row(2))), "Wednesday shows Amanda's cat litter and Aidan's bathroom", q(row(2)));
-ok(/DoorDash/.test(q(row(2))) && /~25th/.test(q(row(2))), 'the ~25th credits land on Wed the 25th, tagged', q(row(2)));
-ok(n(`${row(0)} .ch-item.missed`) === 0, "loading the plan on Wednesday does not mark Monday's chores missed", String(n(`${row(0)} .ch-item.missed`)));
+// ── Home: only what needs doing today ─────────────────────────────────────
+ev("setChoresWho('all'); setChoresTab('week'); renderHome()");
+const homeLines = () => ev("[...document.querySelectorAll('#home-chores .ch-line')].map(l => l.textContent.replace(/\\s+/g, ' ').trim())");
+const homeShown = () => ev("document.getElementById('home-chores-widget').style.display") !== 'none';
+ok(homeShown(), "Home shows a Today's chores card on a day with chores due");
+ok(j(homeLines().map(l => l.replace(/ (Amanda|Aidan|Together).*$/, '')).sort()) === j(['Cat litter', 'Clean bathroom', 'Spend DoorDash credit', 'Spend DoorDash credit, use Uber credit']),
+  "on Wed Nov 25 (plan just loaded): Wednesday's chores and the ~25th credits, nothing from before today", j(homeLines()));
 ok(ev('chores.every(c => c.since === "2026-11-25")'), 'every loaded chore remembers the day it was added');
-// From here on, pretend the plan has been in use since Nov 1 so missed/late can be exercised.
-ev("chores.forEach(c => { c.since = '2026-11-01'; }); renderChores()");
-ok(n(`${row(0)} .ch-item.missed`) === 2, "…but once it's been in use, Monday's two unticked chores show as missed", String(n(`${row(0)} .ch-item.missed`)));
-ok(n(`${row(1)} .ch-note`) === 1 && n(`${row(1)} .ch-item`) === 1, 'Tuesday: volleyball is a reminder (no checkbox), vacuum is tickable');
-ok(/Quick check-in together/.test(q(`${row(6)} .ch-together`)), 'Sunday has the together check-in on its own line', q(row(6)));
-ok(n(`${row(5)} .ch-item`) === 1, 'Saturday Nov 28 (4th Saturday) has only grocery shopping', q(row(5)));
-ok(/1 today|2 today|3 today|4 today/.test(q('#chores-card .rec-head')), 'the header counts what is left today', q('#chores-card .rec-head'));
-const before = q('#chores-card .rec-head');
+ok(/4 to do/.test(q('#chores-card .rec-head')), 'the To-Dos card header counts what is owed', q('#chores-card .rec-head'));
+ok(/Cat litter/.test(q('#today-banner')) && /Clean bathroom/.test(q('#today-banner')), "the Calendar's Today banner lists today's chores", q('#today-banner'));
+// The checkbox ticks; the name edits, same as a to-do.
 const litter = id('Cat litter', 'amanda');
+ok(/toggleChore\('[^']+','2026-11-25'\)/.test(ev("document.querySelector('#home-chores .ch-line .ch-tick').getAttribute('onclick')"))
+  && /openChoreEditor\(/.test(ev("document.querySelector('#home-chores .ch-line .ch-name').getAttribute('onclick')")),
+  'the checkbox ticks and the name opens the editor');
 ev(`toggleChore('${litter}', '2026-11-25')`);
-ok(ev(`_chIsDone('${litter}', '2026-11-25')`) === true, 'ticking a chore records that day');
-ok(n(`${row(2)} .ch-item.done`) === 1, 'the ticked chore shows as done');
-ok(q('#chores-card .rec-head') !== before, 'the today count drops', `${before} → ${q('#chores-card .rec-head')}`);
+ok(ev(`_chIsDone('${litter}', '2026-11-25')`) === true, 'ticking records that day');
+ok(ev("document.querySelectorAll('#home-chores .ch-line.done').length") === 1 && /3 to do/.test(q('#chores-card .rec-head')),
+  'a ticked chore stays on Home struck through (so a mis-tap can be undone) and the count drops', q('#chores-card .rec-head'));
 ok(ev(`_chIsDone('${litter}', '2026-11-27')`) === false, "Friday's cat litter is a separate occurrence, still open");
-ev(`toggleChore('${litter}', '2026-11-25')`);
+for (const x of ev('choresToday("2026-11-25").due.map(d => [d.c.id, d.iso])')) ev(`toggleChore('${x[0]}', '${x[1]}')`);
+ok(/All done for today/.test(q('#home-chores')), 'when everything is ticked Home says all done', q('#home-chores'));
+for (const x of ev('choresToday("2026-11-25").done.map(d => [d.c.id, d.iso])')) ev(`toggleChore('${x[0]}', '${x[1]}')`);
 ok(ev(`_chIsDone('${litter}', '2026-11-25')`) === false, 'tapping again undoes it');
+// A day with nothing due hides the card entirely.
+{
+  const a3 = boot('2026-11-28T10:00:00');   // a Saturday
+  a3.ev("loadChoreTemplate(); setChoresWho('amanda'); renderHome()");
+  ok(a3.ev("document.getElementById('home-chores-widget').style.display") === 'none', 'Home hides the card on a day with nothing due (Amanda, Sat Nov 28)',
+    a3.ev("document.getElementById('home-chores').textContent").replace(/\s+/g, ' '));
+  a3.close();
+}
+// The new card lands right after the stats even for a saved custom layout that predates it.
+ev("localStorage.setItem('ow-widget-order', JSON.stringify(['countdowns', 'stats', 'customize'])); applyWidgetOrder()");
+const wOrder = ev("[...document.querySelectorAll('#home-widgets > .home-widget')].map(w => w.dataset.widget)");
+ok(wOrder.indexOf('chores') === wOrder.indexOf('stats') + 1, "a saved home layout gets Today's chores right after the stats, not at the bottom", j(wOrder));
+
+// ── Late: owed until done or until the next occurrence comes round ──────────
+ev("chores.forEach(c => { c.since = '2026-11-01'; }); renderChores()");
+const due = ev('choresToday("2026-11-25").due.map(d => ({ t: d.c.text, who: d.c.who, iso: d.iso, late: d.late }))');
+const find = t => due.find(d => d.t === t);
+ok(find('Wipe counters') && find('Wipe counters').late && find('Wipe counters').iso === '2026-11-23', "Monday's unticked wipe-counters is late on Wednesday", j(find('Wipe counters')));
+ok(find('Order cat food + litter') && find('Order cat food + litter').iso === '2026-11-07', "this month's 1st-Saturday chore is still owed", j(find('Order cat food + litter')));
+const firstOnTime = due.findIndex(d => !d.late);
+ok(firstOnTime > 0 && due.slice(firstOnTime).every(d => !d.late), 'late ones are listed first', j(due.map(d => d.late)));
+ok(/since Mon Nov 23/.test(q('#home-chores')), 'a late chore says since when', q('#home-chores').slice(0, 160));
+const thu = ev('choresToday("2026-11-26").due.filter(d => d.c.text === "Laundry + change bedding").map(d => ({ iso: d.iso, late: d.late }))')[0];
+ok(thu && thu.iso === '2026-11-26' && !thu.late, "a missed weekly chore stops being late when its next day comes; it is just today's", j(thu));
+ok(!ev('choresToday("2026-11-25").due.some(d => d.c.note)'), 'reminders (volleyball) are never owed');
+ok(ev('choresToday("2026-11-24").notes.some(d => /Volleyball/.test(d.c.text))'), '...but show on their day as a reminder');
+
+// ── Up next (To-Dos card) ───────────────────────────────────────────────────
+ev("showPage('todos'); renderTodos()");
+ok(/Up next/.test(q('#chores-card .ch-tabs')), 'the card opens on Up next');
+const groups = ev("[...document.querySelectorAll('#chores-card .ch-daygrp')].map(g => g.textContent.replace(/\\s+/g, ' ').trim())");
+ok(groups.length && /^Thu Nov 26/.test(groups[0]) && /Laundry/.test(groups[0]), 'Coming up starts tomorrow with Thursday laundry', j(groups.slice(0, 2)));
+ok(groups.length <= 6, 'Coming up covers the next six days only', String(groups.length));
+ok(!ev("document.querySelector('#chores-card .ch-week')"), 'no full week grid any more');
 
 // Per-phone filter
-ev("setChoresWho('aidan')");
-ok(n('#chores-card .ch-hdr > div') === 2 && /Aidan/.test(q('#chores-card .ch-hdr')), 'Aidan filter shows one column', q('#chores-card .ch-hdr'));
-ok(!/Cat litter/.test(q(row(2))) && /Clean bathroom/.test(q(row(2))), "Aidan's view hides Amanda's chores", q(row(2)));
-ok(/Quick check-in together/.test(q(row(6))), "…but keeps the together ones");
+ev("setChoresWho('aidan'); renderHome()");
+ok(!/Order cat food/.test(q('#home-chores')) && /Clean bathroom/.test(q('#home-chores')), "Aidan's phone shows his chores, not Amanda's", q('#home-chores').slice(0, 200));
+ok(/Quick check-in together/.test(ev('choresToday("2026-11-29").due.map(d => d.c.text).join("|")')), '...and still the together ones');
 ok(ev("localStorage.getItem('ow-chores-who')") === 'aidan', 'the filter is remembered on this device');
+ev('cycleChoresWho()');
+ok(ev("localStorage.getItem('ow-chores-who')") === 'all', 'the Home pill cycles Aidan to Both');
 ev("setChoresWho('all')");
 
 // ── Schedule ────────────────────────────────────────────────────────────────
@@ -147,17 +183,27 @@ ok(app.errors.length === 0, 'no runtime errors', app.errors.slice(0, 3).join(' |
 app.close();
 
 // ── Across New Year ─────────────────────────────────────────────────────────
-for (const [now, firstDay, lastDay] of [['2026-12-31T21:00:00', 'Dec 28', 'Jan 3'], ['2027-01-04T09:00:00', 'Jan 4', 'Jan 10']]) {
-  const a2 = boot(now);
-  a2.ev("showPage('todos'); renderTodos(); loadChoreTemplate(); setChoresTab('week')");
-  const days = a2.ev("[...document.querySelectorAll('#chores-card .ch-week .ch-row:not(.ch-hdr) .ch-day span')].map(e => e.textContent)");
-  ok(days.length === 7 && days[0] === firstDay && days[6] === lastDay, `[${now.slice(0, 10)}] the week runs ${firstDay} – ${lastDay}`, JSON.stringify(days));
-  if (firstDay === 'Dec 28') {
-    const sat = a2.ev("[...document.querySelectorAll('#chores-card .ch-week .ch-row')].find(r => /Jan 2/.test(r.textContent)).textContent").replace(/\s+/g, ' ');
-    ok(/Replace HVAC\/furnace filter/.test(sat) && /Deep clean fridge/.test(sat) && /Order cat food/.test(sat),
-      'Sat Jan 2 (in the Dec 28 week) has the quarterly filter + fridge and the 1st-Saturday chores', sat);
-  }
-  ok(a2.errors.length === 0, `[${now.slice(0, 10)}] no runtime errors`, a2.errors.slice(0, 2).join(' | '));
+{
+  const a2 = boot('2026-12-31T21:00:00');
+  a2.ev("loadChoreTemplate(); showPage('todos'); renderTodos()");
+  const soon = a2.ev('choresComingUp("2026-12-31", 6).map(d => [d.iso, d.items.map(c => c.text)])');
+  const jan2 = (soon.find(d => d[0] === '2027-01-02') || [null, []])[1];
+  ok(soon[0] && soon[0][0] === '2027-01-01', 'on Dec 31, Coming up starts Fri Jan 1', JSON.stringify(soon.map(d => d[0])));
+  ok(['Replace HVAC/furnace filter', 'Deep clean fridge', 'Order cat food + litter', 'Go through fridge (before groceries)', 'Grocery shopping'].every(t => jan2.includes(t)),
+    'Sat Jan 2 brings the quarterly filter + fridge and the 1st-Saturday chores', JSON.stringify(jan2));
+  ok(a2.errors.length === 0, '[2026-12-31] no runtime errors', a2.errors.slice(0, 2).join(' | '));
+  a2.close();
+}
+{
+  const a2 = boot('2027-01-02T09:00:00');
+  a2.ev("loadChoreTemplate(); renderHome()");
+  const today = a2.ev('choresToday("2027-01-02").due.map(d => d.c.text)');
+  ok(today.includes('Replace HVAC/furnace filter') && today.includes('Order cat food + litter'), "on Sat Jan 2 Home lists the quarterly and 1st-Saturday chores", JSON.stringify(today));
+  const sun = a2.ev('choresToday("2027-01-03").due.map(d => d.c.text)');
+  ok(sun.includes('Replace HVAC/furnace filter'), '...and still on Sunday, since a weekend chore is on time through Sunday', JSON.stringify(sun));
+  const mon = a2.ev('choresToday("2027-01-04").due.filter(d => d.c.text === "Replace HVAC/furnace filter").map(d => d.late)');
+  ok(mon.length === 1 && mon[0] === true, 'unticked by Monday Jan 4 it shows as late', JSON.stringify(mon));
+  ok(a2.errors.length === 0, '[2027-01-02] no runtime errors', a2.errors.slice(0, 2).join(' | '));
   a2.close();
 }
 T.done();

@@ -230,6 +230,28 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .ch-pill:hover{border-color:var(--amber);color:var(--amber-dark)}
 .ch-pill.on{background:var(--amber);border-color:var(--amber);color:#fff}
 .ch-sep{flex:1}
+.rec-due-pill.late{background:var(--coral)}
+.ch-line{display:flex;align-items:flex-start;gap:4px;min-width:0;padding:2px 0}
+.ch-body{display:flex;flex-direction:column;min-width:0;flex:1;padding-top:2px}
+.ch-tick{flex:none;background:none;border:none;padding:6px;margin:0 0 0 -6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
+.ch-tick:hover .ch-cb{border-color:var(--amber)}
+.ch-tick-ph{flex:none;width:28px;text-align:center;font-size:13px}
+.ch-name{background:none;border:none;font:inherit;font-size:14px;color:var(--text);text-align:left;padding:2px 0;cursor:pointer;min-width:0;overflow-wrap:anywhere;align-self:flex-start}
+.ch-name:hover{color:var(--amber-dark)}
+.ch-line.done .ch-name{text-decoration:line-through;color:var(--text-3)}
+.ch-line.done .ch-cb{background:var(--sage);border-color:var(--sage)}
+.ch-line.late .ch-cb{border-color:var(--coral)}
+.ch-line.note .ch-name{font-style:italic;color:var(--text-2)}
+.ch-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:-1px}
+.ch-tagx{font-size:11px;color:var(--text-3);white-space:nowrap}
+.ch-tagx.late{color:var(--coral);font-weight:700}
+.ch-quiet{font-size:13px;color:var(--text-3);padding:4px 0}
+.ch-daygrp{margin-bottom:6px}
+.ch-daylbl{font-size:12px;font-weight:700;color:var(--text-2);margin:6px 0 2px}
+.ch-home-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ch-home-head .card-title{margin-bottom:0;flex:1;text-align:left}
+.ch-all-link{background:none;border:none;font:inherit;font-size:12px;font-weight:600;color:var(--amber);cursor:pointer;padding:8px 0 0;display:block;margin-left:auto}
+.today-banner-chores{font:inherit;font-size:12px;font-weight:600;background:var(--sage-bg);color:var(--text-2);border:none;border-radius:20px;padding:4px 10px;cursor:pointer;text-align:left}
 .ch-seg{display:inline-flex;gap:4px;flex-wrap:nowrap;margin-left:auto}
 .ch-week{margin-top:10px;border:1px solid var(--border-light);border-radius:10px;overflow:hidden}
 .ch-row{display:grid;grid-template-columns:54px repeat(var(--ch-cols),minmax(0,1fr));border-top:1px solid var(--border-light)}
@@ -281,6 +303,10 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 .ce-del{color:var(--coral);border-color:var(--coral-bg)}
 @media(pointer:coarse){
   .ch-item,.ch-mini{min-height:36px;align-items:center;padding:4px}
+  .ch-tick{min-width:40px;min-height:40px;margin-left:-8px}
+  .ch-tick-ph{width:32px}
+  .ch-name{min-height:36px}
+  .ch-all-link{min-height:36px}
   .ch-pill{min-height:36px}
   .ch-cb{width:20px;height:20px}
   .ch-edit{min-height:32px}
@@ -1237,6 +1263,11 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <div class="home-stat-lbl">Spent This Month ↗</div>
       </div>
     </div>
+  </div>
+
+  <div class="home-widget" data-widget="chores" id="home-chores-widget" style="display:none">
+    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
+    <div class="card ch-home" id="home-chores"></div>
   </div>
 
   <div class="home-widget" data-widget="countdowns">
@@ -2413,43 +2444,92 @@ const _chVisible = c => { const f = _chWhoFilter(); return f === 'all' || c.who 
 const _chWhoBadge = who => `<span class="ch-who ${who}">${_CH_WHO[who] || ''}</span>`;
 const _chMonthSortKey = r => { const on = (r && r.on) || {}; return on.day ? on.day : ((on.nth === -1 ? 5 : (on.nth || 1)) - 1) * 7 + (on.weekday === 'weekend' ? 6 : _CH_WD.indexOf(on.weekday)) + 1; };
 
-// One tickable occurrence. The whole row is the button: a 16px box is too small to hit reliably.
-function _chItemHtml(c, iso, today, tag) {
-  if (c.note) return `<span class="ch-note">${escHtml(c.text)}</span>`;
+// ── What needs doing ────────────────────────────────────────────────────────
+// A chore is OWED from its latest occurrence on or before today until it's ticked — or until its
+// next occurrence comes round (a missed Monday chore stops nagging when next Monday arrives, which
+// then is simply today's). Occurrences before `since` never count.
+const _chBack = r => r.freq === 'weekly' ? 7 : (Array.isArray(r.months) && r.months.length ? 370 : 45);
+function _chLatest(c, today) {
+  const from = _chAdd(today, -_chBack(c.rule));
+  const occ = choreOccurrences(c.rule, (_isDateStr(c.since) && c.since > from) ? c.since : from, today);
+  return occ[occ.length - 1] || null;
+}
+function _chTag(c, iso, today, late) {
+  if (late) return `since ${_chNice(iso)}`;
+  const on = (c.rule && c.rule.on) || {};
+  if (c.rule.freq === 'monthly' && on.weekday === 'weekend') return 'this weekend';
+  if (c.rule.freq === 'monthly' && on.approx) return choreWhenLabel(c.rule);
+  return '';
+}
+// Today's list for the current per-phone filter: owed (late first), today's reminders, and what was
+// already ticked today (kept, struck through, so a mis-tap can be undone).
+function choresToday(today) {
+  const due = [], notes = [], done = [];
+  for (const c of chores) {
+    if (!c.rule || c.rule.freq === 'whenever' || !_chVisible(c)) continue;
+    if (c.note) { if (choreOccurrences(c.rule, today, today).length) notes.push({ c, iso: today }); continue; }
+    const iso = _chLatest(c, today);
+    if (!iso) continue;
+    const end = _chOccEnd(c.rule, iso);
+    if (_chIsDone(c.id, iso)) { if (end >= today) done.push({ c, iso }); continue; }
+    due.push({ c, iso, late: end < today });
+  }
+  due.sort((a, b) => (b.late - a.late) || a.iso.localeCompare(b.iso) || a.c.text.localeCompare(b.c.text));
+  return { due, notes, done };
+}
+// Next `days` days after today, by day: occurrences not yet ticked.
+function choresComingUp(today, days) {
+  const out = [];
+  for (let i = 1; i <= days; i++) {
+    const iso = _chAdd(today, i);
+    const items = chores.filter(c => c.rule && c.rule.freq !== 'whenever' && _chVisible(c)
+      && choreOccurrences(c.rule, iso, iso).length && (c.note || !_chIsDone(c.id, iso)));
+    if (items.length) out.push({ iso, items });
+  }
+  return out;
+}
+// One line: the checkbox ticks, the name opens the editor — same as a to-do.
+function _chLineHtml(c, iso, o) {
+  o = o || {};
+  const who = o.showWho ? _chWhoBadge(c.who) : '';
+  if (c.note) {
+    return `<div class="ch-line note"><span class="ch-tick-ph">📌</span><span class="ch-body"><button class="ch-name" onclick="openChoreEditor('${c.id}')" title="Edit">${escHtml(c.text)}</button>${who ? `<span class="ch-meta">${who}</span>` : ''}</span></div>`;
+  }
   const done = _chIsDone(c.id, iso);
-  const missed = !done && _chOccEnd(c.rule, iso) < today && !(_isDateStr(c.since) && iso < c.since);
-  return `<button class="ch-item${done ? ' done' : ''}${missed ? ' missed' : ''}" onclick="toggleChore('${c.id}','${iso}')" title="${done ? 'Done — tap to undo' : 'Tap when done'}">
-      <span class="ch-cb">${done ? '✓' : ''}</span><span class="ch-txt">${escHtml(c.text)}${tag ? ` <span class="ch-tag">${tag}</span>` : ''}</span></button>`;
+  const tag = o.tag || '';
+  return `<div class="ch-line${done ? ' done' : ''}${o.late ? ' late' : ''}">
+      <button class="ch-tick" onclick="toggleChore('${c.id}','${iso}')" title="${done ? 'Done — tap to undo' : 'Mark done'}" aria-label="${done ? 'Undo' : 'Mark done'}: ${escHtml(c.text)}"><span class="ch-cb">${done ? '✓' : ''}</span></button>
+      <span class="ch-body">
+        <button class="ch-name" onclick="openChoreEditor('${c.id}')" title="Edit chore">${escHtml(c.text)}</button>
+        ${who || tag ? `<span class="ch-meta">${who}${tag ? `<span class="ch-tagx${o.late ? ' late' : ''}">${escHtml(tag)}</span>` : ''}</span>` : ''}
+      </span>
+    </div>`;
+}
+function _chTodayListHtml(today, showWho) {
+  const { due, notes, done } = choresToday(today);
+  const lines = [
+    ...due.map(x => _chLineHtml(x.c, x.iso, { late: x.late, tag: _chTag(x.c, x.iso, today, x.late), showWho })),
+    ...notes.map(x => _chLineHtml(x.c, x.iso, { showWho })),
+    ...done.map(x => _chLineHtml(x.c, x.iso, { showWho })),
+  ];
+  return { html: lines.join(''), due, notes, done };
 }
 
-function _chWeekHtml(today) {
-  const dow = _chDate(today).getDay();
-  const mon = _chAdd(today, -((dow + 6) % 7));
-  const f = _chWhoFilter();
-  const people = f === 'all' ? ['amanda', 'aidan'] : [f];
-  const vis = chores.filter(c => c.rule && c.rule.freq !== 'whenever' && _chVisible(c));
-  const rows = _CH_WEEK.map((wd, i) => {
-    const iso = _chAdd(mon, i);
-    const d = _chDate(iso);
-    const on = vis.filter(c => choreOccurrences(c.rule, iso, iso).length);
-    const tag = c => c.rule.freq === 'monthly' ? escHtml(c.rule.on && c.rule.on.weekday === 'weekend' ? 'this weekend' : choreWhenLabel(c.rule)) : '';
-    const cell = who => on.filter(c => c.who === who).map(c => _chItemHtml(c, iso, today, tag(c))).join('');
-    const together = on.filter(c => c.who === 'together');
-    return `<div class="ch-row${iso === today ? ' today' : ''}${iso < today ? ' past' : ''}">
-        <div class="ch-day">${_CH_WD_LABEL[wd]}<span>${_CH_MON[d.getMonth()]} ${d.getDate()}</span></div>
-        ${people.map(p => `<div class="ch-cell">${cell(p)}</div>`).join('')}
-        ${together.length ? `<div class="ch-together">👫 ${together.map(c => _chItemHtml(c, iso, today, tag(c))).join('')}</div>` : ''}
-      </div>`;
-  }).join('');
+function _chUpNextHtml(today) {
+  const showWho = _chWhoFilter() === 'all';
+  const t = _chTodayListHtml(today, showWho);
+  const todayHtml = `<div class="ch-sec"><div class="ch-sec-title">Today</div>${
+    t.html || '<div class="ch-quiet">Nothing due today ✨</div>'}${
+    !t.due.length && t.done.length ? '<div class="ch-quiet">All done for today ✨</div>' : ''}</div>`;
+  const soon = choresComingUp(today, 6);
+  const soonHtml = soon.length ? `<div class="ch-sec"><div class="ch-sec-title">Coming up</div>${soon.map(d => `
+      <div class="ch-daygrp"><div class="ch-daylbl">${_chNice(d.iso)}</div>${d.items.map(c => _chLineHtml(c, d.iso, { showWho, tag: _chTag(c, d.iso, today, false) })).join('')}</div>`).join('')}</div>` : '';
   const anytime = chores.filter(c => c.rule && c.rule.freq === 'whenever' && _chVisible(c));
   const anyHtml = anytime.length ? `<div class="ch-sec"><div class="ch-sec-title">As it comes up</div>${anytime.map(c => {
       const last = _chLastDone(c.id);
-      return `<div class="ch-any">${_chItemHtml(c, today, today, '')}<span class="ch-next">${escHtml(choreWhenLabel(c.rule))}${last ? ` · last done ${_chNice(last)}` : ''}</span></div>`;
+      return _chLineHtml(c, today, { showWho, tag: `${choreWhenLabel(c.rule)}${last ? ` · last done ${_chNice(last)}` : ''}` });
     }).join('')}</div>` : '';
-  return `<div class="ch-week" style="--ch-cols:${people.length}">
-      <div class="ch-row ch-hdr"><div></div>${people.map(p => `<div>${_CH_WHO[p]}</div>`).join('')}</div>
-      ${rows}
-    </div>${anyHtml}`;
+  return todayHtml + soonHtml + anyHtml;
 }
 
 // "As it comes up": tick = done today; shows when it was last done.
@@ -2504,24 +2584,24 @@ function _choresHtml() {
   const tab = localStorage.getItem('ow-chores-tab') === 'schedule' ? 'schedule' : 'week';
   const f = _chWhoFilter();
   // Today's open count for the header, so a collapsed card still says if something's due.
-  const todayLeft = chores.filter(c => !c.note && c.rule && c.rule.freq !== 'whenever' && _chVisible(c)
-    && choreOccurrences(c.rule, today, today).length && !_chIsDone(c.id, today)).length;
-  const pill = todayLeft ? `<span class="rec-due-pill">${todayLeft} today</span>` : '';
+  const owed = chores.length ? choresToday(today).due : [];
+  const lateN = owed.filter(x => x.late).length;
+  const pill = owed.length ? `<span class="rec-due-pill${lateN ? ' late' : ''}">${owed.length} to do${lateN ? ` · ${lateN} late` : ''}</span>` : '';
   const body = !chores.length
     ? `<div class="ch-empty">
-        <div>Weekly and monthly chores, split between the two of you. Tick each one off on the day.</div>
+        <div>Weekly and monthly chores, split between the two of you. Each one shows up on Home on the day it's due, and goes away once you tick it.</div>
         <div class="ch-actions">
           <button class="btn btn-primary" style="font-size:13px;padding:7px 14px" onclick="loadChoreTemplate()">Start with our plan</button>
           <button class="ch-pill" onclick="openChoreEditor()">+ Add your own</button>
         </div>
       </div>`
     : `<div class="ch-tabs">
-        <button class="ch-pill${tab === 'week' ? ' on' : ''}" onclick="setChoresTab('week')">This week</button>
+        <button class="ch-pill${tab === 'week' ? ' on' : ''}" onclick="setChoresTab('week')">Up next</button>
         <button class="ch-pill${tab === 'schedule' ? ' on' : ''}" onclick="setChoresTab('schedule')">Schedule</button>
         <span class="ch-sep"></span>
         <span class="ch-seg">${['all', 'amanda', 'aidan'].map(w => `<button class="ch-pill ch-pill-who${f === w ? ' on' : ''}" onclick="setChoresWho('${w}')">${w === 'all' ? 'Both' : _CH_WHO[w]}</button>`).join('')}</span>
       </div>
-      ${tab === 'week' ? _chWeekHtml(today) : _chScheduleHtml(today)}`;
+      ${tab === 'week' ? _chUpNextHtml(today) : _chScheduleHtml(today)}`;
   return `<div class="card todo-category" id="chores-card">
       <div class="rec-head" onclick="toggleChoresCard()">
         <div class="card-title">🧹 Chores</div>${pill}
@@ -2533,6 +2613,32 @@ function _choresHtml() {
 function renderChores() {
   const el = document.getElementById('chores-card');
   if (el) el.outerHTML = _choresHtml();
+  renderHomeChores();
+  const tb = document.getElementById('today-banner');
+  if (tb && typeof _renderTodayBanner === 'function') { const t = new Date(); t.setHours(0, 0, 0, 0); _renderTodayBanner(t); }
+}
+// Home: only what needs doing today. Hidden entirely on a day with nothing due.
+function renderHomeChores() {
+  const w = document.getElementById('home-chores-widget');
+  const el = document.getElementById('home-chores');
+  if (!w || !el) return;
+  const today = _todayLocal();
+  const f = _chWhoFilter();
+  const t = chores.length ? _chTodayListHtml(today, f === 'all') : { html: '', due: [], notes: [], done: [] };
+  if (!t.due.length && !t.notes.length && !t.done.length) { w.style.display = 'none'; el.innerHTML = ''; return; }
+  w.style.display = '';
+  const whoLabel = f === 'all' ? 'Both' : _CH_WHO[f];
+  el.innerHTML = `<div class="ch-home-head">
+      <div class="card-title">🧹 Today's chores</div>
+      <button class="ch-pill ch-who-cycle" onclick="cycleChoresWho()" title="Whose chores this phone shows">${whoLabel}</button>
+    </div>
+    ${t.html}
+    ${!t.due.length ? '<div class="ch-quiet">All done for today ✨</div>' : ''}
+    <button class="ch-all-link" onclick="showPage('todos')">All chores →</button>`;
+}
+function cycleChoresWho() {
+  const order = ['all', 'amanda', 'aidan'];
+  setChoresWho(order[(order.indexOf(_chWhoFilter()) + 1) % order.length]);
 }
 function toggleChoresCard() { _lsSet('ow-chores-open', localStorage.getItem('ow-chores-open') === '0' ? '1' : '0'); renderChores(); }
 function setChoresTab(t) { _lsSet('ow-chores-tab', t); renderChores(); }
@@ -3047,7 +3153,7 @@ function initFirestore() {
     const d = snap.exists ? (snap.data() || {}) : {};
     chores = Array.isArray(d.items) ? d.items : [];
     choreDone = (d.done && typeof d.done === 'object') ? d.done : {};
-    if (isActive('todos')) renderChores();
+    renderChores();
   });
 
   _listen('countdowns', snap => {
@@ -3794,6 +3900,7 @@ function scheduleRenderHome() {
 }
 
 function renderHome() {
+  renderHomeChores();
   const now = new Date();
   document.getElementById('home-date-label').textContent =
     `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
@@ -5262,11 +5369,16 @@ function _renderTodayBanner(today) {
   const dateLabel = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const labelHtml = `<span class="today-banner-label">Today · ${dayName}, ${dateLabel}</span>`;
 
-  const hasAnything = chipsHtml || eventsHtml || tripsHtml;
+  // Chores owed today (this phone's filter), so the banner stops saying "nothing scheduled" on a chore day.
+  const todaysChores = (typeof choresToday === 'function' && chores.length) ? choresToday(todayIso) : { due: [], notes: [] };
+  const choresHtml = [...todaysChores.due, ...todaysChores.notes].length
+    ? `<button class="today-banner-chores" onclick="showPage('home')" title="Tick them off on Home">🧹 ${[...todaysChores.due, ...todaysChores.notes].map(x => escHtml(x.c.text)).join(' · ')}</button>`
+    : '';
+  const hasAnything = chipsHtml || eventsHtml || tripsHtml || choresHtml;
   if (!hasAnything) {
     el.innerHTML = labelHtml + '<span class="today-banner-empty">Nothing scheduled — enjoy it ✨</span>';
   } else {
-    el.innerHTML = labelHtml + tripsHtml + eventsHtml + chipsHtml;
+    el.innerHTML = labelHtml + tripsHtml + eventsHtml + chipsHtml + choresHtml;
   }
   el.style.display = '';
 }
@@ -8701,15 +8813,19 @@ function toggleEditMode() {
 // IIFE earlier in the script calls applyWidgetOrder() before the const initializer line
 // executes.
 function applyWidgetOrder() {
-  const DEFAULT_ORDER = ['stats','countdowns','coffee-mood','coming-up','custom-countdowns','customize'];
+  const DEFAULT_ORDER = ['stats','chores','countdowns','coffee-mood','coming-up','custom-countdowns','customize'];
   const saved = _safeJsonParse(localStorage.getItem('ow-widget-order'), null);
   const container = document.getElementById('home-widgets');
   if (!container) return;
-  // Fill in any widgets the user's saved order doesn't know about (added since they last saved).
+  // Fill in any widgets the user's saved order doesn't know about (added since they last saved) —
+  // right after the widget that precedes them by default, not at the very bottom, so a new card
+  // like Today's chores appears where it was designed to sit.
   const order = saved ? [...saved] : [];
-  for (const key of DEFAULT_ORDER) {
-    if (!order.includes(key)) order.push(key);
-  }
+  DEFAULT_ORDER.forEach((key, i) => {
+    if (order.includes(key)) return;
+    const prev = DEFAULT_ORDER.slice(0, i).reverse().find(k => order.includes(k));
+    order.splice(prev ? order.indexOf(prev) + 1 : 0, 0, key);
+  });
   order.forEach(key => {
     const w = container.querySelector(`[data-widget="${key}"]`);
     if (w) container.appendChild(w);

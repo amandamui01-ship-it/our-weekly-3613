@@ -228,7 +228,7 @@ function ok(cond, name, detail) {
         () => { const a = document.querySelector('.page.active'); return a && a.id === 'page-todos'; },
         { timeout: 5000 });
       await page.waitForTimeout(120);
-      const choreControls = await measure('.ch-item, .ch-pill');
+      const choreControls = await measure('.ch-tick, .ch-name, .ch-pill');
       ok(choreControls.length === 0, `${vp.name}: chore checkboxes and pills are tappable (>=36px tall)`, choreControls.join('; '));
       await page.evaluate(() => showPage('budget'));
       await page.waitForTimeout(200);
