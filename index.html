@@ -134,7 +134,7 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 
 /* ── Cards ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;box-shadow:var(--shadow);transition:box-shadow .2s}
-@media(hover:hover){.card,.coffee-card{transition:box-shadow .2s}.card:hover,.coffee-card:hover{box-shadow:0 2px 20px rgba(45,36,23,.16),0 6px 32px rgba(45,36,23,.13)}.japan-card:hover{box-shadow:0 4px 28px rgba(0,0,0,.45),0 8px 40px rgba(0,0,0,.3)}}
+@media(hover:hover){.card,.coffee-card{transition:box-shadow .2s}.card:hover,.coffee-card:hover{box-shadow:0 2px 20px rgba(45,36,23,.16),0 6px 32px rgba(45,36,23,.13)}}
 .card+.card{margin-top:16px}
 .card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:16px;text-align:center}
 
@@ -551,18 +551,6 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
 @keyframes stat-pop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 .stat-popping{animation:stat-pop .4s cubic-bezier(.36,.07,.19,.97) both}
 
-/* ── Japan Countdown ── */
-.japan-card{background:linear-gradient(135deg,#0d0d1a 0%,#1a1035 50%,#0f2460 100%);border:none;text-align:center;padding:18px 18px;margin-bottom:14px;position:relative;overflow:hidden}
-.japan-card::before{content:'🗾';position:absolute;font-size:120px;opacity:.06;right:-10px;bottom:-20px;pointer-events:none}
-@keyframes japan-shimmer{0%{transform:translateX(-120%) skewX(-15deg)}100%{transform:translateX(320%) skewX(-15deg)}}
-.japan-card::after{content:'';position:absolute;top:0;left:0;width:35%;height:100%;background:linear-gradient(to right,transparent,rgba(255,255,255,.07),transparent);animation:japan-shimmer 5s ease-in-out infinite;animation-delay:3s;pointer-events:none}
-.japan-card-label{font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:800;color:rgba(255,255,255,.85);margin-bottom:4px;letter-spacing:0}
-.japan-card-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:12px}
-.japan-countdown{display:flex;align-items:center;justify-content:center;gap:6px}
-.japan-unit{display:flex;flex-direction:column;align-items:center;min-width:68px}
-.japan-num{font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:800;color:white;line-height:1;letter-spacing:-.02em}
-.japan-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);margin-top:5px}
-.japan-sep{font-size:36px;font-weight:300;color:rgba(255,255,255,.2);margin-bottom:14px;line-height:1}
 
 /* ── Misc ── */
 .empty-state{text-align:center;padding:48px 20px;color:var(--text-3);font-size:14px}
@@ -808,7 +796,6 @@ html:not([data-theme="dark"]) body.season-winter{--bg:#f3f5fa;--surface:#f8faff;
   --shadow:0 2px 12px rgba(0,0,0,.25);--shadow-lg:0 8px 32px rgba(0,0,0,.4);
 }
 [data-theme="dark"] .welcome-banner{background:linear-gradient(135deg,#3d2b12 0%,#2a1e0e 100%)}
-[data-theme="dark"] .japan-card{background:linear-gradient(135deg,#1a1228 0%,#0e1820 100%)}
 [data-theme="dark"] #login-overlay{background:var(--bg)}
 [data-theme="dark"] .coffee-card{background:linear-gradient(135deg,#2e2010 0%,#1e1808 100%)}
 [data-theme="dark"] .plan-slot-chip.gym    {background:#1c2e1e;color:#6a9870;border-color:#2a4a2e}
@@ -1064,9 +1051,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
   .nav-tab{padding:12px 10px;font-size:13px}
   /* Cards: reduce side padding on small phones */
   .card{padding:16px 14px}
-  /* Japan countdown: smaller numbers */
-  .japan-num{font-size:24px}
-  .japan-unit{min-width:50px}
   /* Home countdown cards: stack vertically on small screens */
   .home-countdown-row{grid-template-columns:1fr!important}
   /* Weekly schedule: chips wrap to first line, input on its own line below */
@@ -1204,23 +1188,6 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">October 1st</div>
         <div style="font-family:'Playfair Display',Georgia,serif;font-size:38px;font-weight:800;color:var(--amber);line-height:1" id="anniv-days">—</div>
         <div id="anniv-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--amber-dark);opacity:.7;margin-top:6px">days away</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="home-widget" data-widget="japan">
-    <div class="home-widget-handle" title="Drag to reorder">⠿</div>
-    <div class="card japan-card">
-      <div class="japan-card-label">✈️ Japan Countdown</div>
-      <div class="japan-card-sub">Oct 24, 2026 — Tokyo awaits 🌸 楽しみにしてる</div>
-      <div class="japan-countdown">
-        <div class="japan-unit"><span class="japan-num" id="jc-days">—</span><span class="japan-lbl">days</span></div>
-        <div class="japan-sep">:</div>
-        <div class="japan-unit"><span class="japan-num" id="jc-hrs">—</span><span class="japan-lbl">hours</span></div>
-        <div class="japan-sep">:</div>
-        <div class="japan-unit"><span class="japan-num" id="jc-mins">—</span><span class="japan-lbl">mins</span></div>
-        <div class="japan-sep">:</div>
-        <div class="japan-unit"><span class="japan-num" id="jc-secs">—</span><span class="japan-lbl">secs</span></div>
       </div>
     </div>
   </div>
@@ -1579,11 +1546,9 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
 
   <!-- Period picker -->
   <div class="budget-period-row">
-    <select id="b-filter-year" onchange="renderBudget()">
-      <option value="2027">2027</option>
-      <option value="2026" selected>2026</option>
-      <option value="2025">2025</option>
-    </select>
+    <!-- Options are built by renderBudget() from the current year + years with data. A hardcoded
+         `selected` here once pinned every page load to 2026, even in January 2027. -->
+    <select id="b-filter-year" onchange="renderBudget()"></select>
     <div class="budget-month-pills" id="budget-month-pills"></div>
   </div>
 
@@ -1751,9 +1716,7 @@ html:not([data-theme="dark"]) body[data-bg="sage"]      {--bg:#f2f5ef;--surface:
         <option>May</option><option>June</option><option>July</option><option>August</option>
         <option>September</option><option>October</option><option>November</option><option>December</option>
       </select>
-      <select id="rec-load-year" class="bq-sel" style="width:80px" onchange="renderRecurring()">
-        <option>2025</option><option>2026</option><option>2027</option>
-      </select>
+      <select id="rec-load-year" class="bq-sel" style="width:80px" onchange="renderRecurring()"></select>
       <button id="rec-load-btn" class="btn btn-primary" style="font-size:12px;padding:6px 12px" onclick="loadRecurringSelected()">Load</button>
       <button onclick="openRecurringAudit()" style="font-size:12px;font-weight:600;padding:6px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);border-radius:8px;cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">🔍 Review audit</button>
     </div>
@@ -3091,9 +3054,6 @@ function showPage(name) {
     if (name === 'budget')  { renderBudget(); renderBulkCatChips(); checkRecurringReminder(); applySingleAddVisibility(); }
     if (name === 'review')  { document.getElementById('review-date-sub').textContent = getReviewWeekLabel(); loadReviewDraft(); }
     if (name === 'trip')    renderTrip();
-    // Only run the 1Hz Japan countdown ticker when the home page is mounted — saves battery
-    // on mobile and avoids wasted getElementById calls on other pages.
-    if (name === 'home') startJapanTicker(); else stopJapanTicker();
     const newPage = document.getElementById('page-' + name);
     newPage.style.opacity = '0';
     newPage.classList.add('active');
@@ -4988,7 +4948,14 @@ function renderCalendar() {
 let _thisWeekStateApplied = false;
 function renderDates() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const isPast = t => t.sortDate && new Date(t.sortDate + 'T00:00:00') < today;
+  // Past once its LAST day is over, not once it starts — a multi-day trip used to drop into the
+  // collapsed Past Adventures on its first day. Matches renderNextTrip's in-progress rule.
+  const isPast = t => {
+    if (!t.sortDate) return false;
+    const e = parseICSEndDateMemo(t.dates, t.sortDate);      // exclusive YYYYMMDD
+    const endEx = e ? new Date(`${e.slice(0, 4)}-${e.slice(4, 6)}-${e.slice(6, 8)}T00:00:00`) : null;
+    return endEx ? endEx <= today : new Date(t.sortDate + 'T00:00:00') < today;
+  };
   const sortByDate = (a, b) => (a.sortDate || '9999').localeCompare(b.sortDate || '9999');
 
   // Restore saved expand/collapse state of the This Week section on first render. The body
@@ -5044,7 +5011,13 @@ function renderDates() {
 
   // Filter trips to selected year, using the derived year so text-dated trips land in the right
   // one. Only trips with no discoverable year at all fall through to every year.
-  const yearTrips = trips.filter(t => { const y = _tripYear(t); return y === null || y === _datesYear; });
+  // A trip that crosses New Year ("Dec 30 – Jan 2") belongs to both years.
+  const _tripEndYear = t => {
+    if (!t.sortDate) return null;
+    const e = parseICSEndDateMemo(t.dates, t.sortDate);   // exclusive YYYYMMDD
+    return e ? new Date(Date.UTC(+e.slice(0, 4), +e.slice(4, 6) - 1, +e.slice(6, 8) - 1)).getUTCFullYear() : null;
+  };
+  const yearTrips = trips.filter(t => { const y = _tripYear(t); return y === null || y === _datesYear || _tripEndYear(t) === _datesYear; });
   const upcoming = yearTrips.filter(t => !isPast(t)).sort(sortByDate);
   const past     = yearTrips.filter(t =>  isPast(t)).sort(sortByDate);
 
@@ -6288,22 +6261,47 @@ function exportToCalendar() {
   }, 'Export');
 }
 
-function parseSortDate(dateStr) {
+function parseSortDate(dateStr, anchorIso) {
   if (!dateStr) return null;
   const first = dateStr.replace(/[–—\-].*/, '').trim();
-  const today = new Date(); today.setHours(0,0,0,0);
-  // If the user already typed an explicit 4-digit year, honor it — don't year-shift. The old
-  // code would happily move "Jan 5, 2026" entered in May 2026 to Jan 5 2027 because Jan 2026
-  // is more than 2 months in the past. Now: if any 4-digit year is present in the input, use
-  // it verbatim and skip the next-year retry.
-  const explicitYear = (dateStr.match(/\b(20\d{2})\b/) || [])[1];
-  let year = explicitYear ? parseInt(explicitYear) : today.getFullYear();
-  let d = new Date(`${first} ${year}`);
-  if (isNaN(d)) return null;
-  if (!explicitYear && d < new Date(today.getFullYear(), today.getMonth() - 2, 1)) {
-    d = new Date(`${first} ${year + 1}`);
+  const YEAR_RE = /\b(20\d{2})\b/;
+  const firstNoYear = first.replace(/,?\s*\b20\d{2}\b/, '').trim();
+  // Needs a day number: V8's lenient parser turns "not a date 2026" into Jan 1.
+  if (!/\d/.test(firstNoYear)) return null;
+  const at = y => { const d = new Date(`${firstNoYear} ${y}`); return isNaN(d) ? null : d; };
+  // Local calendar components, not toISOString(): local midnight read back in UTC is the
+  // previous day anywhere east of UTC.
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // A year typed on the START ("Feb 14, 2027 – Feb 16") belongs to the start. Honor it verbatim.
+  const ownYear = (first.match(YEAR_RE) || [])[1];
+  if (ownYear) { const d = at(+ownYear); return d ? iso(d) : null; }
+
+  // A year typed only at the END belongs to the end. "Dec 28 – Jan 3, 2027" starts in 2026 —
+  // reading 2027 as the start year filed the holiday trip in Dec 2027.
+  const endYear = (dateStr.match(YEAR_RE) || [])[1];
+  if (endYear) {
+    const d = at(+endYear);
+    if (!d) return null;
+    const endEx = parseICSEndDate(dateStr, iso(d));            // exclusive, YYYYMMDD
+    const lastDayYear = endEx ? new Date(Date.UTC(+endEx.slice(0, 4), +endEx.slice(4, 6) - 1, +endEx.slice(6, 8) - 1)).getUTCFullYear() : +endYear;
+    if (lastDayYear > +endYear) { const prev = at(+endYear - 1); return prev ? iso(prev) : null; }
+    return iso(d);
   }
-  return isNaN(d) ? null : d.toISOString().slice(0, 10);
+
+  // No year typed: the earliest year that isn't more than ~2 months before the reference day.
+  // The reference is the trip's existing date when editing (so fixing a typo on an August trip
+  // in November doesn't move it to next August), otherwise today. Trying last year too is what
+  // lets "Dec 23–27" typed on Jan 3 mean the December that just happened.
+  const ref = anchorIso ? new Date(anchorIso + 'T00:00:00') : new Date();
+  if (isNaN(ref)) return null;
+  const cutoff = new Date(ref.getFullYear(), ref.getMonth() - 2, 1);
+  for (const y of [ref.getFullYear() - 1, ref.getFullYear(), ref.getFullYear() + 1]) {
+    const d = at(y);
+    if (!d) return null;
+    if (d >= cutoff) return iso(d);
+  }
+  return null;
 }
 
 function addTrip() {
@@ -6704,7 +6702,7 @@ function saveTripField(field, value) {
   } else if (field === 'dates') {
     if (!v) { renderTrip(); return; }
     t.dates = v;
-    t.sortDate = parseSortDate(v) || t.sortDate;
+    t.sortDate = parseSortDate(v, t.sortDate) || t.sortDate;
     _invalidateIcsEndCache(); // dates string changed → memoized end date is stale
     // Clear any dismissed overlap so re-overlaps re-warn
     const dismissed = new Set(_safeJsonParse(localStorage.getItem('ow-dismissed-overlaps'), []));
@@ -7649,6 +7647,7 @@ function exportData() {
     todos,
     todoCategories,
     trips,
+    datedEvents,   // calendar events — missing from backups until Nov 2026
     entries: newEntries,
     expenses,
     budgetTargets,
@@ -7878,7 +7877,6 @@ function renderNextTrip() {
   // the Next Adventure card through its last day instead of vanishing the moment it begins.
   const next = [...trips].filter(t => t.sortDate).sort((a,b) => a.sortDate.localeCompare(b.sortDate))
     .find(t => {
-      if ((t.label || '').includes('JAPAN')) return false;
       const endCompact = parseICSEndDateMemo(t.dates, t.sortDate);
       if (!endCompact) return false;
       const endIso = `${endCompact.slice(0,4)}-${endCompact.slice(4,6)}-${endCompact.slice(6,8)}`;
@@ -8036,7 +8034,7 @@ function toggleEditMode() {
 // IIFE earlier in the script calls applyWidgetOrder() before the const initializer line
 // executes.
 function applyWidgetOrder() {
-  const DEFAULT_ORDER = ['stats','countdowns','japan','coffee-mood','coming-up','custom-countdowns','customize'];
+  const DEFAULT_ORDER = ['stats','countdowns','coffee-mood','coming-up','custom-countdowns','customize'];
   const saved = _safeJsonParse(localStorage.getItem('ow-widget-order'), null);
   const container = document.getElementById('home-widgets');
   if (!container) return;
@@ -8111,38 +8109,6 @@ function renderAnniversary() {
   document.getElementById('anniv-label').style.visibility = days ? '' : 'hidden';
 }
 
-// ─── JAPAN COUNTDOWN ─────────────────────────────────────────────────────────
-let _japanInterval = null;
-function tickJapan() {
-  const diff = new Date('2026-10-24T00:00:00') - new Date();
-  if (diff <= 0) {
-    stopJapanTicker();
-    const card = document.querySelector('.japan-card');
-    if (card) card.innerHTML = `
-      <div class="japan-card-label" style="font-size:20px;margin-bottom:6px">🎌 We made it to Japan!</div>
-      <div class="japan-card-sub">Oct 24 – Nov 8, 2026 · 楽しんで 🌸</div>`;
-    return;
-  }
-  const days = document.getElementById('jc-days');
-  if (!days) return; // home page not mounted — nothing to tick
-  const pad = n => String(n).padStart(2,'0');
-  days.textContent = pad(Math.floor(diff/864e5));
-  document.getElementById('jc-hrs').textContent  = pad(Math.floor(diff/36e5)%24);
-  document.getElementById('jc-mins').textContent = pad(Math.floor(diff/6e4)%60);
-  document.getElementById('jc-secs').textContent = pad(Math.floor(diff/1e3)%60);
-}
-function startJapanTicker() {
-  if (_japanInterval) return;
-  tickJapan();
-  _japanInterval = setInterval(tickJapan, 1000);
-}
-function stopJapanTicker() {
-  if (_japanInterval) { clearInterval(_japanInterval); _japanInterval = null; }
-}
-// Start the ticker only if the home page is actually active at load time — every other page
-// would otherwise tick a 1Hz interval that does nothing useful (and burns a bit of battery
-// on mobile). showPage handles subsequent navigation between pages.
-if (isActive('home')) startJapanTicker();
 
 // ─── BUDGET ──────────────────────────────────────────────────────────────────
 
@@ -9330,7 +9296,10 @@ const DEFAULT_RECURRING = [
 // Income counts as "logged" for a month as soon as a sizable income entry exists — paycheck
 // amount AND description vary too much month to month to match on, so we just look for any real
 // income landing. Tweak the threshold if your paychecks run smaller.
-let INCOME_LOADED_MIN = parseInt(localStorage.getItem('ow-income-min'), 10) || 4000;
+let INCOME_LOADED_MIN = (() => {
+  const n = parseInt(localStorage.getItem('ow-income-min'), 10);
+  return (!isNaN(n) && n >= 0) ? n : 4000; // 0 is a legitimate setting — don't let || eat it
+})();
 function _isRecurringLoaded(r, month, year, yearMonthPrefix) {
   // Match by the date's YYYY-MM prefix rather than the derived `month` field. The month
   // field can be missing or stale (a corrupted date during backfill leaves it empty); the
@@ -9377,7 +9346,12 @@ function openBudgetSettings() {
   const lm = document.getElementById('rec-load-month');
   if (lm) lm.value = monthName(new Date());
   const ly = document.getElementById('rec-load-year');
-  if (ly) ly.value = String(new Date().getFullYear());
+  if (ly) {
+    // Last year → next year around today (was a hardcoded 2025–2027 list that would go blank in 2028).
+    const cy = new Date().getFullYear();
+    ly.innerHTML = [cy - 1, cy, cy + 1].map(y => `<option>${y}</option>`).join('');
+    ly.value = String(cy);
+  }
   renderSplitModePicker();
   renderBudgetTargetsEditor();
   o.style.display = 'flex';
@@ -9964,6 +9938,15 @@ function _guessYearForMD(mo, dy) {
   return candidate > twoMoFromNow ? curYear - 1 : curYear;
 }
 function _parseBulkDate(str) {
+  const out = _parseBulkDateRaw(str);
+  if (!out) return null;
+  // A real calendar date only. "13/45" used to be stored as 2025-13-45: it counted under All
+  // but no Year/month/3M/6M view could ever show it, and no pill could find it.
+  const [y, m, d] = out.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) ? out : null;
+}
+function _parseBulkDateRaw(str) {
   // YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
   // M/D/YYYY or M/D/YY

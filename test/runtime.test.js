@@ -79,6 +79,19 @@ const dom = new JSDOM(html, {
   virtualConsole: vc,
 });
 const { window } = dom;
+// Pin the app's clock. The fixtures below are written as "August of this year" with August still
+// ahead (campsite due Aug 25, trips Aug 21–23, Japan in October). Running on the real clock made
+// the suite rot as the year went on: by November those dates were past, so conflicts stopped being
+// checked, a second to-do went overdue, and Japan moved to Past Adventures — 7 red tests, no bug.
+const FIXED_NOW = new Date('2026-08-19T12:00:00').getTime();
+{
+  const RealDate = window.Date;
+  class FixedDate extends RealDate {
+    constructor(...a) { if (a.length) super(...a); else super(FIXED_NOW); }
+    static now() { return FIXED_NOW; }
+  }
+  window.Date = FixedDate;
+}
 window.firebase = firebaseStub;
 window.HTMLElement.prototype.scrollIntoView = function () {};
 window.HTMLInputElement.prototype.showPicker = function () {};
@@ -153,7 +166,7 @@ function push(docId, data) {
   catch (err) { fail++; failures.push({ name: `push ${docId}`, detail: err.message }); }
 }
 
-const TODAY = new Date().toISOString().slice(0, 10);
+const TODAY = new Date(FIXED_NOW).toISOString().slice(0, 10);
 const YEAR = TODAY.slice(0, 4);
 
 push('expenses', { items: [
@@ -726,7 +739,7 @@ if (fail) {
   process.exit(1);
 }
 console.log('  Page loads and all new UI works against real data.\n');
-// The app installs intervals (the Japan countdown ticker, autosave debounces) which keep jsdom's
+// The app installs intervals (autosave debounces, etc.) which keep jsdom's
 // event loop alive forever. Tear the window down and exit explicitly.
 dom.window.close();
 process.exit(0);

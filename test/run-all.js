@@ -13,6 +13,7 @@ const SUITES = [
   ['runtime.test.js',    'runtime (jsdom)'],
   ['budget-audit.test.js','budget math audit (jsdom)'],
   ['ics.test.js',        'calendar feed / dates'],
+  ['year-boundary.test.js','year boundary (jsdom, fake clock)'],
   ['concurrency.test.js','two-client concurrency (jsdom)'],
   ['data-audit.test.js', 'data auditor self-test'],
   ['layout.test.js',     'layout in a real browser (chromium)'],

@@ -58,6 +58,9 @@ window.__pushQueue = [];
 
 const YEAR = String(new Date().getFullYear());
 const MONTH = String(new Date().getMonth() + 1).padStart(2, '0');
+// Trip date TEXT must agree with its sortDate month, or the end-date parser (correctly) rolls the
+// range into next year and Next Adventure shows a months-old trip as happening "Now!".
+const MON = new Date().toLocaleString('en-US', { month: 'short' });
 
 const DATA = {
   expenses: { items: [
@@ -83,8 +86,8 @@ const DATA = {
   ] },
   todoCategories: { items: [{ id: 'todo', label: '📋 To-Do' }] },
   trips: { items: [
-    { id: 'trip-a', dates: 'Aug 21–23', sortDate: `${YEAR}-${MONTH}-21`, label: 'Peninsula State Park Camping' },
-    { id: 'trip-b', dates: 'Aug 22',    sortDate: `${YEAR}-${MONTH}-22`, label: 'Night Market' },
+    { id: 'trip-a', dates: `${MON} 21–23`, sortDate: `${YEAR}-${MONTH}-21`, label: 'Peninsula State Park Camping' },
+    { id: 'trip-b', dates: `${MON} 22`,    sortDate: `${YEAR}-${MONTH}-22`, label: 'Night Market' },
     { id: 'trip-d', dates: 'Oct 24 – Nov 8', sortDate: `${YEAR}-10-24`, label: 'JAPAN' },
   ] },
   okdOverlaps: { pairs: [] },
