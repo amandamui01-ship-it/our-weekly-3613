@@ -2290,7 +2290,9 @@ let _todosLoaded = false; // pin GC must not judge pins against a to-do list tha
 // come from the calendar, and you tick off each OCCURRENCE.
 //
 // Firestore: state/chores = { items: [chore], done: { '<id>_<YYYYMMDD>': 1 } }.
-//   chore = { id, text, who: 'amanda'|'aidan'|'together', rule, note? }
+//   chore = { id, text, who: 'amanda'|'aidan'|'together', rule, note?, since? }
+//   since: the day it was added. Occurrences before it are never "missed" or "late" — loading the plan
+//   on a Thursday must not greet you with Monday's chores in red.
 //   rule  = { freq: 'weekly',  days: ['mon','wed'] }
 //         | { freq: 'monthly', on: { nth: 1..4|-1, weekday: 'sat'|'weekend' } | { day: 25, approx? }, months?: [1,4,7,10] }
 //         | { freq: 'whenever', label?: 'When the box reveal drops' }
@@ -2389,7 +2391,8 @@ function choreMonthsLabel(months) {
 // (possibly late); otherwise the next one coming up.
 function choreCurrent(c, today) {
   if (!c || !c.rule || c.rule.freq === 'whenever') return null;
-  const back = choreOccurrences(c.rule, _chAdd(today, -45), today);
+  const from = _chAdd(today, -45);
+  const back = choreOccurrences(c.rule, (_isDateStr(c.since) && c.since > from) ? c.since : from, today);
   const prev = back[back.length - 1];
   if (prev && !_chIsDone(c.id, prev)) return { iso: prev, late: _chOccEnd(c.rule, prev) < today };
   const next = choreOccurrences(c.rule, _chAdd(today, 1), _chAdd(today, 400))[0] || null;
@@ -2414,7 +2417,7 @@ const _chMonthSortKey = r => { const on = (r && r.on) || {}; return on.day ? on.
 function _chItemHtml(c, iso, today, tag) {
   if (c.note) return `<span class="ch-note">${escHtml(c.text)}</span>`;
   const done = _chIsDone(c.id, iso);
-  const missed = !done && _chOccEnd(c.rule, iso) < today;
+  const missed = !done && _chOccEnd(c.rule, iso) < today && !(_isDateStr(c.since) && iso < c.since);
   return `<button class="ch-item${done ? ' done' : ''}${missed ? ' missed' : ''}" onclick="toggleChore('${c.id}','${iso}')" title="${done ? 'Done — tap to undo' : 'Tap when done'}">
       <span class="ch-cb">${done ? '✓' : ''}</span><span class="ch-txt">${escHtml(c.text)}${tag ? ` <span class="ch-tag">${tag}</span>` : ''}</span></button>`;
 }
@@ -2589,7 +2592,7 @@ const CHORE_TEMPLATE = [
 function loadChoreTemplate() {
   if (chores.length) return;   // never double-load on top of real chores
   _addChores(CHORE_TEMPLATE.map(([text, who, rule, note], i) => {
-    const c = { id: _chNewId() + i, text, who, rule: JSON.parse(JSON.stringify(rule)) };
+    const c = { id: _chNewId() + i, text, who, rule: JSON.parse(JSON.stringify(rule)), since: _todayLocal() };
     if (note) c.note = true;
     return c;
   }));
@@ -2734,7 +2737,7 @@ function saveChoreEditor() {
     closeChoreEditor();
     renderChores();
   } else {
-    const c = { id: _chNewId(), text, who, rule };
+    const c = { id: _chNewId(), text, who, rule, since: _todayLocal() };
     if (note) c.note = true;
     closeChoreEditor();
     _addChores([c]);

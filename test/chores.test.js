@@ -54,7 +54,11 @@ ok(/Mon/.test(q(row(0))) && /Nov 23/.test(q(row(0))), 'the week starts Monday No
 ok(ev(`document.querySelector(${j(row(2))}).classList.contains('today')`), 'Wednesday is highlighted as today');
 ok(/Cat litter/.test(q(row(2))) && /Clean bathroom/.test(q(row(2))), "Wednesday shows Amanda's cat litter and Aidan's bathroom", q(row(2)));
 ok(/DoorDash/.test(q(row(2))) && /~25th/.test(q(row(2))), 'the ~25th credits land on Wed the 25th, tagged', q(row(2)));
-ok(n(`${row(0)} .ch-item.missed`) === 2, "Monday's two unticked chores show as missed", String(n(`${row(0)} .ch-item.missed`)));
+ok(n(`${row(0)} .ch-item.missed`) === 0, "loading the plan on Wednesday does not mark Monday's chores missed", String(n(`${row(0)} .ch-item.missed`)));
+ok(ev('chores.every(c => c.since === "2026-11-25")'), 'every loaded chore remembers the day it was added');
+// From here on, pretend the plan has been in use since Nov 1 so missed/late can be exercised.
+ev("chores.forEach(c => { c.since = '2026-11-01'; }); renderChores()");
+ok(n(`${row(0)} .ch-item.missed`) === 2, "…but once it's been in use, Monday's two unticked chores show as missed", String(n(`${row(0)} .ch-item.missed`)));
 ok(n(`${row(1)} .ch-note`) === 1 && n(`${row(1)} .ch-item`) === 1, 'Tuesday: volleyball is a reminder (no checkbox), vacuum is tickable');
 ok(/Quick check-in together/.test(q(`${row(6)} .ch-together`)), 'Sunday has the together check-in on its own line', q(row(6)));
 ok(n(`${row(5)} .ch-item`) === 1, 'Saturday Nov 28 (4th Saturday) has only grocery shopping', q(row(5)));
@@ -79,6 +83,11 @@ ev("setChoresWho('all')");
 
 // ── Schedule ────────────────────────────────────────────────────────────────
 ev("setChoresTab('schedule')");
+ev(`(function(){ const c = { id: 'fresh1', text: 'Fresh monthly', who: 'amanda', rule: { freq: 'monthly', on: { nth: 1, weekday: 'sat' } }, since: '2026-11-25' };
+  chores.push(c); renderChores(); })()`);
+ok(/Fresh monthly\s*Sat Dec 5/.test(ev("document.querySelector('#chores-card').textContent")),
+  "a monthly chore added after this month's date shows next month's, not late");
+ev("chores = chores.filter(c => c.id !== 'fresh1'); renderChores()");
 const titles = ev("[...document.querySelectorAll('#chores-card .ch-sec-title')].map(e => e.textContent)");
 ok(j(titles) === j(['Weekly', 'Monthly', 'Every 3 months (Jan, Apr, Jul, Oct)']), 'Schedule sections: weekly, monthly, every 3 months', j(titles));
 const monthlyWhens = ev("[...document.querySelectorAll('#chores-card .ch-sec')[1].querySelectorAll('.ch-when')].map(e => e.textContent)");
@@ -105,6 +114,7 @@ ev(`(function(){ const $ = id => document.getElementById(id);
   document.querySelector('.ce-day[data-day="sun"]').click();
   $('ce-save').click(); })()`);
 const plants = ev("chores.find(c => c.text === 'Water plants')");
+ok(plants && plants.since === '2026-11-25', 'a chore added in the editor starts counting today', plants && plants.since);
 ok(plants && plants.who === 'aidan' && j(plants.rule) === j({ freq: 'weekly', days: ['thu', 'sun'] }), 'a new weekly chore saves its days', j(plants));
 ok(ev("document.getElementById('chore-editor-overlay').style.display") === 'none', 'saving closes the editor');
 // Weekly with no days is refused rather than saved as a chore that never comes up.
@@ -135,4 +145,19 @@ ok(!ev(`chores.some(c => c.id === '${vac}')`), 'deleting a chore removes it');
 
 ok(app.errors.length === 0, 'no runtime errors', app.errors.slice(0, 3).join(' | '));
 app.close();
+
+// ── Across New Year ─────────────────────────────────────────────────────────
+for (const [now, firstDay, lastDay] of [['2026-12-31T21:00:00', 'Dec 28', 'Jan 3'], ['2027-01-04T09:00:00', 'Jan 4', 'Jan 10']]) {
+  const a2 = boot(now);
+  a2.ev("showPage('todos'); renderTodos(); loadChoreTemplate(); setChoresTab('week')");
+  const days = a2.ev("[...document.querySelectorAll('#chores-card .ch-week .ch-row:not(.ch-hdr) .ch-day span')].map(e => e.textContent)");
+  ok(days.length === 7 && days[0] === firstDay && days[6] === lastDay, `[${now.slice(0, 10)}] the week runs ${firstDay} – ${lastDay}`, JSON.stringify(days));
+  if (firstDay === 'Dec 28') {
+    const sat = a2.ev("[...document.querySelectorAll('#chores-card .ch-week .ch-row')].find(r => /Jan 2/.test(r.textContent)).textContent").replace(/\s+/g, ' ');
+    ok(/Replace HVAC\/furnace filter/.test(sat) && /Deep clean fridge/.test(sat) && /Order cat food/.test(sat),
+      'Sat Jan 2 (in the Dec 28 week) has the quarterly filter + fridge and the 1st-Saturday chores', sat);
+  }
+  ok(a2.errors.length === 0, `[${now.slice(0, 10)}] no runtime errors`, a2.errors.slice(0, 2).join(' | '));
+  a2.close();
+}
 T.done();
